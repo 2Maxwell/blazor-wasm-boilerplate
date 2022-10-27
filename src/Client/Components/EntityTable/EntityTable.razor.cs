@@ -1,3 +1,4 @@
+using Blazored.SessionStorage;
 using FSH.BlazorWebAssembly.Client.Components.Dialogs;
 using FSH.BlazorWebAssembly.Client.Infrastructure.ApiClient;
 using FSH.BlazorWebAssembly.Client.Infrastructure.Auth;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using MudBlazor;
+using static MudBlazor.CategoryTypes;
 
 namespace FSH.BlazorWebAssembly.Client.Components.EntityTable;
 
@@ -39,16 +41,36 @@ public partial class EntityTable<TEntity, TId, TRequest>
     [Parameter]
     public RenderFragment<TRequest>? EditFormContent { get; set; }
 
+    [Parameter]
+    public TEntity? SelectedItem { get; set; }
+
+    [Parameter]
+    public TEntity? SelectedItem5 { get; set; }
+
+    [Parameter]
+    public EventCallback<TEntity> SelectedItemChanged { get; set; }
+
     [CascadingParameter]
     protected Task<AuthenticationState> AuthState { get; set; } = default!;
     [Inject]
     protected IAuthorizationService AuthService { get; set; } = default!;
+    [Inject]
+    protected ISessionStorageService sessionStorage { get; set; } = default!;
+    [Inject]
+    protected NavigationManager Navigate { get; set; } = default!;
+
+    [Parameter]
+    public int ActionCounter { get; set; } = 0;
 
     private bool _canSearch;
     private bool _canCreate;
     private bool _canUpdate;
     private bool _canDelete;
     private bool _canExport;
+    // private int _idMandant = 0;
+
+    // private string? _currentMandId;
+    // private int _mandantId;
 
     private bool _advancedSearchExpanded;
 
@@ -59,6 +81,10 @@ public partial class EntityTable<TEntity, TId, TRequest>
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthState;
+
+        // _currentMandId = await sessionStorage.GetItemAsStringAsync("currentMandantId");
+        // _mandantId = Convert.ToInt32(await sessionStorage.GetItemAsStringAsync("currentMandantId"));
+
         _canSearch = await CanDoActionAsync(Context.SearchAction, state);
         _canCreate = await CanDoActionAsync(Context.CreateAction, state);
         _canUpdate = await CanDoActionAsync(Context.UpdateAction, state);
@@ -81,6 +107,8 @@ public partial class EntityTable<TEntity, TId, TRequest>
     private bool HasActions => _canUpdate || _canDelete || (Context.HasExtraActionsFunc is not null && Context.HasExtraActionsFunc());
     private bool CanUpdateEntity(TEntity entity) => _canUpdate && (Context.CanUpdateEntityFunc is null || Context.CanUpdateEntityFunc(entity));
     private bool CanDeleteEntity(TEntity entity) => _canDelete && (Context.CanDeleteEntityFunc is null || Context.CanDeleteEntityFunc(entity));
+    private bool HasMandant_0_Query(TEntity entity) => Context.IdMandantFunc is not null;
+    private bool IsEditNotAsModal() => Context.EditNotAsModal is not null && Context.EditNotAsModal == true;
 
     // Client side paging/filtering
     private bool LocalSearch(TEntity entity) =>
@@ -122,6 +150,11 @@ public partial class EntityTable<TEntity, TId, TRequest>
         {
             await _table.ReloadServerData();
         }
+    }
+
+    private async Task OnSelectedItemChanged(TEntity? item)
+    {
+        await SelectedItemChanged.InvokeAsync(item);
     }
 
     private Func<TableState, Task<TableData<TEntity>>>? ServerReloadFunc =>
@@ -187,7 +220,9 @@ public partial class EntityTable<TEntity, TId, TRequest>
             PageSize = state.PageSize,
             PageNumber = state.Page + 1,
             Keyword = SearchString,
-            OrderBy = orderings ?? Array.Empty<string>()
+            OrderBy = orderings ?? Array.Empty<string>(),
+
+            // MandantId = _mandantId,
         };
 
         if (!Context.AllColumnsChecked)
@@ -261,8 +296,9 @@ public partial class EntityTable<TEntity, TId, TRequest>
             _ = Context.UpdateFunc ?? throw new InvalidOperationException("UpdateFunc can't be null!");
 
             var id = Context.IdFunc(entity!);
-
             saveFunc = request => Context.UpdateFunc(id, request);
+
+            // string testen = SelectedItem.ToString();
 
             requestModel =
                 Context.GetDetailsFunc is not null
@@ -273,7 +309,7 @@ public partial class EntityTable<TEntity, TId, TRequest>
                 ? detailsResult
                 : entity!.Adapt<TRequest>();
 
-            title = $"{L["Edit"]} {Context.EntityName}";
+            title = $"{L["Edit"]} {Context.EntityName} - Id: {id}";
             successMessage = $"{Context.EntityName} {L["Updated"]}";
         }
 
@@ -286,12 +322,25 @@ public partial class EntityTable<TEntity, TId, TRequest>
 
         Context.SetAddEditModalRef(dialog);
 
+        await SelectedItemChanged.InvokeAsync(entity!);
+
         var result = await dialog.Result;
 
         if (!result.Cancelled)
         {
             await ReloadDataAsync();
         }
+    }
+
+    private void increaseActionCounter(int counter)
+    {
+        ActionCounter += 1;
+    }
+
+    private int getMandantId(TEntity entity)
+    {
+        var idMandant = Context.IdMandantFunc(entity!);
+        return idMandant;
     }
 
     private async Task Delete(TEntity entity)

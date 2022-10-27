@@ -1,0 +1,63 @@
+﻿@page "/account/mandants"
+@using System.Diagnostics
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Mandants)]
+
+@inject IStringLocalizer<Mandants> L
+@inject IMandantsClient MandantsClient
+
+<FshTitle Title="@L["Mandants"]" Description="@L["Manage Mandants."]" />
+<EntityTable TEntity="MandantDto" TId="int" TRequest="UpdateMandantRequest" Context="@Context">
+
+    <EditFormContent>
+        @if (!Context.AddEditModal.IsCreate)
+        {
+            <MudItem xs="12" md="6">
+                <MudTextField Value="context.Id" ReadOnly DisableUnderLine Label="@L[$"Mandant Id"]" />
+            </MudItem>
+        }
+        <MudItem xs="12" md="8">
+            <MudTextField T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudTextField T="string" For="@(() => context.Kz)" @bind-Value="context.Kz" Label="@L["Kz"]" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudCheckBox Color="Color.Secondary" For="@(() => context.GroupHead)" @bind-Checked="context.GroupHead" Label="@L["GroupHead"]" />
+        </MudItem>
+        <MudItem xs="12" md="6">
+            <MudTextField T="int" For="@(() => context.GroupMember)" @bind-Value="context.GroupMember" Label="@L["GroupMember"]" />
+        </MudItem>
+    </EditFormContent>
+
+</EntityTable>
+
+
+<h3>Mandants</h3>
+
+@code
+{    
+    protected EntityServerTableContext<MandantDto, int, UpdateMandantRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+        Context = new(
+    entityName: L["Mandant"],
+    entityNamePlural: L["Mandants"],
+    entityResource: FSHResource.Mandants,
+    fields: new()
+        {
+            new(mandant => mandant.Id, L["Id"], "Id"),
+            new(mandant => mandant.Kz, L["Kz"], "Kz"),
+            new(mandant => mandant.Name, L["Name"], "Name"),
+            new(mandant => mandant.GroupMember, L["GroupMember"], "GroupMember"),
+            new(mandant => mandant.GroupHead, L["GroupHead"], "GroupHead"),
+    },
+    idFunc: mandant => mandant.Id,
+    searchFunc: async filter => (await MandantsClient
+        .SearchAsync(filter.Adapt<SearchMandantRequest>()))
+        .Adapt<PaginationResponse<MandantDto>>(),
+    createFunc: async mandant => await MandantsClient.CreateAsync(mandant.Adapt<CreateMandantRequest>()),
+    updateFunc: async (id, mandant) => await MandantsClient.UpdateAsync(id, mandant.Adapt<UpdateMandantRequest>()),
+    // deleteFunc: async id => await CategorysClient.DeleteAsync(id),
+    exportAction: string.Empty);
+
+}

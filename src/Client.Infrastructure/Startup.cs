@@ -19,6 +19,7 @@ public static class Startup
         services
             .AddLocalization(options => options.ResourcesPath = "Resources")
             .AddBlazoredLocalStorage()
+            .AddBlazoredSessionStorage()
             .AddMudServices(configuration =>
                 {
                     configuration.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;

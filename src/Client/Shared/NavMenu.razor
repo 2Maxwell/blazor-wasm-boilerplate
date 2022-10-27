@@ -35,6 +35,65 @@
                 </MudNavLink>
             }
         </MudNavGroup>
+
+        <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="ml-4 my-3">@L["HotelManagement"]</MudText>
+
+        <MudNavGroup Title="@L["HotelDefinition"]" Expanded Icon="@Icons.Filled.AddBox">
+            @if (_canViewProducts)
+            {
+                <MudNavLink Href="/hotel/categorys" Icon="@Icons.Filled.ShoppingBag" Class="fsh-nav-child">
+                    @L["Categorys"]
+                </MudNavLink>
+                <MudNavLink Href="/hotel/rooms" Icon="@Icons.Filled.Room" Class="fsh-nav-child">
+                    @L["Rooms"]
+                </MudNavLink>
+                <MudNavLink Href="/hotel/packages" Icon="@Icons.Filled.GifBox" Class="fsh-nav-child">
+                    @L["Packages"]
+                </MudNavLink>
+                <MudNavLink Href="/accounts/rates" Icon="@Icons.Filled.RateReview" Class="fsh-nav-child">
+                    @L["Rates"]
+                </MudNavLink>
+                <MudNavLink Href="/hotel/priceCats" Icon="@Icons.Filled.Euro" Class="fsh-nav-child">
+                    @L["Prices Category Rate"]
+                </MudNavLink>
+
+            }
+            <MudNavGroup Class="ml-4" Title="@L["Policys"]" Expanded="false" Icon="@Icons.Filled.AddBox">
+                @if (_canViewProducts)
+                {
+                    <MudNavLink Href="/hotel/bookingPolicys" Icon="@Icons.Filled.Book" Class="fsh-nav-child">
+                        @L["BookingPolicys"]
+                    </MudNavLink>
+                    <MudNavLink Href="/hotel/cancellationPolicys" Icon="@Icons.Filled.FreeCancellation" Class="fsh-nav-child">
+                        @L["CancellationPolicys"]
+                    </MudNavLink>
+                }
+            </MudNavGroup>
+
+            <MudNavGroup Class="ml-4" Title="@L["Accounting"]" Expanded Icon="@Icons.Filled.AddBox">
+                @if (_canViewProducts)
+                {
+                     <MudNavLink Href="/accounts/items" Icon="@Icons.Filled.LineAxis" Class="fsh-nav-child">
+                        @L["Items"]
+                    </MudNavLink>
+
+                     <MudNavLink Href="/accounts/itemGroups" Icon="@Icons.Filled.ClearAll" Class="fsh-nav-child">
+                        @L["ItemGroups"]
+                    </MudNavLink>
+
+                    <MudNavLink Href="/accounts/priceschemas" Icon="@Icons.Filled.PriceChange" Class="fsh-nav-child">
+                        @L["PriceSchema"]
+                    </MudNavLink>
+
+                    <MudNavLink Href="/accounts/taxes" Icon="@Icons.Filled.MonetizationOn" Class="fsh-nav-child">
+                        @L["Taxes"]
+                    </MudNavLink>
+
+                }
+            </MudNavGroup>
+
+        </MudNavGroup>
+
     }
     @if (CanViewAdministrationGroup)
     {
@@ -51,5 +110,10 @@
         {
             <MudNavLink Href="/tenants" Icon="@Icons.Filled.GroupWork" Disabled="!_canViewTenants">@L["Tenants"]</MudNavLink>
         }
+        @if (_canViewRoles)
+        {
+            <MudNavLink Href="/account/mandants" Icon="@Icons.Filled.GroupWork">@L["Mandants"]</MudNavLink>
+        }
+
     }
 </MudNavMenu>

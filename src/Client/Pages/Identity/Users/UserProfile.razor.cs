@@ -35,6 +35,7 @@ public partial class UserProfile
     private string? _imageUrl;
     private bool _loaded;
     private bool _canToggleUserStatus;
+    private int _mandantId;
 
     private async Task ToggleUserStatus()
     {
@@ -65,6 +66,8 @@ public partial class UserProfile
             {
                 _firstLetterOfName = _firstName.ToUpper().FirstOrDefault();
             }
+
+            _mandantId = Convert.ToInt32(user.MandantId);
         }
 
         var state = await AuthState;

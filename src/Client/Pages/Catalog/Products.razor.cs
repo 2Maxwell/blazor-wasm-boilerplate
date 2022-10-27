@@ -42,6 +42,7 @@ public partial class Products
                 productFilter.BrandId = SearchBrandId == default ? null : SearchBrandId;
                 productFilter.MinimumRate = SearchMinimumRate;
                 productFilter.MaximumRate = SearchMaximumRate;
+                productFilter.MandantId = 99;
 
                 var result = await ProductsClient.SearchAsync(productFilter);
                 return result.Adapt<PaginationResponse<ProductDto>>();

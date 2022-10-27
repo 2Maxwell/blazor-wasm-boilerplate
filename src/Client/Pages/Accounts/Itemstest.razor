@@ -1,0 +1,109 @@
+﻿@page "/accounts/bitemstest"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@attribute [AllowAnonymous]
+
+@inject IStringLocalizer<Items> L
+@inject IItemClient ItemsClient
+@inject IItemGroupsClient ItemGroupsClient
+@inject ISessionStorageService sessionstorage
+
+<FshTitle Title="@L["Update Item"]" Description="@L["Manage Item."]" />
+
+
+        <EditForm Model="@updateRequest" OnValidSubmit="SaveAsync">
+            <MudGrid>
+
+
+            <MudItem xs="3" md="3">
+                <MudNumericField Variant="Variant.Outlined" T="int" Min="900" Max="99999" For="@(() => updateRequest.ItemNumber)" @bind-Value="updateRequest.ItemNumber" Label="@L["ItemNumber"]" />
+            </MudItem>
+
+            <MudItem xs="9" md="9">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="string" For="@(() => updateRequest.Name)" @bind-Value="updateRequest.Name" Label="@L["Name"]" />
+            </MudItem>
+
+            <MudItem xs="4" md="4">
+                <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updateRequest.ItemGroupId)" @bind-Value="updateRequest.ItemGroupId" Label="@L["ItemGroup"]">
+                        <MudSelectItem T="int" Value="0">@L[" Select ItemGroup"]</MudSelectItem>
+                    @foreach (var item in ItemGroupsList)
+                    {
+                        <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="9" md="9">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="decimal" For="@(() => updateRequest.Price)" @bind-Value="updateRequest.Price" Label="@L["Price"]" />
+            </MudItem>
+
+            <MudItem xs="3" md="3">
+                <MudNumericField Variant="Variant.Outlined" T="int" Min="1" Max="999" For="@(() => updateRequest.TaxId)" @bind-Value="updateRequest.TaxId" Label="@L["TaxId"]" />
+            </MudItem>
+
+            <MudItem xs="4" md="4">
+                <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => updateRequest.Automatic)" @bind-Checked="updateRequest.Automatic" Label="@L["Automatic"]" />
+            </MudItem>
+
+            </MudGrid>
+
+                <MudButton DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Cancel" OnClick="@navigateBack">
+                    @L["Cancel"]
+                </MudButton>
+
+                <MudButton DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Save" ButtonType="ButtonType.Submit" Color="Color.Success">
+                    @L["Save"]
+                </MudButton>
+
+        </EditForm>
+
+
+
+@code {
+
+    [Parameter]
+    public ItemDto? item { get; set; }
+
+    private readonly UpdateItemRequest updateRequest = new();
+
+    private CustomValidation? _customValidation;
+
+    [Parameter]
+    public string? SuccessMessage { get; set; }
+
+    [Parameter]
+    [EditorRequired]
+    public Func<UpdateItemRequest, Task> SaveFunc { get; set; } = default!;
+
+    public int _mandantId { get; set; } = 0;
+
+    public List<ItemGroupDto> ItemGroupsList { get; set; } = new List<ItemGroupDto>();
+
+    protected async override Task OnInitializedAsync()
+    {
+        int idItem = 3;
+        item = await ItemsClient.GetAsync(idItem);
+        item.Adapt(updateRequest);
+
+        if(_mandantId == 0) _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));      
+        ItemGroupsList = (await ItemGroupsClient.GetItemGroupSelectAsync(_mandantId)).ToList();
+        Debug.Print("Stop");
+    }
+
+    private async Task SaveAsync()
+    {
+
+        // int id = await ItemsClient.UpdateAsync(item.Id, item.Adapt<UpdateItemRequest>());
+
+        int id = await ApiHelper.ExecuteCallGuardedAsync(
+            () => ItemsClient.UpdateAsync(updateRequest.Id, updateRequest.Adapt<UpdateItemRequest>()), Snackbar, _customValidation, SuccessMessage);
+
+        Navigation.NavigateTo("/accounts/items");
+    }
+
+    private void navigateBack()
+    {
+        Navigation.NavigateTo("/accounts/items");        
+    }
+
+}

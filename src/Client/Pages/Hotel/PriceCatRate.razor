@@ -1,0 +1,426 @@
+﻿@page "/hotel/PriceCats"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Rooms)]
+
+@inject IStringLocalizer<Rooms> L
+@inject ISessionStorageService sessionstorage
+@*@inject IPriceCatsClient PriceCatsClient*@
+@inject IEnumsClient EnumsClient
+@inject ICategorysClient CategoryClient
+@inject IBookingPolicysClient BookingPolicysClient
+@inject ICancellationPolicysClient CancellationPolicysClient
+@inject IPriceSchemaClient PriceSchemasClient
+@inject IPriceCatsClient PriceCatsClient
+@inject ISnackbar Snackbar
+
+<FshTitle Title="@L["Prices"]" Description="@L["Manage Prices for Categorys and Rates."]" />
+
+<style>
+    .align-right input {
+        text-align: right;
+    }
+</style>
+
+<MudGrid>
+
+    @*    <MudItem xs="1">
+    <MudButton OnClick="@ToggleValue" Variant="Variant.Filled" Size="Size.Large" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Edit" DisableElevation="true">Edit Prices</MudButton>
+    </MudItem>
+    *@
+    <MudItem xs="6">
+        <MudExpansionPanel Text="Edit Prices for Periods" MaxHeight="450">
+
+            @*            <EditForm Model="@updatePriceCatBulkRequest" OnValidSubmit="SavePriceChanges">
+            *@
+            <MudGrid>
+
+                @*                <MudItem xs="6">
+                <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="priceEditRateScopeEnumId" Label="@L["RateScopeEnum"]">
+                <MudSelectItem T="int" Value="0">@L["Select RateScope"]</MudSelectItem>
+                @foreach (var item in RateScopeEnumList)
+                {
+                <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+                }
+                </MudSelect>
+                </MudItem>
+                *@
+                <div class="mud-grid-spacing-xs-3"></div>
+
+                <MudItem xs="6">
+                    <MudDatePicker Class="" Editable="true" Variant="Variant.Outlined" Placeholder="Start Date" @bind-Date="updatePriceCatBulkRequest.StartDate" Label="@L["Start Date"]" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudDatePicker Label="EndDate" Editable="true" Variant="Variant.Outlined" Placeholder="End Date" @bind-Date="updatePriceCatBulkRequest.EndDate" MinDate="updatePriceCatBulkRequest.StartDate" />
+                </MudItem>
+
+                @*                <div class="mud-grid-spacing-xs-3"></div>
+                *@
+                <MudItem xs="6">
+                    <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="updatePriceCatBulkRequest.PriceSchemaId" Label="@L["PriceSchema"]">
+                        <MudSelectItem T="int" Value="0">@L["Select PriceSchema"]</MudSelectItem>
+                        @foreach (var item in PriceSchemaList)
+                        {
+                            <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="3">
+                    <MudTextField Variant="Variant.Outlined" T="decimal" @bind-Value="updatePriceCatBulkRequest.BasePrice" Label="@L["BasisPrice"]" />
+                </MudItem>
+
+                <MudItem xs="3">
+                    <MudCheckBox @bind-Checked="updatePriceCatBulkRequest.AddPriceAutomatic" Size="Size.Large" Label="Automatic Price Add" Color="Color.Secondary"></MudCheckBox>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="updatePriceCatBulkRequest.RateTypeEnumId" Label="@L["RateTypeEnum"]">
+                        <MudSelectItem T="int" Value="0">@L["Select RateType"]</MudSelectItem>
+                        @foreach (var item in RateTypeEnumList)
+                        {
+                            <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="3">
+                    <MudCheckBox @bind-Checked="updatePriceCatBulkRequest.IsOverwriteRateType" Size="Size.Large" Label="Overwrite RateType" Color="Color.Warning"></MudCheckBox>
+                </MudItem>
+
+
+                <MudItem xs="12" Class="">
+                    <MudButton OnClick="@SavePricePeriodChanges" Variant="Variant.Filled" Size="Size.Large" Color="Color.Success" StartIcon="@Icons.Material.Filled.Save" DisableElevation="true">Save Price Period Changes</MudButton>
+                </MudItem>
+
+
+            </MudGrid>
+
+            @*            </EditForm>
+            *@
+        </MudExpansionPanel>
+    </MudItem>
+
+    <MudPaper Class="d-flex flex-row flex-grow-1 gap-6" Height="70px" Width="100%">
+
+        <MudItem>
+            <MudDatePicker Class="ml-5" Label="Startdate" Style="max-width:200px" Editable="true" @bind-Date="startDate" Placeholder="Select Date" />
+        </MudItem>
+
+        <MudItem>
+            <MudDatePicker Label="EndDate" Style="max-width:200px" Editable="true" @bind-Date="endDate" Placeholder="Select Date" MinDate="@(Convert.ToDateTime(startDate).AddDays(1))" />
+        </MudItem>
+
+        @*        <MudItem>
+        <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Label="@L["RateScopeEnum"]">
+        <MudSelectItem T="int" Value="0">@L["Select RateScope"]</MudSelectItem>
+        @foreach (var item in RateScopeEnumList)
+        {
+        <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+        }
+        </MudSelect>
+        </MudItem>
+        *@
+        <MudItem Class="mt-3">
+            <MudButton OnClick="@Reload" Variant="Variant.Filled" Size="Size.Large" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Autorenew" DisableElevation="true">Reload</MudButton>
+        </MudItem>
+
+        <MudItem Class="mt-3">
+            <MudCheckBox @bind-Checked="@show_RateType" Label="RateType" Color="Color.Primary"></MudCheckBox>
+        </MudItem>
+        <MudItem Class="mt-3">
+            <MudCheckBox @bind-Checked="@show_RateStart" Label="RateStart" Color="Color.Primary"></MudCheckBox>
+        </MudItem>
+        <MudItem Class="mt-3">
+            <MudCheckBox @bind-Checked="@show_RateAutomatic" Label="RateAutomatic" Color="Color.Primary"></MudCheckBox>
+        </MudItem>
+
+
+        <MudSpacer></MudSpacer>
+
+        <MudBadge Icon="@Icons.Material.Filled.Check" Color="Color.Primary" Overlap="true" Bordered="true" Class="mx-6 my-4">
+            <MudButton Color="Color.Error" Variant="Variant.Filled" DisableElevation="true">@successSingleUpdate</MudButton>
+        </MudBadge>
+
+        @*        <MudItem Class="mt-3 mr-5">
+        <MudButton OnClick="@SavePriceChanges" Variant="Variant.Filled" Size="Size.Large" Color="Color.Success" StartIcon="@Icons.Material.Filled.Save" DisableElevation="true">Save Detail Changes</MudButton>
+        </MudItem>
+        *@
+    </MudPaper>
+
+    <MudSimpleTable xs="12" Class="mt-5">
+        @{
+            loopCounterleft = 0; loopCounterright = 0;
+        }
+        <tbody>
+            @foreach (var item in categoryPriceList)
+            {
+                @if (loopCounterleft == 0)
+                {
+                    <tr>
+                        <th style="height:@meetingRowHeight; background-color:lightslategrey">
+                            Events
+                        </th>
+                        @foreach (PriceCatDto pcr in item.PriceCats.Where(p => p.Pax == 1))
+                        {
+                            <td style="height:@meetingRowHeight; background-color:lightslategrey">
+                                @pcr.EventDates (Ereignis)
+                            </td>
+                        }
+                    </tr>
+
+                }
+                <tr>
+                    <th style="height:@catDateRowHeight; background-color:#5d9cec">
+                        @item.Kz <br />
+                        maxPax: @item.BedsCount
+                    </th>
+                    @foreach (PriceCatDto pcr in item.PriceCats.Where(p => p.Pax == 1))
+                    {
+                        <th style="@(Convert.ToInt16(pcr.DatePrice.DayOfWeek.ToString("D")) == 6 || Convert.ToInt16(pcr.DatePrice.DayOfWeek.ToString("D")) == 0  ? "background-color:#5d9cec;" : "background-color: #1a5094 ;") color:white; height:@catDateRowHeight; text-align:center">
+                            @pcr.DatePrice.ToString("dd.MM") <br />
+                            @pcr.DatePrice.ToString("ddd")
+                        </th>
+                    }
+
+                </tr>
+                @for (int i = 1; i <= item.BedsCount; i++)
+                {
+                    <tr>
+                        <td style="height:@priceRowHeight">
+                            @("Preis " + i + " Pax")
+                        </td>
+
+                        @foreach (PriceCatDto pcr in item.PriceCats.Where(p => p.Pax == i))
+                        {
+                            string helpertext = pcr.RateStart + " + " + pcr.RateAutomatic;
+                            <td style="height:@priceRowHeight">
+                                <MudNumericField Class="align-right" HideSpinButtons="true" InputMode="InputMode.numeric" T="decimal"
+                                     OnKeyDown="@(e => KeyDownHandler(e, @pcr.Id, pcr.RateCurrent))"
+                                     TextChanged="@(e => ValueChangedHandler(e, @pcr.Id))"
+                                     @bind-Value="pcr.RateCurrent"
+                                     Label="Price" Variant="Variant.Outlined" Step=".2M" Format="N2" />
+                            </td>
+                        }
+                    </tr>
+
+                    @if (show_RateStart)
+                    {
+                        <tr>
+                            <td style="height:@priceRowHeight">
+                                Start
+                            </td>
+
+                            @foreach (PriceCatDto pcr in item.PriceCats.Where(p => p.Pax == i))
+                            {
+                                <td style="height:@priceRowHeight; text-align:center">
+                                    <small>@pcr.RateStart</small>
+                                </td>
+                            }
+                        </tr>
+
+                    }
+
+                    if (show_RateAutomatic)
+                    {
+                        <tr>
+                            <td style="height:@priceRowHeight">
+                                Automatic
+                            </td>
+
+                            @foreach (PriceCatDto pcr in item.PriceCats.Where(p => p.Pax == i))
+                            {
+                                <td style="height:@priceRowHeight; text-align:center">
+                                    <small>@pcr.RateAutomatic</small>
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+
+                @if (show_RateType)
+                {
+                    <tr>
+                        <td style="height:@rateTypeRowHeight">
+                            RateTyp
+                        </td>
+                        @foreach (PriceCatDto pcr in item.PriceCats.Where(p => p.Pax == 1))
+                        {
+                            <td style="height:@rateTypeRowHeight; text-align:center ">
+                                @GetRateTypeText(pcr.RateTypeEnumId)
+                            </td>
+                        }
+
+                    </tr>
+
+                }
+
+                loopCounterleft++;
+            }
+        </tbody>
+    </MudSimpleTable>
+
+
+</MudGrid>
+
+
+@code {
+    private ElementReference numFieldExample;
+    public DateTime? startDate = new DateTime(2022, 9, 1);
+    public DateTime? endDate = new DateTime(2022, 9, 20);
+    public int loopCounterleft { get; set; } = 0;
+    public int loopCounterright { get; set; } = 0;
+    public bool show_RateType { get; set; } = true;
+    public bool show_RateStart { get; set; } = false;
+    public bool show_RateAutomatic { get; set; } = false;
+    public bool renderDone { get; set; }
+    private double lastPriceChanged { get; set; }
+    private int lastPriceChangedId { get; set; }
+    private string successSingleUpdate { get; set; } = "no SingleAction now";
+
+
+    [Parameter]
+    public int _mandantId { get; set; }
+    public List<CategoryPriceDto> categoryPriceList { get; set; } = new();
+    public List<RateTypeEnumDto> RateTypeEnumList { get; set; } = new();
+    public List<PriceSchemaDto> PriceSchemaList { get; set; } = new();
+    public UpdatePriceCatBulkRequest updatePriceCatBulkRequest { get; set; } = new();
+
+
+    //public DateTime? priceEditStart = new DateTime(2022, 9, 1);
+    //public DateTime? priceEditEnd { get; set; }
+    //public int priceEditPriceSchemaId { get; set; }
+    //public decimal priceEditBasisPrice { get; set; }
+    //public string? priceEditEvent { get; set; }
+    //public int priceEditRateTypeEnumId { get; set; }
+
+    public bool SwitchValue { get; set; } = false;
+    //public bool ReadOnly { get; set; } = true;
+
+    public string meetingRowHeight { get; private set; } = "60px";
+    public string bookingPolicyRowHeight { get; private set; } = "40px";
+    public string cancellationPolicyRowHeight { get; private set; } = "40px";
+    public string rateRowHeight { get; private set; } = "40px";
+    public string rateTypeRowHeight { get; private set; } = "40px";
+    public string priceRowHeight { get; set; } = "30px";
+    public string catDateRowHeight { get; set; } = "50px";
+    public string border { get; set; } = "border: 1px solid;";
+    static string vis_collapse = "visability:collapse";
+    static string vis_visible = "visibility:visible";
+
+    void ToggleValue()
+    {
+        SwitchValue = !SwitchValue;
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            renderDone = false;
+            // message = "Executed for the first render.";
+        }
+        else
+        {
+            renderDone = true;
+            // message = "Executed after the first render.";
+        }
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (_mandantId == 0)
+        {
+            _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        }
+        RateTypeEnumList = (await EnumsClient.GetRateTypeEnumRequestAsync()).ToList();
+        PriceSchemaList = (await PriceSchemasClient.GetPriceSchemaSelectAsync(_mandantId)).ToList();
+        categoryPriceList = (await CategoryClient.SearchCategoryPricesAsync(_mandantId, Convert.ToDateTime(startDate), Convert.ToDateTime(endDate))).ToList();
+    }
+
+    public string GetRateTypeText(int RateTypeId)
+    {
+        var query = (from c in RateTypeEnumList
+                     where c.Value.Equals(RateTypeId)
+                     select c.Text).FirstOrDefault();
+
+        return query == null ? string.Empty : query;
+    }
+
+    private async void Reload()
+    {
+        renderDone = true;
+        categoryPriceList = (await CategoryClient.SearchCategoryPricesAsync(_mandantId, Convert.ToDateTime(startDate), Convert.ToDateTime(endDate))).ToList();
+        this.StateHasChanged();
+        renderDone = false;
+    }
+
+    private void KeyDownHandler(object args, int id, decimal rateCurrent)
+    {
+        lastPriceChangedId = id;
+        lastPriceChanged = Convert.ToDouble(rateCurrent);
+    }
+
+    private async void ValueChangedHandler(string args, int id)
+    {
+        if (renderDone)
+        {
+            double argsValue = Convert.ToDouble(args);
+            Console.WriteLine("ValueChangedHandler Args: " + args + " | " + lastPriceChanged + ",  Id: " + id + " | " + lastPriceChangedId);
+            Console.WriteLine("id != lastPriceChangedId = {0} || argsValue != lastPriceChanged = {1}", (id != lastPriceChangedId), (argsValue != lastPriceChanged));
+            // Console.WriteLine("Equals(id, lastPriceChangedId = {0} || Equals(argsValue, lastPriceChanged) = {1}", (Equals(id, lastPriceChangedId), Equals(argsValue, lastPriceChanged)));
+
+            if ((id != lastPriceChangedId) || (argsValue != lastPriceChanged))
+            {
+                Console.WriteLine(" nach if-Abfrage: ValueChangedHandler Args: " + args + " | " + lastPriceChanged + ",  Id: " + id + " | " + lastPriceChangedId);
+                lastPriceChangedId = id;
+                lastPriceChanged = argsValue;
+                UpdatePriceCatSinglePriceRequest updatePriceCatSinglePriceRequest = new();
+                updatePriceCatSinglePriceRequest.Id = id;
+                updatePriceCatSinglePriceRequest.RateCurrent = Convert.ToDecimal(argsValue);
+                var result = await PriceCatsClient.UpdateSingleAsync(id, updatePriceCatSinglePriceRequest);
+
+                if (result == id)
+                {
+                    successSingleUpdate = $"new Price saved: {lastPriceChanged} Id: {lastPriceChangedId}";
+                    Snackbar.Add($"new Price saved: {lastPriceChanged} Id: {lastPriceChangedId}", Severity.Success, config => { config.ShowCloseIcon = false; });
+                    this.StateHasChanged();
+                }
+            }
+
+        }
+    }
+
+    private void OnBlurHandler(FocusEventArgs args)
+    {
+        Console.WriteLine("OnBlurHandler Args: " + args.ToString());
+    }
+
+    private async void SavePriceChanges()
+    {
+        UpdatePriceCatsListRequest updatePriceCatsListRequest = new();
+        updatePriceCatsListRequest.PriceCatDtos = new List<PriceCatDto>();
+
+
+        foreach (CategoryPriceDto item in categoryPriceList)
+        {
+            foreach (PriceCatDto pcDto in item.PriceCats)
+            {
+                updatePriceCatsListRequest.PriceCatDtos.Add(pcDto);
+            }
+
+        }
+
+        await PriceCatsClient.UpdateListAsync(updatePriceCatsListRequest);
+    }
+
+    private async void SavePricePeriodChanges()
+    {
+        updatePriceCatBulkRequest.MandantId = _mandantId;
+        await PriceCatsClient.UpdateAsync(updatePriceCatBulkRequest);
+        categoryPriceList = (await CategoryClient.SearchCategoryPricesAsync(_mandantId, Convert.ToDateTime(updatePriceCatBulkRequest.StartDate), Convert.ToDateTime(updatePriceCatBulkRequest.EndDate))).ToList();
+        this.StateHasChanged();
+    }
+
+}

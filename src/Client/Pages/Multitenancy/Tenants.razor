@@ -7,7 +7,7 @@
 <FshTitle Title="@L["Tenants"]" Description="@L["Manage Tenants."]" />
 
 <EntityTable @ref="EntityTable" TEntity="TenantDetail" TId="Guid" TRequest="CreateTenantRequest" Context="@Context"
-    @bind-SearchString="_searchString">
+             @bind-SearchString="_searchString">
     <EditFormContent>
         <MudItem xs="12" md="6">
             <MudTextField T="string" For="@(() => context.Id)" @bind-Value="context.Id" Label="@L["Key"]" />
@@ -42,11 +42,11 @@
         {
             @if (!context.IsActive)
             {
-                <MudMenuItem Style="color:limegreen!important" OnClick="@(() => ActivateTenantAsync(context.Id))">@L["Activate Tenant"]</MudMenuItem>
+                <MudIconButton Icon="@Icons.Filled.PlayArrow" Style="color:limegreen!important" OnClick="@(() => ActivateTenantAsync(context.Id))">@L["Activate Tenant"]</MudIconButton>
             }
             else
             {
-                <MudMenuItem Style="color:red!important" OnClick="@(() => DeactivateTenantAsync(context.Id))">@L["Deactivate Tenant"]</MudMenuItem>
+                <MudIconButton Icon="@Icons.Filled.PlayDisabled" Style="color:red!important" OnClick="@(() => DeactivateTenantAsync(context.Id))">@L["Deactivate Tenant"]</MudIconButton>
             }
         }
     </ExtraActions>

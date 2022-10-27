@@ -1,0 +1,122 @@
+﻿@using System.Diagnostics
+@using static FSH.BlazorWebAssembly.Client.Pages.Hotel.Packages
+
+@inject IStringLocalizer<FSH.BlazorWebAssembly.Client.Pages.Hotel.Packages> L
+
+<EditForm EditContext="editContext" OnValidSubmit="AddPackageItem">
+    <DataAnnotationsValidator />
+    <MudDialog Style="width:700px;max-height:95%; overflow-y: scroll;">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.Add" Class="mr-3" />
+                Create PackageItem
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudGrid>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="p.Start" For="()=>p.Start" MaxDate="p.End" DisableToolbar Label="Start" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="p.End" For="()=>p.End" MinDate="p.Start" DisableToolbar Label="End" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+
+                @if (ItemsList is not null)
+                {
+                    <MudItem xs="8">
+                        <MudSelect T="int" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" For="@(() => p.ItemId)" @bind-Value="p.ItemId" Label="@L["Item"]">
+                            <MudSelectItem T="int" Value="0">@L["Select Item"]</MudSelectItem>
+                            @foreach (var item in ItemsList)
+                            {
+                                <MudSelectItem T="int" Value="@item.Id">@item.ValueContent</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
+                <MudItem xs="4">
+                    <MudTextField ValueChanged="((decimal value) => priceOrPercentage(value))" Disabled="!tooglePricePercentage" For="()=>p.Price" Margin="Margin.Dense" Label="Price" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudText Align="Align.Center"><b>Price OR Percentage</b> Setting Pricefieldvalue other then 0 - disables CoreValue and Percentage. In case both Values are set - only Price will be proceeded. </MudText>
+
+                @if (PackageItemCoreValueEnumList is not null)
+                {
+                    <MudItem xs="8" md="8">
+                        <MudSelect T="int" Disabled="tooglePricePercentage" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" For="@(() => p.PackageItemCoreValueEnumId)" @bind-Value="p.PackageItemCoreValueEnumId" Label="@L["% CoreValue"]">
+                            <MudSelectItem T="int" Value="0">@L["Select CoreValue"]</MudSelectItem>
+                            @foreach (var item in PackageItemCoreValueEnumList)
+                            {
+                                <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="p.Percentage" Disabled="tooglePricePercentage" For="()=>p.Percentage" Margin="Margin.Dense" Adornment="Adornment.End" AdornmentText="%" Label="Percentage" Variant="Variant.Outlined" />
+                </MudItem>
+
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Cancel" Variant="Variant.Text" StartIcon="@Icons.Filled.Cancel" Color="Color.Default" Size="Size.Small">cancel</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Success" ButtonType="ButtonType.Submit" Size="Size.Small">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+    [Parameter]
+    public int _mandantId { get; set; }
+
+    [Parameter]
+    public PackageItemDto p { get; set; } = new();
+
+    [Parameter]
+    public List<ItemSelectDto>? ItemsList { get; set; }
+
+    [Parameter]
+    public List<PackageItemCoreValueEnumDto>? PackageItemCoreValueEnumList { get; set; }
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+    private EditContext? editContext;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(p);
+
+    }
+
+    private void AddPackageItem()
+    {
+        p.MandantId = _mandantId;
+
+
+        MudDialog.Close(DialogResult.Ok(p));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    public decimal decimalValue { get; set; }
+    public bool tooglePricePercentage { get; set; } = true; // true = Price is activ
+
+    private void priceOrPercentage(decimal wert) 
+    {
+        p.Price = wert;
+        decimalValue = wert;
+        if (wert != 0)
+        {
+            tooglePricePercentage = true;
+        }
+        else
+        {
+            tooglePricePercentage = false;
+        }
+    }
+
+
+
+}

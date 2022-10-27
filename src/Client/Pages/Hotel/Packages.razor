@@ -1,0 +1,403 @@
+﻿@page "/hotel/packages"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@using System.Globalization
+@using FSH.BlazorWebAssembly.Client.Components.PackageItem
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Packages)]
+
+@inject IStringLocalizer<Packages> L
+@inject IPackagesClient PackagesClient
+@inject IEnumsClient EnumsClient
+@inject IItemClient ItemsClient
+@inject ISessionStorageService sessionstorage
+@inject IPeriodsClient PeriodsClient
+@inject IPackageItemsClient PackageItemsClient
+
+
+
+<FshTitle Title="@L["Packages"]" Description="@L["Manage Packages."]" />
+<EntityTable TEntity="PackageDto" TId="int" TRequest="UpdatePackageRequest" Context="@Context" >
+
+    <EditFormContent>
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+            <MudItem xs="3" md="3">
+                <MudTextField Value="context.Id" ReadOnly DisableUnderLine Label="@L[$"Package Id"]" />
+            </MudItem>
+        }
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+
+            <MudItem xs="4" md="4">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="true" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+        }
+        else // Create
+        {            
+            <MudItem xs="4" md="4">
+                <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+        }
+
+        <MudItem xs="4" md="4">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Kz)" @bind-Value="context.Kz" Label="@L["Kz"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.Description)" @bind-Value="context.Description" Label="@L["Description"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.Display)" @bind-Value="context.Display" Label="@L["Display"]" />
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudTable Items="@context.PackageItems" T="PackageItemDto" Breakpoint="Breakpoint.None" Dense="true" Hover="true" Bordered="true" @bind-SelectedItem="selectedPackageItem">
+
+                <ToolBarContent>
+                    <MudButton OnClick="(() => AddPackageItem())" Color="Color.Primary" IconColor="Color.Surface" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add">Create PackageItem</MudButton>
+                    <MudSpacer />
+                </ToolBarContent>
+
+                <HeaderContent>
+                    <MudTh>Actions</MudTh>
+                    <MudTh>Start</MudTh>
+                    <MudTh>End</MudTh>
+                    <MudTh>Price</MudTh>
+                    <MudTh>ItemId</MudTh>
+                    <MudTh>Percentage</MudTh>
+                </HeaderContent>
+
+                <RowTemplate Context="packageItem">
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton OnClick="()=>EditPackageItem(packageItem)" Icon="@Icons.Filled.Edit" aria-label="Edit"></MudIconButton>
+                        <MudIconButton OnClick="()=>DeletePackageItem(packageItem)" Icon="@Icons.Filled.Delete" aria-label="Delete"></MudIconButton>
+                    </MudTd>
+                    <MudTd DataLabel="Start">@Convert.ToDateTime(packageItem.Start).ToShortDateString()</MudTd>
+                    <MudTd DataLabel="End">@Convert.ToDateTime(packageItem.End).ToShortDateString()</MudTd>
+                    <MudTd DataLabel="Price" Style="text-align:right">@packageItem.Price</MudTd>
+                    <MudTd DataLabel="ItemId">@packageItem.ItemId</MudTd>
+                    <MudTd DataLabel="Percentage" Style="text-align:right">@packageItem.Percentage</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => PackageItemSum)" ReadOnly="true" Value="PackageItemSum" Label="@L["Summe PackageItems"]" />
+        </MudItem>
+
+        <MudItem xs="2" md="2">
+            <MudNumericField Variant="Variant.Outlined" T="int" Min="1" For="@(() => context.InvoicePosition)" @bind-Value="context.InvoicePosition" Label="@L["InvoicePosition"]" />
+        </MudItem>
+
+        <MudItem xs="10" md="10">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.InvoiceName)" @bind-Value="context.InvoiceName" Label="@L["Print on Invoice"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.PackageBookingBaseEnumId)" @bind-Value="context.PackageBookingBaseEnumId" Label="@L["PackageBookingBaseEnum"]">
+                <MudSelectItem T="int" Value="0">@L["Select PackageBase"]</MudSelectItem>
+                @foreach (var item in PackageBaseEnumList)
+                {
+                    <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12" md="5">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.PackageBookingRhythmEnumId)" @bind-Value="context.PackageBookingRhythmEnumId" Label="@L["PackageBookingRhythmEnumId"]">
+                <MudSelectItem T="int" Value="0">@L["Select PackageRhythm"]</MudSelectItem>
+                @foreach (var item in PackageRhythmEnumList)
+                {
+                    <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="4" md="3">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.Optional)" @bind-Checked="context.Optional" Label="@L["Optional"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="3">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.ShopExtern)" @bind-Checked="context.ShopExtern" Label="@L["ShopExtern"]" />
+        </MudItem>
+
+    </EditFormContent>
+
+</EntityTable>
+
+
+@code {
+    public CultureInfo _de = CultureInfo.GetCultureInfo("de-DE");
+    [Parameter]
+    public int _mandantId { get; set; }
+    public List<PackageBookingBaseEnumDto> PackageBaseEnumList { get; set; } = new List<PackageBookingBaseEnumDto>();
+    public List<PackageBookingRhythmEnumDto> PackageRhythmEnumList { get; set; } = new List<PackageBookingRhythmEnumDto>();
+    public List<PackageItemCoreValueEnumDto> PackageItemCoreValueEnumList { get; set; } = new List<PackageItemCoreValueEnumDto>();
+    [CascadingParameter]
+    public List<ItemSelectDto> ItemsList { get; set; } = new List<ItemSelectDto>();
+    public DateTime? LastEndDate { get; set; }
+    public UpdatePackageRequest? selectedPackage { get; set; }
+    // public PackageDto selectedPackage1 { get; set; }
+    public PackageItemDto? selectedPackageItem { get; set; }
+    public bool PriceIsStatic_Checked { get; set; }
+    public string PackageItemSum { get; set; }
+
+    protected EntityServerTableContext<PackageDto, int, UpdatePackageRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+    Context = new(
+        entityName: L["Package"],
+        entityNamePlural: L["Packages"],
+        entityResource: FSHResource.Packages,
+        fields: new()
+            {
+            // new(package => package.Id, L["Id"], "Id"),
+            new(package => package.Kz, L["Kz"], "Kz"),
+                new(package => package.Name, L["Name"], "Name"),
+                new(package => package.Display, L["Display"], "Display")
+            },
+        idFunc: package => package.Id,
+        idMandantFunc: item => item.MandantId,
+        editNotAsModal: false,
+        searchFunc: async filter =>
+        {
+            var packagefilter = filter.Adapt<SearchPackagesRequest>();
+            packagefilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+            _mandantId = packagefilter.MandantId;
+            var result = await PackagesClient.SearchAsync(packagefilter);
+
+            return result.Adapt<PaginationResponse<PackageDto>>();
+        },
+        createFunc: async package =>
+        {
+            package.MandantId = _mandantId;
+            await PackagesClient.CreateAsync(package.Adapt<CreatePackageRequest>());
+        },
+        getDefaultsFunc: () => Task.FromResult(new UpdatePackageRequest()
+            {
+                PackageItems = new List<PackageItemDto>(),
+            }),
+        // getDetailsFunc: async id => (await PackagesClient.GetAsync(id)).Adapt<UpdatePackageRequest>(),
+
+        updateFunc: async (id, package) =>
+        {
+            await PackagesClient.UpdateAsync(id, package.Adapt<UpdatePackageRequest>());
+            // selectedPackage = package;
+            // LastEndDate = package.Periods.LastOrDefault() == null ? null: package.Periods.LastOrDefault().End;
+        },
+        // editFormInitializedFunc: selectedPackage = Context.AddEditModal.RequestModel,
+
+        // deleteFunc: async id => await RoomsClient.DeleteAsync(id),
+        exportAction: string.Empty);
+
+    protected async override Task OnInitializedAsync()
+    {
+        PackageBaseEnumList = (await EnumsClient.GetPackageBookingBaseEnumRequestAsync()).ToList();
+        Debug.Print("Anzahl items in PackageBaseEnumList: " + PackageBaseEnumList.Count());
+
+        PackageRhythmEnumList = (await EnumsClient.GetPackageBookingRhythmEnumRequestAsync()).ToList();
+        Debug.Print("Anzahl items in PackageRhythmEnumList: " + PackageRhythmEnumList.Count());
+
+        PackageItemCoreValueEnumList = (await EnumsClient.GetPackageItemCoreValueEnumRequestAsync()).ToList();
+
+        ItemsList = (await ItemsClient.GetItemSelectAsync(_mandantId)).ToList();
+    }
+
+
+    private async Task AddPackageItem()
+    {
+        selectedPackage = Context.AddEditModal.RequestModel;
+        var parameters = new DialogParameters {
+            ["_mandantId"] = _mandantId,
+            ["ItemsList"] = ItemsList,
+            ["PackageItemCoreValueEnumList"] = PackageItemCoreValueEnumList};
+        var dialog = DialogService.Show<AddPackageItemModal>("", parameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            PackageItemDto pi = (PackageItemDto)result.Data;
+            pi.PackageId = selectedPackage.Id;
+            // Package Price nach Perioden berechnen und in Package anzeigen.
+            selectedPackage.PackageItems.Add(pi);
+            CalculatePackageItems(selectedPackage.PackageItems);
+            Context.AddEditModal.ForceRender();
+        }
+    }
+
+    private async Task EditPackageItem(PackageItemDto packageItem)
+    {
+        var parameters = new DialogParameters {
+            ["packageItem"] = packageItem,
+            ["ItemsList"] = ItemsList,
+            ["PackageItemCoreValueEnumList"] = PackageItemCoreValueEnumList};
+        var dialog = DialogService.Show<EditPackageItemModal>("", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            selectedPackage = Context.AddEditModal.RequestModel;
+            CalculatePackageItems(Context.AddEditModal.RequestModel.PackageItems);
+            Context.AddEditModal.ForceRender();
+        }
+    }
+
+    private async Task DeletePackageItem(PackageItemDto packageItem)
+    {
+        Context.AddEditModal.RequestModel.PackageItems.Remove(packageItem);
+        if (packageItem.Id > 0)
+        {
+            await PackageItemsClient.DeleteAsync(packageItem.Id);
+        }
+        CalculatePackageItems(Context.AddEditModal.RequestModel.PackageItems);
+
+        Context.AddEditModal.ForceRender();
+    }
+
+    private void CalculatePackageItems(ICollection<PackageItemDto> packageItems)
+    {
+        DateTime? start = null;
+        DateTime? end = null;
+        decimal summePeriod = 0;
+        string result = "";
+        int counter = 0;
+
+        foreach (PackageItemDto item in packageItems)
+        {
+            if (!start.HasValue)
+            {
+                start = item.Start;
+                end = item.End;
+                summePeriod += item.Price;
+                counter++;
+            }
+            else
+            {
+                if (start == item.Start && end == item.End)
+                {
+                    summePeriod += item.Price;
+                    counter++;
+                    if (counter == packageItems.Count())
+                    {
+                        result += Convert.ToDateTime(start).ToShortDateString() + " -> ";
+                        result += Convert.ToDateTime(end).ToShortDateString() + " Period: ";
+                        result += summePeriod + Environment.NewLine;
+                    }
+                }
+                else
+                {
+                    result += Convert.ToDateTime(start).ToShortDateString() + " -> ";
+                    result += Convert.ToDateTime(end).ToShortDateString() + " Period: ";
+                    result += summePeriod + Environment.NewLine;
+                    start = item.Start;
+                    end = item.End;
+                    summePeriod = item.Price;
+                    counter++;
+                    if (counter == packageItems.Count())
+                    {
+                        result += Convert.ToDateTime(start).ToShortDateString() + " -> ";
+                        result += Convert.ToDateTime(end).ToShortDateString() + " Period: ";
+                        result += summePeriod + Environment.NewLine;
+                    }
+                }
+            }
+        }
+        PackageItemSum = result;
+    }
+
+    //private async Task AddPeriod()
+    //{
+    //    selectedPackage = Context.AddEditModal.RequestModel;
+
+    //    LastEndDate = selectedPackage.Periods.LastOrDefault() == null ? null : selectedPackage.Periods.LastOrDefault().End;
+    //    var parameters = new DialogParameters { ["LastPeriodEnd"] = LastEndDate == null ? null : LastEndDate.Value.AddDays(1) };
+    //    var dialog = DialogService.Show<AddPeriodModal>("", parameters);
+    //    var result = await dialog.Result;
+    //    if (!result.Cancelled)
+    //    {
+    //        PeriodDto period = (PeriodDto)result.Data;
+    //        period.Source = "package";
+    //        period.SourceId = selectedPackage.Id;
+    //        // Context.AddEditModal.RequestModel.Periods.Add(period);
+
+    //        selectedPackage.Periods.Add(period);
+
+    //        //if (period != null && Context.AddEditModal.RequestModel.Periods != null) Context.AddEditModal.RequestModel.Periods.Add(period);
+    //        // StateHasChanged();
+    //        Context.AddEditModal.ForceRender();
+    //    }
+    //}
+
+
+
+    //private async Task DeletePeriod(PeriodDto period)
+    //{
+    //    //selectedPackage = Context.AddEditModal.RequestModel;
+    //    //selectedPackage.Periods.Remove(period);
+    //    Context.AddEditModal.RequestModel.Periods.Remove(period);
+
+    //    if (period.Id > 0)
+    //    {
+    //        await PeriodsClient.DeleteAsync(period.Id);
+    //    }
+
+    //    Context.AddEditModal.ForceRender();
+    //}
+
+
+
+    //async Task EditPeriod(PeriodDto period)
+    //{
+    //    var parameters = new DialogParameters { ["period"] = PeriodToModal(period) };
+    //    var dialog = DialogService.Show<EditPeriodModal>("", parameters);
+    //    var result = await dialog.Result;
+
+    //    if (!result.Cancelled)
+    //    {
+    //        selectedPackage = Context.AddEditModal.RequestModel;
+
+    //        PeriodDto? annonceDTORes = (PeriodDto)result.Data;
+    //        PeriodDto? p = selectedPackage.Periods.FirstOrDefault(p => p.Id == annonceDTORes.Id);
+    //        p.End = annonceDTORes.End;
+    //        p.Start = annonceDTORes.Start;
+    //        p.Source = annonceDTORes.Source;
+    //        p.Id = annonceDTORes.Id;
+    //        p.Price = annonceDTORes.Price;
+    //        p.SourceId = annonceDTORes.SourceId;
+    //        Context.AddEditModal.ForceRender();
+    //    }
+    //}
+
+
+
+    //public void PriceIsStatic_changed(bool value)
+    //{
+    //    bool valueDelivered = false;
+    //    valueDelivered = value;
+    //    PriceIsStatic_Checked = value;
+    //    Context.AddEditModal.RequestModel.PriceIsStatic = value;
+    //    Context.AddEditModal.ForceRender();
+    //}
+
+    //private PeriodDto PeriodToModal(PeriodDto period)
+    //{
+    //    PeriodDto currentPeriod = new PeriodDto();
+    //    currentPeriod.End = period.End;
+    //    currentPeriod.Start = period.Start;
+    //    currentPeriod.Source = period.Source;
+    //    currentPeriod.Id = period.Id;
+    //    currentPeriod.Price = period.Price;
+    //    currentPeriod.SourceId = period.SourceId;
+    //    return currentPeriod;
+    //}
+
+    //public class PerTest
+    //{
+    //   public DateTime? Start { get; set; }
+    //   public DateTime? End { get; set; }
+    //   public decimal Price { get; set; }
+    //}
+}
+

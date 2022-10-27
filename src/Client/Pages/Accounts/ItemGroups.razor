@@ -1,0 +1,60 @@
+﻿@page "/accounts/itemgroups"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@attribute [MustHavePermission(FSHAction.View, FSHResource.ItemGroups)]
+
+@inject IStringLocalizer<ItemGroups> L
+@inject IItemGroupsClient ItemGroupsClient
+@inject ISessionStorageService sessionstorage
+
+<FshTitle Title="@L["ItemGroups"]" Description="@L["Manage ItemGroups."]" />
+
+<EntityTable TEntity="ItemGroupDto" TId="int" TRequest="UpdateItemGroupRequest" Context="@Context">
+
+        <EditFormContent>
+            <MudItem xs="3" md="3">
+                <MudNumericField Variant="Variant.Outlined" T="int" Min="1" Max="999" For="@(() => context.OrderNumber)" @bind-Value="context.OrderNumber" Label="@L["OrderNumber"]" />
+            </MudItem>
+
+            <MudItem xs="9" md="9">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+
+        </EditFormContent>
+
+</EntityTable>
+
+
+@code {
+    [Parameter]
+    public int _mandantId { get; set; }
+    protected EntityServerTableContext<ItemGroupDto, int, UpdateItemGroupRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+        Context = new(
+            entityName: L["ItemGroup"],
+            entityNamePlural: L["ItemGroups"],
+            entityResource: FSHResource.ItemGroups,
+            fields: new()
+                {
+                    // new(itemGroup => itemGroup.Id, L["Id"], "Id"),
+                    new(itemGroup => itemGroup.OrderNumber, L["OrderNumber"], "OrderNumber"),
+                    new(itemGroup => itemGroup.Name, L["Name"], "Name"),
+            },
+            idFunc: itemGroup => itemGroup.Id,
+            searchFunc: async filter =>
+            {
+                var itemGroupfilter = filter.Adapt<SearchItemGroupsRequest>();
+                itemGroupfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+                _mandantId = itemGroupfilter.MandantId;
+                var result = await ItemGroupsClient.SearchAsync(itemGroupfilter);
+                return result.Adapt<PaginationResponse<ItemGroupDto>>();
+            },               
+            createFunc: async itemGroup =>
+            {
+                itemGroup.MandantId = _mandantId;
+                await ItemGroupsClient.CreateAsync(itemGroup.Adapt<CreateItemGroupRequest>());
+            },
+            updateFunc: async (id, itemGroup) => await ItemGroupsClient.UpdateAsync(id, itemGroup.Adapt<UpdateItemGroupRequest>()),
+            exportAction: string.Empty);
+}

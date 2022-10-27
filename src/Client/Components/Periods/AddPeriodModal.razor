@@ -1,0 +1,68 @@
+﻿@using static FSH.BlazorWebAssembly.Client.Pages.Hotel.Packages
+
+
+<EditForm EditContext="editContext" OnValidSubmit="Addperiod">
+    <DataAnnotationsValidator/>
+    <MudDialog Style="width:700px;max-height:95%; overflow-y: scroll;">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.Add" Class="mr-3"/>
+                Create Period
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudGrid>
+                <MudItem xs="4">
+                    <MudDatePicker @bind-Date="period.Start" For="()=>period.Start" MaxDate="period.End" MinDate="LastPeriodEnd" DisableToolbar Label="Start" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudDatePicker @bind-Date="period.End" For="()=>period.End" MinDate="period.Start" DisableToolbar Label="End" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="period.Price" For="()=>period.Price" Margin="Margin.Dense" Label="Price" Variant="Variant.Outlined" />
+                </MudItem>
+@*                <MudItem xs="8">
+                    <MudTextField @bind-Value="period.Source" For="()=>period.Source" Margin="Margin.Dense" Label="Source" Variant="Variant.Outlined"></MudTextField>
+                </MudItem>
+*@            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Cancel" Variant="Variant.Text" StartIcon="@Icons.Filled.Cancel" Color="Color.Default"  Size="Size.Small">cancel</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Success" ButtonType="ButtonType.Submit" Size="Size.Small">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code{
+    [Parameter]
+    public PeriodDto period { get; set; } = new PeriodDto();
+
+    [Parameter]
+    public DateTime? LastPeriodEnd { get; set; } = new DateTime();
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+    public string sourceValue { get; set; } = "package";
+
+    private EditContext editContext;
+
+
+    protected override void OnInitialized()
+    {
+        period.Source = "package";
+        editContext = new EditContext(period);     
+    }
+
+
+    private void Addperiod()
+    {
+        
+        MudDialog.Close(DialogResult.Ok(period));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+}

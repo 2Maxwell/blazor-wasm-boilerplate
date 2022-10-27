@@ -7,7 +7,91 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="ApiClient\FSHApi - Kopie.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220301.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220302.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220331.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220401.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220403.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220404.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220405.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220501a.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220502.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220502b.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220512.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220516.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220522.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220522_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220528.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220528_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220528_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220528_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220604.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220609.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220611.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220630.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220712.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220713.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220714.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220719.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220720.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220721.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220803.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220814.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220814_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220816.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220816_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220818.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220819.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220825.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220825_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220825_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220828.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220830.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220831.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220901.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220901_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220911.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220912.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220913.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220918.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220919.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220919_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220919_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220919_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220927.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220929.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220929_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220929_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220929_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20220929_4.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221002.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221004.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221007.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221009.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221009_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221009_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221009_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221009_4.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221010.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221011.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221012.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221012_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221014.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221016.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221017.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221024.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221024_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221024_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20221024_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_Old.cs" />
+      <Compile Remove="ApiClient\FSHApi_Output_20220302.cs" />
+      <Compile Remove="ApiClient\FSHApi_Output_20220320.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Blazored.LocalStorage" Version="4.2.0" />
+        <PackageReference Include="Blazored.SessionStorage" Version="2.2.0" />
         <PackageReference Include="MediatR.Courier.DependencyInjection" Version="5.0.0" />
         <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="10.0.1" />
         <PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="6.0.3" />
@@ -31,9 +115,7 @@
     </ItemGroup>
 
     <Target Name="NSwag">
-        <Exec WorkingDirectory="$(ProjectDir)\ApiClient"
-              EnvironmentVariables="ASPNETCORE_ENVIRONMENT=Development"
-              Command="$(NSwagExe_Net60) run nswag.json /variables:Configuration=$(Configuration)" />
+        <Exec WorkingDirectory="$(ProjectDir)\ApiClient" EnvironmentVariables="ASPNETCORE_ENVIRONMENT=Development" Command="$(NSwagExe_Net60) run nswag.json /variables:Configuration=$(Configuration)" />
     </Target>
 
 </Project>

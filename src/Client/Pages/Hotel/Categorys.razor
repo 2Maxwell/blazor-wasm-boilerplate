@@ -1,0 +1,209 @@
+﻿    @page "/hotel/categorys"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Categorys)]
+
+@inject IStringLocalizer<Categorys> L
+@inject ICategorysClient CategorysClient
+@inject IRoomsClient RoomsClient
+@inject ISessionStorageService sessionstorage
+
+
+<FshTitle Title="@L["Categorys"]" Description="@L["Manage Categorys."]" />
+
+<EntityTable TEntity="CategoryDto" TId="int" TRequest="UpdateCategoryRequest" Context="@Context">
+
+    <EditFormContent>
+                @if (!Context.AddEditModal.IsCreate)
+        {
+            <MudItem xs="3" md="3">
+                <MudTextField Value="context.Id" ReadOnly DisableUnderLine Label="@L[$"Category Id"]" />
+            </MudItem>
+
+@*            <MudItem xs="3" md="3">
+                <MudTextField
+                Value="@RoomsCount"
+                ReadOnly="true" DisableUnderLine Label="@L[$"RoomsCount"]" />
+                <MudTextField Value="@(() => getRoomsCount(context.Id))" @onloadstart="@((int RoomsCount) => RoomsClient.CountRoomsByCategoryIdAsync(context.Id))" ReadOnly="true" DisableUnderLine Label="@L[$"RoomsCount"]" />
+
+*@            <MudItem xs="3" md="3">
+                <MudTextField Value="@RoomsCount" ReadOnly="true" DisableUnderLine Label="@L[$"RoomsCount"]" />
+            </MudItem>
+        }
+
+        <MudItem xs="4" md="4">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+        </MudItem>
+        <MudItem xs="3" md="3">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Kz)" @bind-Value="context.Kz" Label="@L["ShortName"]" />
+        </MudItem>
+
+        <MudItem xs="2" md="2">
+            <MudNumericField Variant="Variant.Outlined" T="int" Min="1" For="@(() => context.OrderNumber)" @bind-Value="context.OrderNumber" Label="@L["OrderNumber"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="5" For="@(() => context.Description)" @bind-Value="context.Description" Label="@L["Description"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="5" For="@(() => context.Properties)" @bind-Value="context.Properties" Label="@L["Properties"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudNumericField Variant="Variant.Outlined" T="int" Min="1" For="@(() => context.NumberOfBeds)" @bind-Value="context.NumberOfBeds" Label="@L["NumberOfBeds"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudNumericField Variant="Variant.Outlined" T="int" Min="0" For="@(() => context.NumberOfExtraBeds)" @bind-Value="context.NumberOfExtraBeds" Label="@L["NumberOfExtraBeds"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudCheckBox id="cbVkatRelevant" Color="Color.Secondary" For="@(() => context.VkatRelevant)" @bind-Checked="context.VkatRelevant" Label="@L["VkatRelevant"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayDescriptionShort)" @bind-Value="context.DisplayDescriptionShort" Label="@L["DisplayDescriptionShort"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayHightlights)" @bind-Value="context.DisplayHightlights" Label="@L["DisplayHighlights"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudNumericField Variant="Variant.Outlined" T="int" Min="1" For="@(() => context.CategoryDefaultQuantity)" @bind-Value="context.CategoryDefaultQuantity" Label="@L["CategoryDefaultQuantity"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            @*            <MudCheckBox id="cbCategoryIsVirtual" Color="Color.Secondary" Size="Size.Large" For="@(() => context.CategoryIsVirtual)" @bind-Checked="context.CategoryIsVirtual" Label="@L["CategoryIsVirtual"]" />
+            *@
+            @*            <MudCheckBox id="cbCategoryIsVirtual" name="cbCategoryIsVirtual" @onclick="cbCategoryIsVirtual_changed"  Color="Color.Secondary" Size="Size.Large" For="@(() => context.CategoryIsVirtual)" @bind-Checked="context.CategoryIsVirtual" Label="@L["CategoryIsVirtual"]" />
+            *@
+            <MudCheckBox id="cbCategoryIsVirtual" name="cbCategoryIsVirtual" T="bool"
+                         Color="Color.Secondary" Size="Size.Large" For="@(() => context.CategoryIsVirtual)"
+                         Checked="context.CategoryIsVirtual"
+                         CheckedChanged ="HandleCheckedChanged" Label="@L["CategoryIsVirtual"]"
+                          />
+        </MudItem>
+
+        @*                          @onclick="@(() => {Console.WriteLine("onclick: " + context.CategoryIsVirtual); cbCategoryIsVirtual_changed();})"
+            @oninput="HandleCheck"  @bind-Checked:event="oninput"                            @bind-Checked="context.CategoryIsVirtual" Label="@L["CategoryIsVirtual"]"
+
+
+        *@
+
+
+
+        <MudItem xs="4" md="4">
+            <MudSelect id="selVirtualSourceCategoryId" T="int" Disabled="!context.CategoryIsVirtual" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.VirtualSourceCategoryId)" @bind-Value="context.VirtualSourceCategoryId" Label="@L["VirtualSourceCategory"]">
+                @foreach (var item in CategoryIsVirtualList)
+                {
+                    <MudSelectItem T="int" Value="@item.Id">@item.Kz @item.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField id="txtVirtualCategoryFormula" Disabled="!context.CategoryIsVirtual" Variant="Variant.Outlined" T="string" For="@(() => context.VirtualCategoryFormula)" @bind-Value="context.VirtualCategoryFormula" Label="@L["VirtualCategoryFormula"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudSelect id="selVirtualImportCategoryId" T="int" Disabled="!context.CategoryIsVirtual" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.VirtualImportCategoryId)" @bind-Value="context.VirtualImportCategoryId" Label="@L["VirtualImportCategoryId"]">
+                @foreach (var item in CategoryIsVirtualList)
+                {
+                    <MudSelectItem T="int" Value="@item.Id">@item.Kz @item.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudNumericField id="numVirtualCategoryQuantity" Variant="Variant.Outlined" T="int" Min="1" Disabled="!context.CategoryIsVirtual" For="@(() => context.VirtualCategoryQuantity)" @bind-Value="context.VirtualCategoryQuantity" Label="@L["VirtualCategoryQuantity"]" />
+        </MudItem>
+
+
+
+    </EditFormContent>
+
+</EntityTable>
+
+@code {
+
+    [Parameter]
+    public int RoomsCount { get; set; }
+    public List<CategorySelectDto> CategoryIsVirtualList { get; set; } = new List<CategorySelectDto>();
+    protected EntityServerTableContext<CategoryDto, int, UpdateCategoryRequest> Context { get; set; } = default!;
+    public int _mandantId { get; set; }
+
+
+    [Parameter]
+    public bool IsVirtual_Visible { get; set; } = false;
+
+    protected override void OnInitialized() =>
+        Context = new(
+    entityName: L["Category " + RoomsCount],
+    entityNamePlural: L["Categorys"],
+    entityResource: FSHResource.Categorys,
+    fields: new()
+        {
+            new(category => category.Id, L["Id"], "Id"),
+            new(category => category.Kz, L["Kz"], "Kz"),
+            new(category => category.Name, L["Name"], "Name"),
+            new(category => category.Description, L["Description"], "Description"),
+            new(category => category.OrderNumber, L["Ordernumber"], "OrderNumber"),
+            new(category => category.VirtualCategoryQuantity, L["VirtualCategoryQuantity"], "VirtualCategoryQuantity"),
+        },
+    idFunc: category => category.Id,
+    //searchFunc: async filter => (await CategorysClient
+    //    .SearchAsync(filter.Adapt<SearchCategorysRequest>()))
+    //    .Adapt<PaginationResponse<CategoryDto>>(),
+    searchFunc: async filter =>
+        {
+            var categoryfilter = filter.Adapt<SearchCategorysRequest>();
+            categoryfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+            _mandantId = categoryfilter.MandantId;
+            var result = await CategorysClient.SearchAsync(categoryfilter);
+            return result.Adapt<PaginationResponse<CategoryDto>>();
+        },
+    createFunc: async category => await CategorysClient.CreateAsync(category.Adapt<CreateCategoryRequest>()),
+    updateFunc: async (id, category) => await CategorysClient.UpdateAsync(id, category.Adapt<UpdateCategoryRequest>()),
+    // editFormInitializedFunc: async id => await RoomsCount = RoomsClient.CountRoomsByCategoryIdAsync(id),
+    // deleteFunc: async id => await CategorysClient.DeleteAsync(id),
+    exportAction: string.Empty);
+
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        CategoryIsVirtualList = (await CategorysClient.GetCategorySelectAsync(-1, _mandantId)).ToList(); // -1 = CategoryIsVirtual = False
+        Debug.Print("Anzahl items in CategoryIsVirtualList: " + CategoryIsVirtualList.Count());
+    }
+
+    void cbCategoryIsVirtual_changed()
+    {
+
+        Console.WriteLine("Methodenanfang IsVirtual_Visible : " + IsVirtual_Visible.ToString());
+        //Console.WriteLine("not Null");
+
+        if (IsVirtual_Visible)
+        {
+            IsVirtual_Visible = false;
+        }
+        else
+        {
+            IsVirtual_Visible = true;
+        }
+
+        Console.WriteLine("Methodenende IsVirtual_Visible : " + IsVirtual_Visible.ToString());
+    }
+
+    private async void HandleCheckedChanged (bool isChecked)
+    {
+        Console.WriteLine("Context.AddEditModal.RequestModel.CategoryIsVirtual: " + Context.AddEditModal.RequestModel.CategoryIsVirtual);
+        Context.AddEditModal.RequestModel.CategoryIsVirtual = isChecked;
+        Console.WriteLine("Context.AddEditModal.RequestModel.CategoryIsVirtual: " + Context.AddEditModal.RequestModel.CategoryIsVirtual);
+        RoomsCount = await RoomsClient.CountRoomsByCategoryIdAsync(Context.AddEditModal.RequestModel.Id);
+        Console.WriteLine("RoomsCount: " + RoomsCount);
+
+    }
+}

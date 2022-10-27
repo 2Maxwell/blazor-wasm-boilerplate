@@ -53,6 +53,11 @@ internal class AzureAdClaimsPrincipalFactory : AccountClaimsPrincipalFactory<Rem
                 userIdentity.AddClaim(new Claim(FSHClaims.Fullname, $"{userDetails.FirstName} {userDetails.LastName}"));
             }
 
+            if (!userIdentity.HasClaim(c => c.Type == FSHClaims.MandantId))
+            {
+                userIdentity.AddClaim(new Claim(FSHClaims.MandantId, userDetails.MandantId.ToString()));
+            }
+
             if (!userIdentity.HasClaim(c => c.Type == ClaimTypes.NameIdentifier))
             {
                 userIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, userDetails.Id.ToString()));

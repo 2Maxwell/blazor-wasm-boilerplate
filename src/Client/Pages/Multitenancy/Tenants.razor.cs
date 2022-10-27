@@ -23,6 +23,7 @@ public partial class Tenants
     protected Task<AuthenticationState> AuthState { get; set; } = default!;
     [Inject]
     protected IAuthorizationService AuthService { get; set; } = default!;
+    // public TenantDetail selectedTenant { get; set; } = null;
 
     private bool _canUpgrade;
     private bool _canModify;

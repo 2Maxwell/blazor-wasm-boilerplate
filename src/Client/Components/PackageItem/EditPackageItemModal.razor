@@ -1,0 +1,98 @@
+﻿@using static FSH.BlazorWebAssembly.Client.Pages.Hotel.Packages
+
+@inject IStringLocalizer<FSH.BlazorWebAssembly.Client.Pages.Hotel.Packages> L
+
+<EditForm EditContext="editContext" OnValidSubmit="EditPackageItem">
+    <DataAnnotationsValidator />
+    <MudDialog Style="width:700px;max-height:95%; overflow-y: scroll;">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.Add" Class="mr-3" />
+                Edit PackageItem
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudGrid>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="packageItem.Start" For="()=>packageItem.Start" MaxDate="packageItem.End" DisableToolbar Label="Start" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="packageItem.End" For="()=>packageItem.End" MinDate="packageItem.Start" DisableToolbar Label="End" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+
+                @if (ItemsList is not null)
+                {
+                    <MudItem xs="8">
+                        <MudSelect T="int" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" For="@(() => packageItem.ItemId)" @bind-Value="packageItem.ItemId" Label="@L["Item"]">
+                            <MudSelectItem T="int" Value="0">@L["Select Item"]</MudSelectItem>
+                            @foreach (var item in ItemsList)
+                            {
+                                <MudSelectItem T="int" Value="@item.Id">@item.ValueContent</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="packageItem.Price" For="()=>packageItem.Price" Margin="Margin.Dense" Label="Price" Variant="Variant.Outlined" />
+                </MudItem>
+
+                @if (PackageItemCoreValueEnumList is not null)
+                {
+                    <MudItem xs="8" md="8">
+                        <MudSelect T="int" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" For="@(() => packageItem.PackageItemCoreValueEnumId)" @bind-Value="packageItem.PackageItemCoreValueEnumId" Label="@L["% CoreValue"]">
+                            <MudSelectItem T="int" Value="0">@L["Select CoreValue"]</MudSelectItem>
+                            @foreach (var item in PackageItemCoreValueEnumList)
+                            {
+                                <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="packageItem.Percentage" For="()=>packageItem.Percentage" Margin="Margin.Dense" Adornment="Adornment.End" AdornmentText="%" Label="Percentage" Variant="Variant.Outlined" />
+                </MudItem>
+
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Cancel" Variant="Variant.Text" StartIcon="@Icons.Filled.Cancel" Color="Color.Default" Size="Size.Small">cancel</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Success" ButtonType="ButtonType.Submit" Size="Size.Small">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public PackageItemDto packageItem { get; set; } = new();
+
+    [Parameter]
+    public List<ItemSelectDto>? ItemsList { get; set; }
+
+    [Parameter]
+    public List<PackageItemCoreValueEnumDto>? PackageItemCoreValueEnumList { get; set; }
+
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+    private EditContext? editContext;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(packageItem);
+    }
+
+    private void EditPackageItem()
+    {
+        MudDialog.Close(DialogResult.Ok(packageItem));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+
+
+}

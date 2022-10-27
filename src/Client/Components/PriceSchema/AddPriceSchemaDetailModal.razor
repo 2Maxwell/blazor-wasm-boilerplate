@@ -1,0 +1,79 @@
+﻿@using System.Diagnostics
+@using static FSH.BlazorWebAssembly.Client.Pages.Accounts.PriceSchemas
+
+@inject IStringLocalizer<FSH.BlazorWebAssembly.Client.Pages.Accounts.PriceSchemas> L
+
+
+<EditForm EditContext="editContext" OnValidSubmit="AddPriceSchemaDetail">
+    <DataAnnotationsValidator />
+    <MudDialog Style="width:700px;max-height:95%; overflow-y: scroll;">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.Add" Class="mr-3" />
+                Create PriceSchemaDetail
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudGrid>
+
+@*                <MudItem xs="12" md="5">
+                    <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" For="@(() => p.TargetCatPax)" @bind-Value="p.TargetCatPax" Label="@L["Base Category Pax"]">
+                        <MudSelectItem T="int" Value="0">@L["Select Target Cat_Pax"]</MudSelectItem>
+                        @foreach (var item in CatPaxList)
+                        {
+                            <MudSelectItem T="string" Value="@item.CatPax">@item.CatPax</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+*@
+        <MudItem xs="12" md="5">
+            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Margin="Margin.Dense" Placeholder="Select Base Cat_Pax" For="@(() => p.TargetCatPax)" @bind-Value="p.TargetCatPax" Label="@L["Base Category Pax"]">
+                @foreach (var item in CatPaxList)
+                {
+                    <MudSelectItem Value="@item.CatPax"/>
+                }
+            </MudSelect>
+        </MudItem>
+
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="p.TargetDifference" For="()=>p.TargetDifference" Margin="Margin.Dense" Adornment="Adornment.End" AdornmentText="€" Label="TargetDiffenece" Variant="Variant.Outlined" />
+                </MudItem>
+
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Cancel" Variant="Variant.Text" StartIcon="@Icons.Filled.Cancel" Color="Color.Default" Size="Size.Small">cancel</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Success" ButtonType="ButtonType.Submit" Size="Size.Small">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+
+    [Parameter]
+    public PriceSchemaDetailDto p { get; set; } = new();
+
+    [Parameter]
+    public List<CategorySelectCatPaxDto> CatPaxList { get; set; } = new List<CategorySelectCatPaxDto>();
+
+    [CascadingParameter]
+    MudDialogInstance? MudDialog { get; set; }
+
+
+    private EditContext? editContext;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(p);
+    }
+
+    private void AddPriceSchemaDetail()
+    {
+        if(MudDialog is not null) MudDialog.Close(DialogResult.Ok(p));
+    }
+
+    private void Cancel()
+    {
+        if(MudDialog is not null) MudDialog.Cancel();
+    }
+}

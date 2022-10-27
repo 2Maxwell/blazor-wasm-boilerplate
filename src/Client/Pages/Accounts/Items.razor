@@ -1,0 +1,122 @@
+﻿@page "/accounts/items"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Items)]
+
+@inject IStringLocalizer<Items> L
+@inject IItemClient ItemsClient
+@inject IItemGroupsClient ItemGroupsClient
+@inject ISessionStorageService sessionstorage
+@inject ITaxesClient TaxesClient
+
+<FshTitle Title="@L["Items"]" Description="@L["Manage Items."]" />
+
+<EntityTable TEntity="ItemDto" TId="int" TRequest="UpdateItemRequest" Context="@Context">
+
+    <EditFormContent>
+        <MudItem xs="3" md="3">
+            <MudNumericField Variant="Variant.Outlined" T="int" Min="1000" Max="99999" For="@(() => context.ItemNumber)" @bind-Value="context.ItemNumber" Label="@L["ItemNumber"]" />
+        </MudItem>
+
+        <MudItem xs="9" md="9">
+            <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.ItemGroupId)" @bind-Value="context.ItemGroupId" Label="@L["ItemGroup"]">
+                <MudSelectItem T="int" Value="0">@L[" Select ItemGroup"]</MudSelectItem>
+                @foreach (var item in ItemGroupsList)
+                {
+                    <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="9" md="9">
+            <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="decimal" For="@(() => context.Price)" @bind-Value="context.Price" Label="@L["Price"]" />
+        </MudItem>
+
+        <MudItem xs="3" md="3">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.TaxId)" @bind-Value="context.TaxId" Label="@L["TaxId"]">
+                <MudSelectItem T="int" Value="0">@L[" Select Tax"]</MudSelectItem>
+                @foreach (var item in TaxesList)
+                {
+                    <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.Automatic)" @bind-Checked="context.Automatic" Label="@L["Automatic"]" />
+        </MudItem>
+
+    </EditFormContent>
+
+</EntityTable>
+
+
+@code {
+    [Parameter]
+    public int _mandantId { get; set; } = 0;
+    public List<ItemGroupDto> ItemGroupsList { get; set; } = new List<ItemGroupDto>();
+    public List<TaxSelectDto> TaxesList { get; set; } = new();
+
+    protected EntityServerTableContext<ItemDto, int, UpdateItemRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+        Context = new(
+            entityName: L["Item"],
+            entityNamePlural: L["Items"],
+            entityResource: FSHResource.Items,
+            fields: new()
+                    {
+                    //new(item => item.Id, L["Id"], "Id"),
+                    new(item => item.ItemNumber, L["ItemNumber"], "ItemNumber"),
+                    new(item => item.Name, L["Name"], "Name"),
+                    new(item => item.Price, L["Price"], "Price"),
+                    new(item => item.Automatic, L["Automatic"], "Automatic"),
+                },
+            idFunc: item => item.Id,
+            idMandantFunc: item => item.MandantId,
+            editNotAsModal: true,
+            updateNavigationUrl: "/accounts/bitemstest",
+            searchFunc: async filter =>
+            {
+                var itemfilter = filter.Adapt<SearchItemsRequest>();
+                if (_mandantId == 0)
+                {
+                    itemfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+                }
+                else
+                {
+                    itemfilter.MandantId = _mandantId;
+                }
+                // _mandantId = itemfilter.MandantId;
+                var result = await ItemsClient.SearchAsync(itemfilter);
+                return result.Adapt<PaginationResponse<ItemDto>>();
+            },
+            createFunc: async item =>
+            {
+                item.MandantId = _mandantId;
+                await ItemsClient.CreateAsync(item.Adapt<CreateItemRequest>());
+            },
+            updateFunc: async (id, item) => await ItemsClient.UpdateAsync(id, item.Adapt<UpdateItemRequest>()),
+            exportAction: string.Empty
+            //getMandantIdFunc: async (id) =>
+            //{
+            //    ItemDto item = new();
+            //    item = await ItemsClient.GetAsync(id);
+            //    return item.MandantId;
+            //}
+            );
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (_mandantId == 0) _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        ItemGroupsList = (await ItemGroupsClient.GetItemGroupSelectAsync(_mandantId)).ToList();
+        Debug.Print("Stop");
+        TaxesList = (await TaxesClient.GetTaxSelectDtoAsync(_mandantId)).ToList();
+    }
+
+
+}

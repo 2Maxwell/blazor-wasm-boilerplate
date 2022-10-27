@@ -40,6 +40,10 @@
             </MudExpansionPanel>
         }
 
+@*                <FshTable @ref="_table" Elevation="25" ServerData="@ServerReloadFunc" Items="@_entityList" Filter="LocalSearch"
+            Loading="@Loading" LoadingProgressColor="@Color.Secondary" ChildRowContent="@ChildRowContent" SelectedItemChanged="OnSelectedItemChanged" T="TEntity">
+*@
+
         <FshTable @ref="_table" Elevation="25" ServerData="@ServerReloadFunc" Items="@_entityList" Filter="LocalSearch"
             Loading="@Loading" LoadingProgressColor="@Color.Secondary" ChildRowContent="@ChildRowContent">
 
@@ -73,8 +77,11 @@
             </ToolBarContent>
 
             <HeaderContent>
+                <MudTh Style="text-align:left; max-width:50px">@L["Actions"]</MudTh>
+
                 @if (Context.Fields is not null)
                 {
+
                     foreach (var field in Context.Fields)
                     {
                         <MudTh>
@@ -89,10 +96,148 @@
                         </MudTh>
                     }
                 }
-                <MudTh Style="text-align:right">@L["Actions"]</MudTh>
             </HeaderContent>
 
+
+
             <RowTemplate>
+
+                <MudTd DataLabel="Actions" Style="text-align:left; max-width:100px">
+@*                            @if (CanUpdateEntity(context) & !HasMandant_0_Query(context))
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Title="@L["Edit"]" aria-label="@L["Edit"]" @onclick="@(() => InvokeModal(context))"></MudIconButton>
+                                increaseActionCounter(1);                    
+                            }
+*@
+
+                    @if (HasMandant_0_Query(context))
+                    {
+                        if (getMandantId(context) > 0)
+                        {
+                            if (CanUpdateEntity(context))
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Title="@L["Edit"]" aria-label="@L["Edit"]" @onclick="@(() => InvokeModal(context))"></MudIconButton>
+                                increaseActionCounter(1);
+                            }
+                            if (CanDeleteEntity(context))
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Title="@L["Delete"]" aria-label="@L["Delete"]" @onclick="@(() => Delete(context))"></MudIconButton>
+                                increaseActionCounter(1);                    
+                            }
+                            if (ExtraActions is not null)
+                            {
+                                @ExtraActions(context)
+                                increaseActionCounter(1);
+                            }
+
+                        }
+                    }
+                    else
+                    {
+                            if (CanUpdateEntity(context))
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Title="@L["Edit"]" aria-label="@L["Edit"]" @onclick="@(() => InvokeModal(context))"></MudIconButton>
+                                increaseActionCounter(1);
+                            }
+                            if (CanDeleteEntity(context))
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Title="@L["Delete"]" aria-label="@L["Delete"]" @onclick="@(() => Delete(context))"></MudIconButton>
+                                increaseActionCounter(1);                    
+                            }
+                            if (ExtraActions is not null)
+                            {
+                                @ExtraActions(context)
+                                increaseActionCounter(1);
+                            }
+
+                    }
+
+                    @if (ActionCounter == 0)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.DoNotTouch" Title="@L["No Allowed Actions"]" aria-label="@L["No Allowed Actions"]"></MudIconButton>
+
+@*                        <MudIconButton Icon="@Icons.Material.Filled.DoNotTouch" Title="@L["No Allowed Actions"]" aria-label="@L["No Allowed Actions"]" @onclick="@(() => Delete(context))"></MudIconButton>
+*@
+                    }
+
+                    @{
+                        ActionCounter = 0;
+                    }
+
+
+
+@*                    @if (ActionsContent is not null)
+                    {
+                        @ActionsContent(context)
+                    }
+                    else if (HasActions)
+                    {
+                        <MudMenu Label="@L["Actions"]" Variant="Variant.Filled" DisableElevation="true"
+                            EndIcon="@Icons.Filled.KeyboardArrowDown" IconColor="Color.Secondary" Direction="Direction.Left"
+                            OffsetX="true">
+                            @if (CanUpdateEntity(context))
+                            {
+                                <MudMenuItem Icon="@Icons.Filled.Edit" title="@L["Edit"]" @onclick="@(() => InvokeModal(context))">@L["Edit"]</MudMenuItem>
+                            }
+                            @if (CanDeleteEntity(context))
+                            {
+                                <MudMenuItem Icon="@Icons.Filled.Delete" title="@L["Delete"]" Style="color:red!important" @onclick="@(() => Delete(context))">@L["Delete"]</MudMenuItem>
+                            }
+                            @if (ExtraActions is not null)
+                            {
+                                @ExtraActions(context)
+                            }
+                        </MudMenu>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Filled" DisableElevation="true"
+                            StartIcon="@Icons.Material.Filled.DoNotTouch" IconColor="Color.Secondary" Size="Size.Small"
+                        Color="Color.Surface">
+                            @L["No Allowed Actions"]
+                        </MudButton>
+                    }
+*@
+                </MudTd>
+
+
+
+@*                <MudTd DataLabel="Actions" Style="text-align: right">
+                    @if (ActionsContent is not null)
+                    {
+                        @ActionsContent(context)
+                    }
+                    else if (HasActions)
+                    {
+                        <MudMenu Label="@L["Actions"]" Variant="Variant.Filled" DisableElevation="true"
+                            EndIcon="@Icons.Filled.KeyboardArrowDown" IconColor="Color.Secondary" Direction="Direction.Left"
+                            OffsetX="true">
+                            @if (CanUpdateEntity(context))
+                            {
+                                <MudMenuItem Icon="@Icons.Filled.Edit" title="@L["Edit"]" @onclick="@(() => InvokeModal(context))">@L["Edit"]</MudMenuItem>
+                            }
+                            @if (CanDeleteEntity(context))
+                            {
+                                <MudMenuItem Icon="@Icons.Filled.Delete" title="@L["Delete"]" Style="color:red!important" @onclick="@(() => Delete(context))">@L["Delete"]</MudMenuItem>
+                            }
+                            @if (ExtraActions is not null)
+                            {
+                                @ExtraActions(context)
+                            }
+                        </MudMenu>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Filled" DisableElevation="true"
+                            StartIcon="@Icons.Material.Filled.DoNotTouch" IconColor="Color.Secondary" Size="Size.Small"
+                        Color="Color.Surface">
+                            @L["No Allowed Actions"]
+                        </MudButton>
+                    }
+
+                </MudTd>
+
+*@
                 @foreach (var field in Context.Fields)
                 {
                     <MudTd DataLabel="@field.DisplayName">
@@ -110,39 +255,6 @@
                         }
                     </MudTd>
                 }
-                <MudTd DataLabel="Actions" Style="text-align: right">
-                    @if (ActionsContent is not null)
-                    {
-                        @ActionsContent(context)
-                    }
-                    else if (HasActions)
-                    {
-                        <MudMenu Label="@L["Actions"]" Variant="Variant.Filled" DisableElevation="true"
-                            EndIcon="@Icons.Filled.KeyboardArrowDown" IconColor="Color.Secondary" Direction="Direction.Left"
-                            OffsetX="true">
-                            @if (CanUpdateEntity(context))
-                            {
-                                <MudMenuItem @onclick="@(() => InvokeModal(context))">@L["Edit"]</MudMenuItem>
-                            }
-                            @if (CanDeleteEntity(context))
-                            {
-                                <MudMenuItem Style="color:red!important" @onclick="@(() => Delete(context))">@L["Delete"]</MudMenuItem>
-                            }
-                            @if (ExtraActions is not null)
-                            {
-                                @ExtraActions(context)
-                            }
-                        </MudMenu>
-                    }
-                    else
-                    {
-                        <MudButton Variant="Variant.Filled" DisableElevation="true"
-                            StartIcon="@Icons.Material.Filled.DoNotTouch" IconColor="Color.Secondary" Size="Size.Small"
-                        Color="Color.Surface">
-                            @L["No Allowed Actions"]
-                        </MudButton>
-                    }
-                </MudTd>
             </RowTemplate>
 
             <PagerContent>

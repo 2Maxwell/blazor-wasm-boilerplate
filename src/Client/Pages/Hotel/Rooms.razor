@@ -1,0 +1,160 @@
+﻿@page "/hotel/rooms"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Rooms)]
+
+@inject IStringLocalizer<Rooms> L
+@inject IRoomsClient RoomsClient
+@inject ICategorysClient CategorysClient
+@inject ISessionStorageService sessionstorage
+
+
+<FshTitle Title="@L["Rooms"]" Description="@L["Manage Rooms."]" />
+
+<EntityTable TEntity="RoomDto" TId="int" TRequest="UpdateRoomRequest" Context="@Context">
+
+    <EditFormContent>
+
+        @if (!Context.AddEditModal.IsCreate)
+        {
+            <MudItem xs="3" md="3">
+                <MudTextField Value="context.Id" ReadOnly DisableUnderLine Label="@L[$"Room Id"]" />
+            </MudItem>
+        }
+
+        @if (!Context.AddEditModal.IsCreate)
+        {
+
+            <MudItem xs="4" md="4">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="true" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+        }
+        else
+        {
+            <MudItem xs="4" md="4">
+                <MudTextField Variant="Variant.Outlined"  T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+        }
+
+        <MudItem xs="4" md="4">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.CategoryId)" @bind-Value="context.CategoryId" Label="@L["Category"]">
+                    <MudSelectItem T="int" Value="0">Select Category</MudSelectItem>
+                @foreach (var item in CategoryList)
+                {
+                    <MudSelectItem T="int" Value="@item.Id">@item.Kz @item.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="5" For="@(() => context.Description)" @bind-Value="context.Description" Label="@L["Description"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayDescription)" @bind-Value="context.DisplayDescription" Label="@L["DisplayDescription"]" />
+        </MudItem>
+
+        <MudItem xs="2" md="2">
+            <MudNumericField Variant="Variant.Outlined" T="int" Min="1" For="@(() => context.Beds)" @bind-Value="context.Beds" Label="@L["Beds"]" />
+        </MudItem>
+
+        <MudItem xs="2" md="2">
+            <MudNumericField Variant="Variant.Outlined" T="int" For="@(() => context.BedsExtra)" @bind-Value="context.BedsExtra" Label="@L["BedsExtra"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="5" For="@(() => context.Facilities)" @bind-Value="context.Facilities" Label="@L["Facilities"]" />
+        </MudItem>
+
+        <MudItem xs="10" md="10">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.PhoneNumber)" @bind-Value="context.PhoneNumber" Label="@L["PhoneNumber"]" />
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.Clean)" @bind-Checked="context.Clean" Label="@L["Clean"]" />
+        </MudItem>
+
+        <MudItem xs="3">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.Clean)" @bind-Checked="context.Blocked" Label="@L["Blocked"]" />
+        </MudItem>
+
+        <MudItem xs="3">
+            <MudDatePicker Variant="Variant.Outlined" Editable="true" For="@(() => context.BlockedStart)" @bind-Date="context.BlockedStart" Placeholder="Select Date" Label="@L["BlockedStart"]" />
+        </MudItem>
+
+        <MudItem xs="3">
+            <MudDatePicker Variant="Variant.Outlined" Editable="true" For="@(() => context.BlockedEnd)" @bind-Date="context.BlockedEnd" Placeholder="Select Date" Label="@L["BlockedEnd"]" />
+        </MudItem>
+
+
+        <MudPaper Class="pa-16 ma-2"></MudPaper>
+        <MudPaper Class="pa-16 ma-2" Outlined="true" Square="true"></MudPaper>
+
+    </EditFormContent>
+
+</EntityTable>
+
+
+@code {
+    [Parameter]
+    public int _mandantId { get; set; }
+    public List<CategorySelectDto> CategoryList { get; set; } = new List<CategorySelectDto>();
+
+    protected EntityServerTableContext<RoomDto, int, UpdateRoomRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+        Context = new(
+            entityName: L["Room"],
+            entityNamePlural: L["Rooms"],
+            entityResource: FSHResource.Rooms,
+            fields: new()
+                {
+                    new(room => room.Id, L["Id"], "Id"),
+                    new(room => room.Name, L["Name"], "Name"),
+                    new(room => room.Beds, L["Beds"], "Beds"),
+                    new(room => room.CategoryName, L["Category"], "Category.Name"),
+                    new(room => room.Description, L["Description"], "Description"),
+                // new(room => room.BedsMax, L["BedsMax"], "BedsMax"),
+                //new(room => room.Properties, L["Properties"], "Properties"),
+                //new(room => room.VkatRelevant, L["VkatRelevanz"], "VkatRelevant"),
+                //new(room => room.VkatDone, L["VkatDone"], "VkatDone"),
+                //new(room => room.NumberOfBeds, L["NumberOfBeds"], "NumberOfBeds"),
+                //new(room => room.NumberOfExtraBeds, L["NumberOfExtraBeds"], "NumberOfExtraBeds"),
+                //new(room => room.DisplayDescriptionShort, L["DisplayDescriptionShort"], "DisplayDescriptionShort"),
+                //new(room => room.DisplayHightlights, L["DisplayHightlights"], "DisplayHightlights"),
+                //new(room => room.roomIsVirtual, L["roomIsVirtual"], "roomIsVirtual"),
+                //new(room => room.VirtualSourceroomId, L["VirtualSourceroomId"], "VirtualSourceroomId"),
+                //new(room => room.VirtualroomFormula, L["VirtualroomFormula"], "VirtualroomFormula"),
+                //new(room => room.VirtualImportroomId, L["VirtualImportroomId"], "VirtualImportroomId"),
+                //new(room => room.VirtualroomQuantity, L["VirtualroomQuantity"], "VirtualroomQuantity"),
+                //new(room => room.roomDefaultQuantity, L["roomDefaultQuantity"], "roomDefaultQuantity")
+                // new(category => category., L[""], ""),
+            },
+            idFunc: room => room.Id,
+            searchFunc: async filter =>
+            {
+                var roomfilter = filter.Adapt<SearchRoomsRequest>();
+                roomfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+                _mandantId = roomfilter.MandantId;
+                // roomfilter.MandantId = _mandantId;
+                var result = await RoomsClient.SearchAsync(roomfilter);
+                return result.Adapt<PaginationResponse<RoomDto>>();
+            },               
+            createFunc: async room =>
+            {
+                room.MandantId = _mandantId;
+                await RoomsClient.CreateAsync(room.Adapt<CreateRoomRequest>());
+            },
+            updateFunc: async (id, room) => await RoomsClient.UpdateAsync(id, room.Adapt<UpdateRoomRequest>()),
+            // deleteFunc: async id => await RoomsClient.DeleteAsync(id),
+            exportAction: string.Empty);
+
+    protected async override Task OnInitializedAsync()
+    {
+        _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        CategoryList = (await CategorysClient.GetCategorySelectAsync(-1, _mandantId)).ToList(); // -1 = CategoryIsVirtual = False
+        Debug.Print("Anzahl items in CategoryList: " + CategoryList.Count());
+    }
+
+
+}

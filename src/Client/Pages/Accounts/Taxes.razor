@@ -1,0 +1,189 @@
+﻿@page "/accounts/taxes"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@using System.Globalization
+@using FSH.BlazorWebAssembly.Client.Components.PackageItem
+@using FSH.BlazorWebAssembly.Client.Components.TaxItem
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Packages)]
+
+@inject IStringLocalizer<Taxes> L
+@inject ITaxesClient TaxesClient
+@inject ISessionStorageService sessionstorage
+@inject ITaxItemsClient TaxItemsClient
+@inject IEnumsClient EnumsClient
+
+
+<FshTitle Title="@L["Taxes"]" Description="@L["Manage Taxes."]" />
+<EntityTable TEntity="TaxDto" TId="int" TRequest="UpdateTaxRequest" Context="@Context" >
+
+    <EditFormContent>
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+@*                <MudItem xs="3" md="3">
+                    <MudTextField Value="context.Id" ReadOnly DisableUnderLine Label="@L[$"Tax Id"]" />
+                </MudItem>
+*@        }
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+                <MudItem xs="5" md="5">
+                    <MudTextField Variant="Variant.Outlined" ReadOnly="true" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+                </MudItem>
+        }
+        else // Create
+        {            
+                <MudItem xs="5" md="5">
+                    <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+                </MudItem>
+        }
+
+        <MudItem xs="3" md="3">
+            <MudTextField Variant="Variant.Outlined" T="int" For="@(() => context.CountryId)" @bind-Value="context.CountryId" Label="@L["CountryId"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.TaxSystemEnumId)" @bind-Value="context.TaxSystemEnumId" Label="@L["TaxSystemEnum"]">
+                <MudSelectItem T="int" Value="0">@L["Select TaxSystem"]</MudSelectItem>
+                @foreach (var item in TaxSystemEnumList)
+                {
+                    <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudTable Items="@context.TaxItems" T="TaxItemDto" Breakpoint="Breakpoint.None" Dense="true" Hover="true" Bordered="true" @bind-SelectedItem="selectedItem">
+
+                <ToolBarContent>
+                    <MudButton OnClick="(() => AddTaxItem())" Color="Color.Primary" IconColor="Color.Surface" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add">Create TaxItem</MudButton>
+                    <MudSpacer />
+                </ToolBarContent>
+
+                <HeaderContent>
+                    <MudTh>Actions</MudTh>
+                    <MudTh>Start</MudTh>
+                    <MudTh>End</MudTh>
+                    <MudTh>TaxRate</MudTh>
+                </HeaderContent>
+
+                <RowTemplate Context="taxItem">
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton OnClick="()=>EditTaxItem(taxItem)" Icon="@Icons.Filled.Edit" aria-label="Edit"></MudIconButton>
+                        <MudIconButton OnClick="()=>DeleteTaxItem(taxItem)" Icon="@Icons.Filled.Delete" aria-label="Delete"></MudIconButton>
+                    </MudTd>
+                    <MudTd DataLabel="Start">@Convert.ToDateTime(taxItem.Start).ToShortDateString()</MudTd>
+                    <MudTd DataLabel="End">@Convert.ToDateTime(taxItem.End).ToShortDateString()</MudTd>
+                    <MudTd DataLabel="Price" Style="text-align:right">@taxItem.TaxRate</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+
+    </EditFormContent>
+
+</EntityTable>
+
+
+
+
+@code {
+    [Parameter]
+    public int _mandantId { get; set; }
+    public List<TaxSystemEnumDto> TaxSystemEnumList { get; set; } = new List<TaxSystemEnumDto>();
+    public UpdateTaxRequest? selectedTax { get; set; }
+    public TaxItemDto? selectedItem { get; set; }
+    protected EntityServerTableContext<TaxDto, int, UpdateTaxRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+        Context = new(
+            entityName: L["Tax"],
+            entityNamePlural: L["Taxes"],
+            entityResource: FSHResource.Brands,
+            fields: new()
+                {
+                    // new(tax => tax.Id, L["Id"], "Id"),
+                    new(tax => tax.Name, L["Name"], "Name"),
+                },
+            idFunc: tax => tax.Id,
+            idMandantFunc: item => item.MandantId,
+            editNotAsModal: false,
+            searchFunc: async filter =>
+            {
+                var taxfilter = filter.Adapt<SearchTaxesRequest>();
+                taxfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+                _mandantId = taxfilter.MandantId;
+                var result = await TaxesClient.SearchAsync(taxfilter);
+
+                return result.Adapt<PaginationResponse<TaxDto>>();
+            },
+            createFunc: async tax =>
+            {
+                tax.MandantId = _mandantId;
+                await TaxesClient.CreateAsync(tax.Adapt<CreateTaxRequest>());
+            },
+            getDefaultsFunc: () => Task.FromResult(new UpdateTaxRequest()
+                {
+                    TaxItems = new List<TaxItemDto>(),
+                }),
+            updateFunc: async (id, tax) =>
+            {
+                await TaxesClient.UpdateAsync(id, tax.Adapt<UpdateTaxRequest>());
+            },
+            exportAction: string.Empty);
+
+    protected async override Task OnInitializedAsync()
+    {
+
+        TaxSystemEnumList = (await EnumsClient.GetTaxSystemEnumRequestAsync()).ToList();
+    }
+
+    private async Task AddTaxItem()
+    {
+        selectedTax = Context.AddEditModal.RequestModel;
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] = _mandantId,
+            };
+        var dialog = DialogService.Show<AddTaxItemModal>("", parameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            TaxItemDto pi = (TaxItemDto)result.Data;
+            pi.TaxId = selectedTax.Id;
+            selectedTax.TaxItems.Add(pi);
+            Context.AddEditModal.ForceRender();
+        }
+    }
+
+    private async Task EditTaxItem(TaxItemDto taxItem)
+    {
+        var parameters = new DialogParameters
+            {
+                ["taxItem"] = taxItem,
+            };
+        var dialog = DialogService.Show<EditTaxItemModal>("", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            selectedTax = Context.AddEditModal.RequestModel;
+            Context.AddEditModal.ForceRender();
+        }
+    }
+
+    private async Task DeleteTaxItem(TaxItemDto taxItem)
+    {
+        Context.AddEditModal.RequestModel.TaxItems.Remove(taxItem);
+        if (taxItem.Id > 0)
+        {
+            await TaxItemsClient.DeleteAsync(taxItem.Id);
+        }
+        Context.AddEditModal.ForceRender();
+    }
+
+
+
+
+
+
+}

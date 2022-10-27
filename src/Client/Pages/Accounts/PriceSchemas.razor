@@ -1,0 +1,231 @@
+﻿@page "/accounts/priceschemas"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@using System.Globalization
+@using FSH.BlazorWebAssembly.Client.Components.PriceSchema
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Packages)]
+
+@inject IStringLocalizer<PriceSchemas> L
+@inject IPriceSchemaClient PriceSchemasClient
+@inject IEnumsClient EnumsClient
+@inject ISessionStorageService sessionstorage
+@inject IPriceSchemaDetailsClient PriceSchemaDetailsClient
+@inject ICategorysClient CategorysClient
+
+<FshTitle Title="@L["Priceschemas"]" Description="@L["Manage Priceschemas."]" />
+<EntityTable TEntity="PriceSchemaDto" TId="int" TRequest="UpdatePriceSchemaRequest" Context="@Context">
+
+    <EditFormContent>
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+            <MudItem xs="3" md="3">
+                <MudTextField Value="context.Id" ReadOnly DisableUnderLine Label="@L[$"Priceschema Id"]" />
+            </MudItem>
+        }
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+
+            <MudItem xs="5" md="5">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="true" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+        }
+        else // Create
+        {
+            <MudItem xs="5" md="5">
+                <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+        }
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.Description)" @bind-Value="context.Description" Label="@L["Description"]" />
+        </MudItem>
+
+        <MudItem xs="6" md="6">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.RateTypeEnumId)" @bind-Value="context.RateTypeEnumId" Label="@L["RateTypeEnum"]">
+                <MudSelectItem T="int" Value="0">@L["Select Ratetyp"]</MudSelectItem>
+                @foreach (var item in RateTypeEnumList)
+                {
+                    <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="6" md="6">
+            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Placeholder="Select Base Cat_Pax" For="@(() => context.BaseCatPax)" @bind-Value="context.BaseCatPax" Label="@L["Base Category Pax"]">
+                @foreach (var item in CatPaxList)
+                {
+                    <MudSelectItem Value="@item.CatPax"/>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudTable Items="@context.PriceSchemaDetails" T="PriceSchemaDetailDto" Breakpoint="Breakpoint.None" Dense="true" Hover="true" Bordered="true" @bind-SelectedItem="selectedPriceSchemaDetail">
+
+                <ToolBarContent>
+                    <MudButton OnClick="(() => AddPriceSchemaDetail())" Color="Color.Primary" IconColor="Color.Surface" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add">Create Priceschemadetail</MudButton>
+                    <MudSpacer />
+                </ToolBarContent>
+
+                <HeaderContent>
+                    <MudTh>Actions</MudTh>
+                    <MudTh>TargetCatPax</MudTh>
+                    <MudTh>TargetDifference</MudTh>
+                </HeaderContent>
+
+                <RowTemplate Context="priceSchemaDetail">
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton OnClick="()=>EditPriceSchemaDetail(priceSchemaDetail)" Icon="@Icons.Filled.Edit" aria-label="Edit"></MudIconButton>
+                        <MudIconButton OnClick="()=>DeletePriceSchemaDetail(priceSchemaDetail)" Icon="@Icons.Filled.Delete" aria-label="Delete"></MudIconButton>
+                    </MudTd>
+                    <MudTd DataLabel="TargetCatPax" Style="text-align:left">@priceSchemaDetail.TargetCatPax</MudTd>
+                    <MudTd DataLabel="TargetDifference">@priceSchemaDetail.TargetDifference</MudTd>
+                </RowTemplate>
+            </MudTable>
+        </MudItem>
+
+    </EditFormContent>
+
+</EntityTable>
+
+
+
+@code {
+    [Parameter]
+    public int _mandantId { get; set; } = 1;
+    public List<RateTypeEnumDto> RateTypeEnumList { get; set; } = new List<RateTypeEnumDto>();
+    public List<CategorySelectCatPaxDto> CatPaxList { get; set; } = new List<CategorySelectCatPaxDto>();
+    public List<CategorySelectCatPaxDto> CatPaxZielList { get; set; } = new List<CategorySelectCatPaxDto>();
+
+    public UpdatePriceSchemaRequest? selectedPriceSchema { get; set; }
+    public PriceSchemaDetailDto? selectedPriceSchemaDetail { get; set; }
+
+    protected EntityServerTableContext<PriceSchemaDto, int, UpdatePriceSchemaRequest> Context { get; set; } = default!;
+
+
+    protected override void OnInitialized() =>
+        Context = new(
+            entityName: L["PriceSchemas"],
+            entityNamePlural: L["PriceSchema"],
+            entityResource: FSHResource.Packages,
+            fields: new()
+                {
+                    new(priceSchema => priceSchema.Name, L["Name"], "Name"),
+                    new(priceSchema => priceSchema.RateTypeEnumId, L["RateTypeEnumId"], "RateTypeEnumId"),
+                    new(priceSchema => priceSchema.BaseCatPax, L["BaseCatPax"], "BaseCatPax")
+                },
+            idFunc: priceSchema => priceSchema.Id,
+            editNotAsModal: false,
+            searchFunc: async filter =>
+            {
+                var psfilter = filter.Adapt<SearchPriceSchemasRequest>();
+                psfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+                _mandantId = psfilter.MandantId;
+                var result = await PriceSchemasClient.SearchAsync(psfilter);
+
+                return result.Adapt<PaginationResponse<PriceSchemaDto>>();
+            },
+            createFunc: async priceSchema =>
+            {
+                priceSchema.MandantId = _mandantId;
+                await PriceSchemasClient.CreateAsync(priceSchema.Adapt<CreatePriceSchemaRequest>());
+            },
+            getDefaultsFunc: () => Task.FromResult(new UpdatePriceSchemaRequest()
+                {
+                    PriceSchemaDetails = new List<PriceSchemaDetailDto>(),
+                }),
+            // getDetailsFunc: async id => (await PackagesClient.GetAsync(id)).Adapt<UpdatePackageRequest>(),
+
+            updateFunc: async (id, priceSchema) =>
+            {
+                await PriceSchemasClient.UpdateAsync(id, priceSchema.Adapt<UpdatePriceSchemaRequest>());
+            // selectedPackage = package;
+            // LastEndDate = package.Periods.LastOrDefault() == null ? null: package.Periods.LastOrDefault().End;
+        },
+            // editFormInitializedFunc: selectedPackage = Context.AddEditModal.RequestModel,
+
+            // deleteFunc: async id => await RoomsClient.DeleteAsync(id),
+            exportAction: string.Empty);
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        CatPaxList = (await CategorysClient.GetCategorySelectCatPaxAsync(_mandantId)).ToList();
+        RateTypeEnumList = (await EnumsClient.GetRateTypeEnumRequestAsync()).ToList();
+        Debug.Print("TestStop");
+        string test = string.Empty;
+        CatPaxZielList = (await CategorysClient.GetCategorySelectCatPaxAsync(_mandantId)).ToList();
+
+    }
+
+    private async Task AddPriceSchemaDetail()
+    {
+        selectedPriceSchema = Context.AddEditModal.RequestModel;
+
+        // BaseCatPax aus CatPaxZielList entfernen
+        var cp = CatPaxZielList.Where(x => x.CatPax == selectedPriceSchema.BaseCatPax).FirstOrDefault();
+        // var cpZiel = cp.Adapt<CategorySelectCatPaxDto>();
+        if (cp is not null) CatPaxZielList.Remove(cp);
+
+        foreach (var item in selectedPriceSchema.PriceSchemaDetails)
+        {
+            var selectedCatPaxZiel = CatPaxZielList.Where(x => x.CatPax == item.TargetCatPax).FirstOrDefault();
+            if (selectedCatPaxZiel is not null) CatPaxZielList.Remove(selectedCatPaxZiel);
+        }
+
+        var parameters = new DialogParameters {
+            ["CatPaxList"] = CatPaxZielList
+            };
+        var dialog = DialogService.Show<AddPriceSchemaDetailModal>("", parameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            PriceSchemaDetailDto pi = (PriceSchemaDetailDto)result.Data;
+            pi.PriceSchemaId = selectedPriceSchema.Id;
+            selectedPriceSchema.PriceSchemaDetails.Add(pi);
+            Context.AddEditModal.ForceRender();
+        }
+    }
+
+    private async Task EditPriceSchemaDetail(PriceSchemaDetailDto priceSchemaDetail)
+    {
+        selectedPriceSchema = Context.AddEditModal.RequestModel;
+
+        // BaseCatPax aus CatPaxZielList entfernen
+        var cp = CatPaxZielList.Where(x => x.CatPax == selectedPriceSchema.BaseCatPax).FirstOrDefault();
+        // var cpZiel = cp.Adapt<CategorySelectCatPaxDto>();
+        if (cp is not null) CatPaxZielList.Remove(cp);
+
+        foreach (var item in selectedPriceSchema.PriceSchemaDetails)
+        {
+            var selectedCatPaxZiel = CatPaxZielList.Where(x => x.CatPax == item.TargetCatPax).FirstOrDefault();
+            if (selectedCatPaxZiel is not null) CatPaxZielList.Remove(selectedCatPaxZiel);
+        }
+
+        var parameters = new DialogParameters {
+            ["p"] = priceSchemaDetail,
+            ["CatPaxList"] = CatPaxZielList
+            };
+        var dialog = DialogService.Show<EditPriceSchemaDetailModal>("", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            selectedPriceSchema = Context.AddEditModal.RequestModel;
+            Context.AddEditModal.ForceRender();
+        }
+    }
+    private async Task DeletePriceSchemaDetail(PriceSchemaDetailDto priceSchemaDetail)
+    {
+        Context.AddEditModal.RequestModel.PriceSchemaDetails.Remove(priceSchemaDetail);
+        if (priceSchemaDetail.Id > 0)
+        {
+            await PriceSchemaDetailsClient.DeleteAsync(priceSchemaDetail.Id);
+        }
+        CatPaxZielList = (await CategorysClient.GetCategorySelectCatPaxAsync(_mandantId)).ToList();
+
+        Context.AddEditModal.ForceRender();
+    }
+}

@@ -1,0 +1,61 @@
+﻿@using Blazored.SessionStorage
+<MudBadge Icon="@Icons.Material.Filled.Lock" Color="Color.Error" Overlap="true" Bordered="true" Class="mx-6 my-4">
+    <MudButton Color="Color.Error" Variant="Variant.Filled" DisableElevation="true">@MandantFullName </MudButton>
+</MudBadge>
+
+@code {
+
+    [Inject]
+    protected ISessionStorageService sessionStorage { get; set; } = default!;
+    [Inject]
+    protected IMandantsClient MandantsClient { get; set; } = default!;
+    [Inject]
+    protected IUsersClient UsersClient { get; set; } = default!;
+
+    [CascadingParameter]
+    protected Task<AuthenticationState> AuthState { get; set; } = default!;
+
+    private string? UserId { get; set; }
+    public MandantDto? MandantDto { get; set; }
+    public int MandantId { get; set; } = 0;
+    public string? MandantFullName { get; set; } = "Kein Eintrag";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        var user = (await AuthState).User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            if(string.IsNullOrEmpty(UserId)){
+                UserId = user.GetUserId();
+            }
+        }
+        if (await ApiHelper.ExecuteCallGuardedAsync(() => UsersClient.GetByIdAsync(UserId), Snackbar) is UserDetailsDto currentUser)
+        {
+            MandantId = Convert.ToInt32(currentUser.MandantId);
+            await sessionStorage.SetItemAsStringAsync("currentMandantId", MandantId.ToString());
+
+        }
+
+        await LoadMandantData(MandantId);
+    }
+
+    private async Task LoadMandantData(int mandantId)
+    {
+        if (mandantId >= 0)
+        {
+            MandantDto = await MandantsClient.GetAsync(MandantId);
+            if (MandantDto != null)
+            {
+                MandantFullName = MandantDto.Name + " | " + MandantDto.Kz;
+                // StateHasChanged();
+            }
+        }
+    }
+
+    }
+
+
+
+

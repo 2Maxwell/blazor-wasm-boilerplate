@@ -1,0 +1,130 @@
+﻿@page "/hotel/bookingpolicys"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@using System.Globalization
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Packages)]
+
+@inject IStringLocalizer<BookingPolicys> L
+@inject IBookingPolicysClient BookingPolicysClient
+@inject ISessionStorageService sessionstorage
+
+<FshTitle Title="@L["BookingPolicys"]" Description="@L["Manage BookingPolicys."]" />
+
+<EntityTable TEntity="BookingPolicyDto" TId="int" TRequest="UpdateBookingPolicyRequest" Context="@Context">
+
+    <EditFormContent>
+
+            <MudHidden T="int" hidden="hidden" For="@(() => context.MandantId )" @bind-Value="context.MandantId" Label="@L["MandantId"]" />
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+            <MudItem xs="2">
+                <MudTextField Value="context.Id" ReadOnly DisableUnderLine Label="@L[$"Id"]" />
+            </MudItem>
+        }
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+
+            <MudItem xs="6">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="true" HelperText="@L["Field Readonly"]" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+
+            <MudItem xs="4">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="true" HelperText="@L["Field Readonly"]" T="string" For="@(() => context.Kz)" @bind-Value="context.Kz" Label="@L["Kz"]" />
+            </MudItem>
+        }
+        else // Create
+        {            
+            <MudItem xs="6">
+                <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+
+            <MudItem xs="4">
+                <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Kz)" @bind-Value="context.Kz" Label="@L["Kz"]" />
+            </MudItem>
+        }
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.Description)" @bind-Value="context.Description" Label="@L["Description"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayShort)" @bind-Value="context.DisplayShort" Label="@L["DisplayShort (; is separator)"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.Display)" @bind-Value="context.Display" Label="@L["Display"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.ConfirmationText)" @bind-Value="context.ConfirmationText" Label="@L["ConfirmationText"]" />
+        </MudItem>
+
+        <MudItem xs="3" md="3">
+            <MudNumericField Variant="Variant.Outlined" T="int" Min="1" For="@(() => context.Priority)" @bind-Value="context.Priority" Label="@L["Priority"]" />
+        </MudItem>
+
+        <MudItem xs="3" md="3">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.IsDefault)" @bind-Checked="context.IsDefault" Label="@L["Default"]" />
+        </MudItem>
+
+        <MudItem xs="3" md="3">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.CreditCard)" @bind-Checked="context.CreditCard" Label="@L["CreditCard"]" />
+        </MudItem>
+
+        <MudItem xs="3" md="3">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.Deposit)" @bind-Checked="context.Deposit" Label="@L["Deposit"]" />
+        </MudItem>
+
+    </EditFormContent>
+
+</EntityTable>
+
+
+@code {
+    public CultureInfo _de = CultureInfo.GetCultureInfo("de-DE");
+    [Parameter]
+    public int _mandantId { get; set; }
+
+    protected EntityServerTableContext<BookingPolicyDto, int, UpdateBookingPolicyRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+    Context = new(
+        entityName: L["BookingPolicy"],
+        entityNamePlural: L["BookingPolicys"],
+        entityResource: FSHResource.Packages,
+        fields: new()
+            {
+                new(bookingPolicy => bookingPolicy.Kz, L["Kz"], "Kz"),
+                new(bookingPolicy => bookingPolicy.Name, L["Name"], "Name"),
+                new(bookingPolicy => bookingPolicy.IsDefault, L["Default"], "Default"),
+                new(bookingPolicy => bookingPolicy.Priority, L["Priority"], "Priority"),
+                // new(bookingPolicy => bookingPolicy.MandantId, L["MandantId"], "MandantId")
+            },
+        idFunc: bookingPolicy => bookingPolicy.Id,
+        editNotAsModal: false,
+        searchFunc: async filter =>
+        {
+            var bookingPolicyfilter = filter.Adapt<SearchBookingPolicysRequest>();
+            bookingPolicyfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+            _mandantId = bookingPolicyfilter.MandantId;
+            var result = await BookingPolicysClient.SearchAsync(bookingPolicyfilter);
+
+            return result.Adapt<PaginationResponse<BookingPolicyDto>>();
+        },
+        getDefaultsFunc: () => Task.FromResult(new UpdateBookingPolicyRequest()
+        {
+            // MandantId = _mandantId,
+        }),
+        createFunc: async bookingPolicy =>
+        {
+            bookingPolicy.MandantId = _mandantId;
+            await BookingPolicysClient.CreateAsync(bookingPolicy.Adapt<CreateBookingPolicyRequest>());
+        },
+        updateFunc: async (id, bookingPolicy) =>
+        {
+            await BookingPolicysClient.UpdateAsync(id, bookingPolicy.Adapt<UpdateBookingPolicyRequest>());
+        },
+        exportAction: string.Empty);
+}

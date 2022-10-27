@@ -1,0 +1,69 @@
+﻿@using System.Diagnostics
+@using static FSH.BlazorWebAssembly.Client.Pages.Accounts.Taxes
+
+@inject IStringLocalizer<FSH.BlazorWebAssembly.Client.Pages.Accounts.Taxes> L
+
+<EditForm EditContext="editContext" OnValidSubmit="EditItem">
+    <style>
+        .align-right input {
+            text-align: right;
+        }
+    </style>
+    <DataAnnotationsValidator />
+    <MudDialog Style="width:700px;max-height:95%; overflow-y: scroll;">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.Add" Class="mr-3" />
+                @L["Create TaxItem"]
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudGrid>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="p.Start" For="()=>p.Start" MaxDate="p.End" DisableToolbar Label="@L["Valid from"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="p.End" For="()=>p.End" MinDate="p.Start" DisableToolbar Label="@L["Valid thru"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField Class="align-right" For="()=>p.TaxRate" @bind-value="p.TaxRate" Adornment="Adornment.End" AdornmentText="%" Margin="Margin.Dense" Label="@L["TaxRate"]" Variant="Variant.Outlined" />
+                </MudItem>
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Cancel" Variant="Variant.Text" StartIcon="@Icons.Filled.Cancel" Color="Color.Default" Size="Size.Small">cancel</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Success" ButtonType="ButtonType.Submit" Size="Size.Small">Save</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+
+
+
+
+@code {
+
+    [Parameter]
+    public TaxItemDto p { get; set; } = new();
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+    private EditContext? editContext;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(p);
+    }
+
+    private void EditItem()
+    {
+        MudDialog.Close(DialogResult.Ok(p));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+}

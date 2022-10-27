@@ -20,6 +20,7 @@ public abstract class EntityTableContext<TEntity, TId, TRequest>
     /// A function that returns the Id of the entity. This is only needed when using the CRUD functionality.
     /// </summary>
     public Func<TEntity, TId>? IdFunc { get; }
+    public Func<TEntity, int>? IdMandantFunc { get; }
 
     /// <summary>
     /// A function that executes the GetDefaults method on the api (or supplies defaults locally) and returns
@@ -106,6 +107,9 @@ public abstract class EntityTableContext<TEntity, TId, TRequest>
     /// </summary>
     public string ExportAction { get; }
 
+    public bool? EditNotAsModal { get; }
+    public string? UpdateNavigationUrl { get; }
+
     /// <summary>
     /// Use this if you want to run initialization during OnInitialized of the AddEdit form.
     /// </summary>
@@ -130,6 +134,7 @@ public abstract class EntityTableContext<TEntity, TId, TRequest>
     public EntityTableContext(
         List<EntityField<TEntity>> fields,
         Func<TEntity, TId>? idFunc,
+        Func<TEntity, int>? idMandantFunc,
         Func<Task<TRequest>>? getDefaultsFunc,
         Func<TRequest, Task>? createFunc,
         Func<TId, Task<TRequest>>? getDetailsFunc,
@@ -143,6 +148,8 @@ public abstract class EntityTableContext<TEntity, TId, TRequest>
         string? updateAction,
         string? deleteAction,
         string? exportAction,
+        bool? editNotAsModal,
+        string? updateNavigationUrl,
         Func<Task>? editFormInitializedFunc,
         Func<bool>? hasExtraActionsFunc,
         Func<TEntity, bool>? canUpdateEntityFunc,
@@ -152,7 +159,10 @@ public abstract class EntityTableContext<TEntity, TId, TRequest>
         Fields = fields;
         EntityName = entityName;
         EntityNamePlural = entityNamePlural;
+        EditNotAsModal = editNotAsModal;
+        UpdateNavigationUrl = updateNavigationUrl;
         IdFunc = idFunc;
+        IdMandantFunc = idMandantFunc;
         GetDefaultsFunc = getDefaultsFunc;
         CreateFunc = createFunc;
         GetDetailsFunc = getDetailsFunc;
@@ -177,7 +187,7 @@ public abstract class EntityTableContext<TEntity, TId, TRequest>
 
     public IAddEditModal<TRequest> AddEditModal =>
         _addEditModalRef?.Dialog as IAddEditModal<TRequest>
-        ?? throw new InvalidOperationException("AddEditModal is only available when the modal is shown.");
+        ?? throw new InvalidOperationException("AddEditModal is only available when the modal is shown. (EntityTableContext.cs Line 190)");
 
     // Shortcuts
     public EntityClientTableContext<TEntity, TId, TRequest>? ClientContext => this as EntityClientTableContext<TEntity, TId, TRequest>;

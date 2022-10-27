@@ -7,12 +7,21 @@
 
 <EntityTable TEntity="UserDetailsDto" TId="Guid" TRequest="CreateUserRequest" Context="@Context">
     <ExtraActions>
-        <MudMenuItem OnClick="(() => ViewProfile(context.Id))">@L["View Profile"]</MudMenuItem>
+@*        <MudIconButton Icon="@Icons.Material.Filled.Edit" Title="@L["Edit"]" aria-label="@L["Edit"]" @onclick="@(() => InvokeModal(context))"></MudIconButton>
+*@
+        <MudIconButton OnClick="(() => ViewProfile(context.Id))" Icon="@Icons.Material.Filled.Edit">@L["View Profile"]</MudIconButton>
+        @if (_canViewRoles)
+        {
+            <MudIconButton OnClick="(() => ManageRoles(context.Id))" Icon="@Icons.Material.Filled.VerifiedUser">@L["Manage Roles"]</MudIconButton>
+        }
+
+
+@*        <MudMenuItem OnClick="(() => ViewProfile(context.Id))" Icon >@L["View Profile"]</MudMenuItem>
         @if (_canViewRoles)
         {
             <MudMenuItem OnClick="(() => ManageRoles(context.Id))">@L["Manage Roles"]</MudMenuItem>
         }
-    </ExtraActions>
+*@    </ExtraActions>
 
     <EditFormContent>
         <MudItem xs="12" md="6">

@@ -10,8 +10,14 @@
     <ExtraActions>
         @if (_canViewRoleClaims)
         {
-            <MudMenuItem @onclick="@(() => ManagePermissions(context.Id))">@L["Manage Permission"]</MudMenuItem>
+            @*            <MudMenuItem @onclick="@(() => ManagePermissions(context.Id))">@L["Manage Permission"]</MudMenuItem>
+        *@
+            <MudIconButton Icon="@Icons.Filled.Edit" @onclick="@(() => ManagePermissions(context.Id))" Title="@L["Manage Permission"]" aria-label="@L["Manage Permission"]" la>@L["Manage Permission"]</MudIconButton>
+        }else
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.DoNotTouch" Title="@L["No Allowed Actions"]" aria-label="@L["No Allowed Actions"]"></MudIconButton>
         }
+
     </ExtraActions>
 
     <EditFormContent>
@@ -26,7 +32,7 @@
         </MudItem>
         <MudItem xs="12" md="6">
             <MudTextField For="@(() => context.Description)" @bind-Value="context.Description"
-                Label="@L["Description"]" />
+                          Label="@L["Description"]" />
         </MudItem>
     </EditFormContent>
 

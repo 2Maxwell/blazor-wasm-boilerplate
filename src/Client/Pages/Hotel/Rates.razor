@@ -1,0 +1,212 @@
+﻿@page "/accounts/rates"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@using System.Globalization
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Packages)]
+
+@inject IStringLocalizer<Rates> L
+@inject IRatesClient RatesClient
+@inject ISessionStorageService sessionstorage
+@inject IEnumsClient EnumsClient
+@inject IBookingPolicysClient BookingPolicysClient
+@inject ICancellationPolicysClient CancellationPolicysClient
+@inject IPackagesClient PackagesClient
+@inject ICategorysClient CategorysClient
+
+
+<FshTitle Title="@L["Rates"]" Description="@L["Manage Rates."]" />
+
+<EntityTable TEntity="RateDto" TId="int" TRequest="UpdateRateRequest" Context="@Context" @bind-SelectedItem="selectedRate">
+    <EditFormContent>
+
+        <MudHidden T="int" hidden="hidden" For="@(() => context.MandantId )" @bind-Value="context.MandantId" Label="@L["MandantId"]" />
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+            <MudItem xs="1">
+                <MudText Typo="Typo.caption">@selectedRate.Name</MudText>
+            </MudItem>
+
+            <MudItem xs="1">
+                <MudTextField Value="context.Id" ReadOnly DisableUnderLine Label="@L[$"Id"]" />
+            </MudItem>
+        }
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+
+            <MudItem xs="6">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="true" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+
+            <MudItem xs="4">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="true" T="string" For="@(() => context.Kz)" @bind-Value="context.Kz" Label="@L["Kz"]" />
+            </MudItem>
+        }
+        else // Create
+        {            
+            <MudItem xs="6">
+                <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+
+            <MudItem xs="4">
+                <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Kz)" @bind-Value="context.Kz" Label="@L["Kz"]" />
+            </MudItem>
+        }
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.Description)" @bind-Value="context.Description" Label="@L["Description"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayShort)" @bind-Value="context.DisplayShort" Label="@L["DisplayShort (; is separator)"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.Display)" @bind-Value="context.Display" Label="@L["Display"]" />
+        </MudItem>
+
+        <MudItem xs="6">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.BookingPolicyId)" @bind-Value="context.BookingPolicyId" Label="@L["BookingPolicy"]">
+                <MudSelectItem T="int" Value="0">@L["Select BookingPolicy"]</MudSelectItem>
+                @foreach (var item in BookingPolicysList)
+                {
+                    <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="6">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.CancellationPolicyId)" @bind-Value="context.CancellationPolicyId" Label="@L["CancellationPolicy"]">
+                <MudSelectItem T="int" Value="0">@L["Select CancellationPolicy"]</MudSelectItem>
+                @foreach (var item in CancellationPolicysList)
+                {
+                    <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" MultiSelection="true" For="@(() => context.Packages)" @bind-Value="context.Packages"
+                SelectedValues="context.IePackages.ToHashSet<string>()" Label="@L["Packages included"]">
+                @foreach (var item in PackagesKzMultiSelectList)
+                {
+                    <MudSelectItem T="string" Value="@item.Kz">@item.Kz</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" MultiSelection="true" For="@(() => context.Categorys)" @bind-Value="context.Categorys"
+                SelectedValues="context.IeCategorys.ToHashSet<string>()" Label="@L["Categorys included"]">
+                @foreach (var item in CategorysKzMultiSelectList)
+                {
+                    <MudSelectItem T="string" Value="@item.Kz">@item.Kz</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.RuleFlex)" @bind-Checked="context.RuleFlex" Label="@L["RuleFlex"]" />
+        </MudItem>
+
+
+        <MudItem xs="6">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.RateTypeEnumId)" @bind-Value="context.RateTypeEnumId" Label="@L["RateTypeEnum"]">
+                <MudSelectItem T="int" Value="0">@L["Select RateType"]</MudSelectItem>
+                @foreach (var item in RateTypeEnumList)
+                {
+                    <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="6">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.RateScopeEnumId)" @bind-Value="context.RateScopeEnumId" Label="@L["RateScopeEnum"]">
+                <MudSelectItem T="int" Value="0">@L["Select RateScope"]</MudSelectItem>
+                @foreach (var item in RateScopeEnumList)
+                {
+                    <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+    </EditFormContent>
+
+</EntityTable>
+
+
+@code {
+    public CultureInfo _de = CultureInfo.GetCultureInfo("de-DE");
+    [Parameter]
+    public int _mandantId { get; set; }
+    public List<BookingPolicySelectDto> BookingPolicysList { get; set; } = new List<BookingPolicySelectDto>();
+    public List<CancellationPolicySelectDto> CancellationPolicysList { get; set; } = new List<CancellationPolicySelectDto>();
+    public List<PackageKzMultiSelectDto> PackagesKzMultiSelectList { get; set; } = new List<PackageKzMultiSelectDto>();
+    public List<CategoryKzMultiSelectDto> CategorysKzMultiSelectList { get; set; } = new List<CategoryKzMultiSelectDto>();
+    public List<RateTypeEnumDto> RateTypeEnumList { get; set; } = new List<RateTypeEnumDto>();
+    public List<RateScopeEnumDto> RateScopeEnumList { get; set; } = new List<RateScopeEnumDto>();
+
+    public RateDto selectedRate { get; set; } = new RateDto { Name = "Default Name" };
+    // public RateDto selectedRate1 { get; set; }
+    // public RateDto? elementBeforeEdit { get; set; }
+    //private IEnumerable<string>? categorys { get; set; } // = new HashSet<string>() { selectedRate.Categorys.ToString()}; // Context.AddEditModal.RequestModel.Categorys.ToString();
+    //private IEnumerable<string>? categorys1 { get; set; } = new[] { "first", "second" };
+
+    protected EntityServerTableContext<RateDto, int, UpdateRateRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+    Context = new(
+        entityName: L["Rate"],
+        entityNamePlural: L["Rates"],
+        entityResource: FSHResource.Packages,
+        fields: new()
+            {
+                new(rate => rate.Kz, L["Kz"], "Kz"),
+                new(rate => rate.Name, L["Name"], "Name"),
+                new(rate => rate.Packages, L["Packages"], "Packages"),
+                new(rate => rate.Categorys, L["Categorys"], "Categorys"),
+                // new(rate => rate.MandantId, L["MandantId"], "MandantId")
+            },
+        idFunc: Rate => Rate.Id,
+        editNotAsModal: false,
+        searchFunc: async filter =>
+        {
+            var Ratefilter = filter.Adapt<SearchRatesRequest>();
+            Ratefilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+            _mandantId = Ratefilter.MandantId;
+            var result = await RatesClient.SearchAsync(Ratefilter);
+
+            return result.Adapt<PaginationResponse<RateDto>>();
+        },
+        getDefaultsFunc: () => Task.FromResult(new UpdateRateRequest()
+        {
+            // categorys = new HashSet<string>() { Context.AddEditModal.RequestModel.Categorys.ToString() }
+            // MandantId = _mandantId,
+        }),
+        createFunc: async Rate =>
+        {
+            Rate.MandantId = _mandantId;
+            await RatesClient.CreateAsync(Rate.Adapt<CreateRateRequest>());
+        },
+        updateFunc: async (id, Rate) =>
+        {
+            await RatesClient.UpdateAsync(id, Rate.Adapt<UpdateRateRequest>());
+        },
+        exportAction: string.Empty);
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (_mandantId == 0)
+        {
+            _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId")); 
+        } 
+        BookingPolicysList = (await BookingPolicysClient.GetBookingPolicySelectAsync(_mandantId)).ToList();
+        CancellationPolicysList = (await CancellationPolicysClient.GetCancellationPolicySelectAsync(_mandantId)).ToList();
+        PackagesKzMultiSelectList = (await PackagesClient.GetPackageKzMultiSelectAsync(_mandantId)).ToList();
+        CategorysKzMultiSelectList = (await CategorysClient.GetCategoryKzMultiSelectAsync(_mandantId)).ToList();
+        RateTypeEnumList = (await EnumsClient.GetRateTypeEnumRequestAsync()).ToList();
+        RateScopeEnumList = (await EnumsClient.GetRateScopeEnumRequestAsync()).ToList();
+    }
+}

@@ -25,6 +25,9 @@ public static class ClaimsPrincipalExtensions
     public static string? GetUserId(this ClaimsPrincipal principal)
        => principal.FindFirstValue(ClaimTypes.NameIdentifier);
 
+    public static string? GetMandantId(this ClaimsPrincipal principal)
+        => principal.FindFirstValue(FSHClaims.MandantId);
+
     public static string? GetImageUrl(this ClaimsPrincipal principal)
        => principal.FindFirstValue(FSHClaims.ImageUrl);
 

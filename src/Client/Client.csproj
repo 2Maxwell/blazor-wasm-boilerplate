@@ -9,6 +9,16 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Remove="Components\EntityTableExtended\EntityTableExtended.razor.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Remove="Components\EntityTableExtended\EntityTableExtended.razor" />
+      <Content Remove="Components\Periods\AddPeriodModal.razor" />
+      <Content Remove="Components\Periods\EditPeriodModal.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Mapster" Version="7.3.0" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.3" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.3" PrivateAssets="all" />
@@ -31,5 +41,10 @@
              There's something too much trimmed from Msal in the publish step. Then, after logging in,
              the user gets redirected to authentication/login-failed with no error message. -->
         <TrimmerRootAssembly Include="Microsoft.Authentication.WebAssembly.Msal" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Components\EntityTableExtended\" />
+      <Folder Include="Components\Periods\" />
     </ItemGroup>
 </Project>
