@@ -1,0 +1,403 @@
+﻿@using Blazored.SessionStorage
+
+@inject ISessionStorageService sessionstorage
+@inject ICompanysClient CompanysClient
+@inject IPersonsClient PersonsClient
+@inject ILanguagesClient LanguagesClient
+@inject ICountriesClient CountriesClient
+@inject ISalutationsClient SalutationsClient
+@inject IStringLocalizer<BookerCompanyShopMandant> L
+
+<MudGrid>
+    <MudItem xs="12">
+        @*        <MudStack Row="true">
+        <FSH.BlazorWebAssembly.Client.Components.Company.CompanyAutoComplete MaxItems="null" Value="companyId" ValueChanged="((e) => CompanyIdChanged(e))" Label="@L["Company Name, Zip, City"]" />
+        <MudStack Row="true">
+        <MudButtonGroup Class="mt-4 mb-2" Variant="Variant.Outlined" OverrideStyles="true">
+        <MudIconButton OnClick="AddCompany" Icon="@Icons.Filled.Add" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
+        <MudIconButton OnClick="LoadCompany" Icon="@Icons.Material.Filled.Autorenew" Size="Size.Small" Color="Color.Success" Title="@L["Reload Company"]" aria-label="Reload Company"></MudIconButton>
+        </MudButtonGroup>
+        </MudStack>
+        </MudStack>
+
+        <MudStack Row="true">
+        <FSH.BlazorWebAssembly.Client.Components.Company.CompanyAutoComplete MaxItems="null" Value="companyId" ValueChanged="((e) => CompanyIdChanged(e))" Label="@L["Company Name, Zip, City"]" />
+        <MudStack Row="true">
+        <MudIconButton OnClick="AddCompany" Class="mt-4 mb-2" Icon="@Icons.Filled.Add" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
+        <MudIconButton OnClick="LoadCompany" Class="mt-4 mb-2" Icon="@Icons.Material.Filled.Autorenew" Color="Color.Success" Title="@L["Reload Company"]" aria-label="Reload Company"></MudIconButton>
+        </MudStack>
+        </MudStack>
+
+        <MudStack Row="true">
+        <FSH.BlazorWebAssembly.Client.Components.Company.CompanyAutoComplete MaxItems="null" Value="companyId" ValueChanged="((e) => CompanyIdChanged(e))" Label="@L["Company Name, Zip, City"]" />
+        <MudStack Row="true">
+        <MudIconButton OnClick="AddCompany" Class="mt-4 mb-2" Variant="Variant.Outlined" Icon="@Icons.Filled.Add" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
+        <MudIconButton OnClick="LoadCompany" Class="mt-4 mb-2" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Autorenew" Color="Color.Success" Title="@L["Reload Company"]" aria-label="Reload Company"></MudIconButton>
+        </MudStack>
+        </MudStack>
+        *@
+        <MudStack Row="true">
+            <FSH.BlazorWebAssembly.Client.Components.Company.CompanyAutoComplete MaxItems="null" Value="companyId" ValueChanged="((e) => CompanyIdChanged(e))" Label="@L["Company Name, Zip, City"]" />
+            <MudStack Row="true">
+                <MudIconButton OnClick="AddCompany" Class="mt-6 mb-5" Variant="Variant.Outlined" Icon="@Icons.Filled.Add" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
+                @*                <MudIconButton OnClick="LoadCompany" Class="mt-6 mb-5" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Autorenew" Color="Color.Success" Title="@L["Reload Company"]" aria-label="Reload Company"></MudIconButton>
+                *@
+                @*<MudIconButton OnClick="AddCompany" Class="mt-6 mb-5" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.PersonAdd" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>*@
+                @if (companyId != default)
+                {
+                    <MudToggleIconButton @bind-Toggled="contactOn" Class="mt-6 mb-5" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.PersonAdd" Color="Color.Success" Title="@L["Add Contact"]" ToggledIcon="@Icons.Material.Filled.PersonOff" ToggledColor="@Color.Error" ToggledTitle="@L["Remove Contact"]"></MudToggleIconButton>
+                }
+
+            </MudStack>
+        </MudStack>
+
+        @*        <MudStack Row="true">
+        <FSH.BlazorWebAssembly.Client.Components.Company.CompanyAutoComplete MaxItems="null" Value="companyId" ValueChanged="((e) => CompanyIdChanged(e))" Label="@L["Company Name, Zip, City"]" />
+        <MudStack Row="true">
+        <MudIconButton OnClick="AddCompany" Icon="@Icons.Filled.Add" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
+        <MudIconButton OnClick="LoadCompany" Icon="@Icons.Material.Filled.Autorenew" Color="Color.Success" Title="@L["Reload Company"]" aria-label="Reload Company"></MudIconButton>
+        </MudStack>
+        </MudStack>
+
+
+
+        <FSH.BlazorWebAssembly.Client.Components.Company.CompanyAutoComplete MaxItems="null" Value="companyId" ValueChanged="((e) => CompanyIdChanged(e))" Label="@L["Company Name, Zip, City"]" />
+        <MudIconButton OnClick="AddCompany" Icon="@Icons.Filled.Add" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
+        <MudIconButton OnClick="LoadCompany" Icon="@Icons.Material.Filled.Autorenew" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success" Title="@L["Reload Company"]" aria-label="Reload Company"></MudIconButton>
+        *@
+    </MudItem>
+
+    @if (contactOn && companyId != default)
+    {
+        <MudItem xs="12">
+            <MudStack Row="true">
+                <FSH.BlazorWebAssembly.Client.Components.Person.ContactAutoComplete MaxItems="null" _companyId="@companyId" Value="contactId" ValueChanged="((e) => ContactIdChanged(e))" Label="@L["Contact Name"]" />
+                <MudIconButton OnClick="OpenAddContact" Class="mt-6 mb-5" Icon="@Icons.Filled.Add" Variant="Variant.Outlined" Color="Color.Success" Title="@L["Add new Contact"]" aria-label="Add new Contact"></MudIconButton>
+
+                @if (contactId != default)
+                {
+                    <MudToggleIconButton @bind-Toggled="contactEditOn" Class="mt-6 mb-5" Variant="Variant.Outlined" Icon="@Icons.Material.Filled.Edit" Color="Color.Info" Title="@L["Show Contactdetails"]" ToggledIcon="@Icons.Material.Filled.EditOff" ToggledColor="@Color.Error" ToggledTitle="@L["Close Contactdetails"]"></MudToggleIconButton>
+                }
+            </MudStack>
+        </MudItem>
+    }
+    @*
+    @if (companyId != default)
+    {
+    <MudItem xs="12">
+    <FSH.BlazorWebAssembly.Client.Components.Person.ContactAutoComplete MaxItems="null" _companyId="@companyId" Value="contactId" ValueChanged="((e) => ContactIdChanged(e))" Label="@L["Contact Name"]" />
+    <MudIconButton OnClick="OpenAddContact" Icon="@Icons.Filled.Add" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
+    @if (contactId != 0)
+    {
+    <MudIconButton OnClick="EditContact" Icon="@Icons.Filled.Edit" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" Title="@L["Edit Contact"]" aria-label="Edit Person"></MudIconButton>
+    }
+    </MudItem>
+    }
+
+    *@
+    @if ((contactId != default && contactEditOn) || (contactCaller == "new"))
+    {
+        <MudItem xs="12">
+            <MudPaper Style="border-style: double;" Class="border-double mud-border-warning border-4 pl-3 pr-3">
+                <MudGrid>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updatePersonRequest.Name" For="()=>updatePersonRequest.Name" Label="@L["Name"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updatePersonRequest.FirstName" For="()=>updatePersonRequest.FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="4">
+                        <MudDatePicker @bind-Date="updatePersonRequest.DateOfBirth" For="()=>updatePersonRequest.DateOfBirth" MaxDate="DateTime.Today" DisableToolbar Label="@L["Date of Birth"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="4">
+                        <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updatePersonRequest.LanguageId)" @bind-Value="@updatePersonRequest.LanguageId" Label="@L["Language"]">
+                            <MudSelectItem T="int" Value="0">@L["Select Language"]</MudSelectItem>
+                            @foreach (var item in languagesList)
+                            {
+                                <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="4">
+                        <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updatePersonRequest.SalutationId)" @bind-Value="updatePersonRequest.SalutationId" Label="@L["Salutation"]">
+                            <MudSelectItem T="int" Value="0">@L["Select Salutation"]</MudSelectItem>
+                            @foreach (var item in salutationsList)
+                            {
+                                <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudDivider></MudDivider>
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updatePersonRequest.Telephone" For="()=>updatePersonRequest.Telephone" Label="@L["Telephone"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updatePersonRequest.Telefax" For="()=>updatePersonRequest.Telefax" Label="@L["Telefax"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updatePersonRequest.Mobil" For="()=>updatePersonRequest.Mobil" Label="@L["Mobil"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updatePersonRequest.Email" For="()=>updatePersonRequest.Email" Label="@L["Email"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudButton OnClick="AddEditContact" DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Save" Color="Color.Success">
+                            @L["Save Contact"]
+                        </MudButton>
+
+                    </MudItem>
+
+                </MudGrid>
+
+            </MudPaper>
+        </MudItem>
+
+    }
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="updateCompanyRequest.Name1" For="()=>updateCompanyRequest.Name1" Label="@L["Name1"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="updateCompanyRequest.Name2" For="()=>updateCompanyRequest.Name2" Label="@L["Name2"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="4">
+        <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updateCompanyRequest.LanguageId)" @bind-Value="@updateCompanyRequest.LanguageId" Label="@L["Language"]">
+            @foreach (var item in languagesList)
+            {
+                <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudDivider></MudDivider>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="updateCompanyRequest.Address1" For="()=>updateCompanyRequest.Address1" Label="@L["Address1"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="updateCompanyRequest.Address2" For="()=>updateCompanyRequest.Address2" Label="@L["Address2"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="3">
+        <MudTextField @bind-Value="updateCompanyRequest.Zip" For="()=>updateCompanyRequest.Zip" Label="@L["ZipCode"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="5">
+        <MudTextField @bind-Value="updateCompanyRequest.City" For="()=>updateCompanyRequest.City" Label="@L["City"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="4">
+        <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updateCompanyRequest.CountryId)" @bind-Value="@updateCompanyRequest.CountryId" Label="@L["Country"]">
+            @foreach (var item in countriesList)
+            {
+                <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudDivider></MudDivider>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="updateCompanyRequest.Telephone" For="()=>updateCompanyRequest.Telephone" Label="@L["Telephone"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="updateCompanyRequest.Telefax" For="()=>updateCompanyRequest.Telefax" Label="@L["Telefax"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="updateCompanyRequest.Mobil" For="()=>updateCompanyRequest.Mobil" Label="@L["Mobil"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="updateCompanyRequest.Email" For="()=>updateCompanyRequest.Email" Label="@L["Email"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudButton OnClick="SaveCompany" DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Save" Color="Color.Success">
+            @L["Save Company"] @companyId | @contactId
+        </MudButton>
+    </MudItem>
+
+
+</MudGrid>
+
+
+@code {
+    [Parameter]
+    public int companyId { get; set; }
+    [Parameter]
+    public int contactId { get; set; }
+    [Parameter]
+    public int _mandantId { get; set; }
+    [Parameter]
+    public EventCallback<int> companyIdChanged { get; set; }
+    [Parameter]
+    public EventCallback<int> contactIdChanged { get; set; }
+    public string contactCaller { get; set; } = string.Empty;
+
+    public bool contactOn { get; set; }
+    public bool contactEditOn { get; set; }
+
+
+    public UpdateCompanyRequest updateCompanyRequest { get; set; } = new();
+    public UpdatePersonRequest updatePersonRequest { get; set; } = new();
+
+    public List<CountrySelectDto> countriesList { get; set; } = new();
+    public List<LanguageSelectDto> languagesList { get; set; } = new();
+    public List<SalutationSelectDto> salutationsList { get; set; } = new();
+
+    protected async override Task OnInitializedAsync()
+    {
+        languagesList = (await LanguagesClient.GetLanguageSelectAsync()).ToList();
+        countriesList = (await CountriesClient.GetCountrySelectAsync()).ToList();
+        salutationsList = (await SalutationsClient.GetSalutationSelectAsync(_mandantId, 0)).ToList();
+
+        LoadCompany();
+        if (contactId != default)
+        {
+            contactOn = true;
+            LoadContact();
+        }
+
+    }
+
+    private void CompanyIdChanged(int value)
+    {
+        companyIdChanged.InvokeAsync(value);
+        companyId = value;
+        LoadCompany();
+    }
+
+    private void ContactIdChanged(int value)
+    {
+        contactIdChanged.InvokeAsync(value);
+        contactId = value;
+        LoadContact();
+    }
+
+    private async void LoadCompany()
+    {
+        if (_mandantId == 0) _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+
+        if (companyId != 0)
+        {
+            CompanyDto companyDto = await CompanysClient.GetAsync(companyId);
+            updateCompanyRequest = (companyDto.Adapt<UpdateCompanyRequest>());
+        }
+        else
+        {
+            updateCompanyRequest = new UpdateCompanyRequest();
+        }
+
+        StateHasChanged();
+    }
+
+    private async void LoadContact()
+    {
+        if (contactId != 0)
+        {
+            PersonDto personDto = await PersonsClient.GetAsync(contactId);
+            updatePersonRequest = (personDto.Adapt<UpdatePersonRequest>());
+            contactCaller = string.Empty;
+        }
+        else
+        {
+            updatePersonRequest = new UpdatePersonRequest();
+        }
+    }
+
+    private async void AddCompany()
+    {
+        companyId = 0;
+        updateCompanyRequest = new UpdateCompanyRequest();
+        StateHasChanged();
+    }
+
+    private async void SaveCompany()
+    {
+        if (updateCompanyRequest.Id == 0) // CREATE
+        {
+            updateCompanyRequest.MandantId = _mandantId;
+            int id = await CompanysClient.CreateAsync(updateCompanyRequest.Adapt<CreateCompanyRequest>());
+            companyId = id;
+            CompanyIdChanged(id);
+        }
+        else
+        {
+            int id = await CompanysClient.UpdateAsync(updateCompanyRequest.Id, updateCompanyRequest);
+            companyId = id;
+        }
+    }
+
+    //private async void EditContact()
+    //{
+
+    //}
+
+    private async void OpenAddContact()
+    {
+        if (contactCaller == string.Empty)
+        {
+            contactCaller = "new";
+            contactId = 0;
+            ContactIdChanged(0);
+            updatePersonRequest = new();
+        }
+        else
+        {
+            contactCaller = string.Empty;
+        }
+    }
+
+    private async void AddEditContact()
+    {
+        if (updatePersonRequest.Id == 0) // CREATE
+        {
+            updatePersonRequest.MandantId = _mandantId;
+            updatePersonRequest.Source = "CompanyContact,";
+            updatePersonRequest.CompanyId = companyId;
+            int id = await PersonsClient.CreateAsync(updatePersonRequest.Adapt<CreatePersonRequest>());
+            contactId = id;
+        }
+        else
+        {
+            if (!updatePersonRequest.Source!.Contains("CompanyContact"))
+            {
+                if (updatePersonRequest.Source.Length > 0)
+                {
+                    string s = updatePersonRequest.Source.Trim();
+                    s += " CompanyContact,";
+                    updatePersonRequest.Source = s;
+                }
+                else
+                {
+                    updatePersonRequest.Source = "CompanyContact,";
+                }
+            }
+            int id = await PersonsClient.UpdateAsync(updatePersonRequest.Id, updatePersonRequest);
+            contactId = id;
+            contactCaller = string.Empty;
+        }
+    }
+
+}

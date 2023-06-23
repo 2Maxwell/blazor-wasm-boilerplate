@@ -1,0 +1,51 @@
+﻿@inject IStringLocalizer<LnxDialog> L
+
+<MudDialog >
+    <TitleContent>
+
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudImage Src="logo-single.png" Width="50" Height="50" Alt="Lunnax ATLAS" Elevation="25" Class="rounded-lg" />
+
+            <MudText Typo="Typo.h6">
+@*                <MudIcon Icon="@Icons.Material.Filled.Delete" Class="mr-3 mb-n1" />
+*@                @L[HeaderText]
+            </MudText>
+            <MudSpacer></MudSpacer>
+
+
+        </MudStack>
+
+@*        <img src="logo-single.png" Style="height:250px" />
+*@
+    </TitleContent>
+    <DialogContent>
+        <MudText>@L[ContentText]</MudText>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton StartIcon="@Icons.Filled.Cancel" OnClick="Cancel">@L[CancelText]</MudButton>
+        <MudButton StartIcon="@Icons.Filled.Delete" Color="Color.Error" Variant="Variant.Filled" OnClick="Submit">@L[ConfirmText]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string? ContentText { get; set; }
+
+    [Parameter]
+    public string? HeaderText { get; set; }
+    [Parameter]
+    public string? CancelText { get; set; }
+
+    [Parameter]
+    public string? ConfirmText { get; set; }
+
+    void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+    void Cancel() => MudDialog.Cancel();
+}

@@ -1,0 +1,277 @@
+﻿@using System.Text.Json;
+@inject IStringLocalizer<CatRatesSelectItem> L
+@inject IPackagesClient PackagesClient
+@inject IRatesClient RatesClient
+
+
+
+<MudItem xs="12">
+    <MudCard>
+        <MudCardContent>
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6">@categoryShopMandantDto.Name @L["from"] @categoryShopMandantDto.RatesList.Where(x => x.RateTotal > 0).OrderBy(x => x.RateTotal).Select(x => x.RateTotal).FirstOrDefault().ToString("C")</MudText>
+
+                </MudItem>
+                <MudItem xs="5">
+                    <MudImage ObjectFit="ObjectFit.Fill" Height="250" Width="600" Src="@(string.IsNullOrEmpty(@categoryShopMandantDto.ImagePath) ? string.Empty : (Config[ConfigNames.ApiBaseUrl] + @categoryShopMandantDto.ImagePath))" Alt="@L["RoomView"]" Class="rounded-lg" />
+                </MudItem>
+                <MudItem xs="7">
+                    <MudGrid>
+
+                        <MudItem xs="6">
+                            <MudText>@categoryShopMandantDto.DisplayShort</MudText>
+                            @{
+                                string[] highlightArray = @categoryShopMandantDto.DisplayHighLight.Split(';');
+                                foreach (var item in highlightArray)
+                                {
+                                    if (item != string.Empty)
+                                    {
+                                        <MudText Typo="Typo.body2">- @item.Trim()</MudText>
+                                    }
+                                }
+                            }
+                        </MudItem>
+
+                        <MudItem xs="6">
+                            <MudChip Icon="@Icons.Material.Filled.Bed" IconColor="Color.Success">@L["Beds"]: @categoryShopMandantDto.NumberOfBeds</MudChip>
+                            @if (categoryShopMandantDto.NumberOfExtraBeds == 0)
+                            {
+                                <MudChip Icon="@Icons.Material.Filled.Bed" IconColor="Color.Error">@L["Extrabed"]: @categoryShopMandantDto.NumberOfExtraBeds</MudChip>
+                            }
+                            else
+                            {
+                                <MudChip Icon="@Icons.Material.Filled.Bed" IconColor="Color.Warning">@L["Extrabed"]: @categoryShopMandantDto.NumberOfExtraBeds</MudChip>
+
+                            }
+                            @*<MudText Typo="Typo.body1"> @categoryShopMandantDto.NumberOfExtraBeds</MudText>*@
+                        </MudItem>
+
+                    </MudGrid>
+
+                </MudItem>
+                <MudItem xs="12">
+                    @foreach (RateShopMandantDto rateShopMandantDto in categoryShopMandantDto.RatesList)
+                    {
+                        <MudPaper Class="pa-1 mb-3" Elevation="10">
+                            <MudGrid Class="pa-1 ma-1">
+                                <MudItem xs="4">
+
+                                    <MudText Typo="Typo.h6">@rateShopMandantDto.Name</MudText>
+                                    <MudText Typo="Typo.body1">@rateShopMandantDto.DisplayShort</MudText>
+                                    @{
+                                        string[] highlightArray = @rateShopMandantDto.DisplayHighLight.Split(';');
+                                        foreach (var item in highlightArray)
+                                        {
+                                            <MudText Typo="Typo.body2">- @item.Trim()</MudText>
+                                        }
+                                    }
+                                    @{
+                                        decimal result = rateShopMandantDto.RateTotal / categoryShopMandantDto.PriceCatDtos.Count();
+                                    }
+                                    <MudText Typo="Typo.h4">@L["Rate Total"]: @rateShopMandantDto.RateTotal.ToString("N2")</MudText>
+                                    <MudText Style="color:dimgrey" Typo="Typo.h6">@L["Rate Daily"]: @result.ToString("C") </MudText>
+
+                                    <MudGrid>
+                                        <MudItem xs="4">
+                                            <MudNumericField T="int?" @bind-Value="@rateShopMandantDto.Amount" Label="@L["Rooms"]" Variant="Variant.Outlined" />
+                                        </MudItem>
+                                    </MudGrid>
+
+                                </MudItem>
+
+                                <MudItem xs="8">
+
+                                    <MudCarousel Class="mud-width-full" Style="height:300px;" ShowArrows="false" ShowBullets="true" AutoCycle="false" TData="object">
+                                        <MudCarouselItem>
+                                            <MudGrid>
+                                                <MudItem xs="4">
+                                                    <MudText Typo="Typo.body1">@L["BookingPolicy"]</MudText>
+                                                    <MudText Typo="Typo.body1">@rateShopMandantDto.BookingPolicyDto.Name</MudText>
+                                                    @{
+                                                        string[] highlightBookingPolicyArray = @rateShopMandantDto.BookingPolicyDto.DisplayHighLight.Split(';');
+                                                        foreach (var item in highlightBookingPolicyArray)
+                                                        {
+                                                            if (item != string.Empty)
+                                                            {
+                                                                <MudItem>
+                                                                    <MudText Typo="Typo.body2"><MudIcon Class="pt-2" Icon="@Icons.Filled.ArrowRight" Size="Size.Small" /> @item.Trim()</MudText>
+                                                                </MudItem>
+                                                            }
+                                                        }
+                                                    }
+                                                </MudItem>
+
+                                                <MudItem xs="4">
+                                                    <MudText Typo="Typo.body1">@L["CancellationPolicy"]</MudText>
+                                                    <MudText Typo="Typo.body1">@rateShopMandantDto.CancellationPolicyDto.Name</MudText>
+                                                    @{
+                                                        string[] highlightCancellationPolicyArray = @rateShopMandantDto.CancellationPolicyDto.DisplayHighLight.Split(';');
+                                                        foreach (var item in highlightCancellationPolicyArray)
+                                                        {
+                                                            if (item != string.Empty)
+                                                            {
+                                                                <MudText Typo="Typo.body2"><MudIcon Class="pt-2" Icon="@Icons.Filled.ArrowRight" Size="Size.Small" /> @item.Trim()</MudText>
+                                                            }
+                                                        }
+                                                    }
+                                                </MudItem>
+
+                                                <MudItem xs="4">
+                                                    <MudText Typo="Typo.body1">@L["Packages included"]</MudText>
+                                                    @{
+                                                        string[] packagesIncludedArray = @rateShopMandantDto.PackagesValidDisplay.Split(';');
+                                                        foreach (var item in packagesIncludedArray)
+                                                        {
+                                                            if (item != string.Empty)
+                                                            {
+                                                                <MudText Typo="Typo.body2"><MudIcon Class="pt-2" Icon="@Icons.Filled.ArrowRight" Size="Size.Small" /> @item.Trim()</MudText>
+                                                            }
+                                                        }
+                                                    }
+                                                </MudItem>
+                                            </MudGrid>
+                                        </MudCarouselItem>
+                                        <MudCarouselItem>
+                                            <MudGrid>
+                                                <MudItem xs="8">
+                                                    <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Style="height:250px">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>@L["Date"]</th>
+                                                                <th>@L["Description"]</th>
+                                                                <th style="text-align:right">@L["Amount"]</th>
+                                                                <th style="text-align:right">@L["Price"]</th>
+                                                                <th style="text-align:right">@L["Total"]</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @{
+                                                                decimal total = 0;
+                                                            }
+
+                                                            @foreach (BookingLineSummary bl in rateShopMandantDto.BookingLineSummaries.OrderBy(x => x.Date))
+                                                            {
+                                                                <tr>
+                                                                    <td>
+                                                                        @bl.Date.ToString("dd.MM.yyyy")
+                                                                    </td>
+                                                                    <td>
+                                                                        @bl.Description
+                                                                        @bl.TaxLine
+                                                                    </td>
+                                                                    <td style="text-align:right">
+                                                                        @Convert.ToDecimal(bl.Amount).ToString("N2")
+                                                                    </td>
+                                                                    <td style="text-align:right">
+                                                                        @bl.Price.ToString("N2")
+                                                                    </td>
+                                                                    <td style="text-align:right">
+                                                                        @bl.Total.ToString("N2")
+                                                                    </td>
+                                                                </tr>
+                                                                total += @bl.Total;
+                                                            }
+
+                                                            <tr>
+                                                                <td>
+                                                                </td>
+                                                                <td>
+                                                                    @L["Total"]
+                                                                </td>
+                                                                <td>
+                                                                </td>
+                                                                <td>
+                                                                </td>
+                                                                <td style="text-align:right">
+                                                                    @total.ToString("N2")
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </MudSimpleTable>
+                                                </MudItem>
+                                                <MudItem xs="4">
+                                                    <MudGrid>
+                                                        <MudItem xs="12">
+                                                            <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" MultiSelection="true" @bind-Value="rateShopMandantDto.Packages"
+                                                                   SelectedValues="rateShopMandantDto.Packages.Split(',', StringSplitOptions.TrimEntries).AsEnumerable().ToHashSet<string>()" Label="@L["Packages included"]">
+                                                                @foreach (var item in packagesKzMultiSelectList)
+                                                                {
+                                                                    <MudSelectItem T="string" Value="@item.Kz">@item.Kz</MudSelectItem>
+                                                                }
+                                                            </MudSelect>
+                                                        </MudItem>
+                                                        <MudItem xs="12">
+                                                            <MudButton OnClick="(() => ReCalculate_RateShopMandantDto(rateShopMandantDto, categoryShopMandantDto))" Variant="Variant.Filled" FullWidth="true" EndIcon="@Icons.Material.Filled.Autorenew" Color="Color.Primary">@L["ReCalculate Packages"]</MudButton>
+                                                        </MudItem>
+                                                    </MudGrid>
+                                                </MudItem>
+
+                                            </MudGrid>
+
+                                        </MudCarouselItem>
+
+                                    </MudCarousel>
+
+                                </MudItem>
+
+                            </MudGrid>
+
+                        </MudPaper>
+
+                    }
+
+                </MudItem>
+
+            </MudGrid>
+
+        </MudCardContent>
+    </MudCard>
+</MudItem>
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter]
+    public CategoryShopMandantDto categoryShopMandantDto { get; set; }
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    public List<PackageKzMultiSelectDto> packagesKzMultiSelectList { get; set; } = new List<PackageKzMultiSelectDto>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        packagesKzMultiSelectList = (await PackagesClient.GetPackageKzMultiSelectAsync(reservationDto.MandantId, PackageTargetEnum.HotelReservation)).ToList();
+
+    }
+
+    public async Task ReCalculate_RateShopMandantDto(RateShopMandantDto rsmDto, CategoryShopMandantDto csmDto)
+    {
+        GetRateShopMandantRecalculateRequest rsmrecalc = new();
+        rsmrecalc.MandantId = reservationDto.MandantId;
+        rsmrecalc.Arrival = Convert.ToDateTime(reservationDto.Arrival);
+        rsmrecalc.Departure = Convert.ToDateTime(reservationDto.Departure);
+        rsmrecalc.PriceCatDtos = csmDto.PriceCatDtos!;
+        Pax pax = new();
+        pax = JsonSerializer.Deserialize<Pax>(reservationDto.PaxString);
+        rsmrecalc.Pax = pax;
+        rsmrecalc.RoomAmount = 1;
+        rsmrecalc.RateShopMandantDto = rsmDto;
+
+        RateShopMandantDto rsmDto_newCalculated = new();
+
+        rsmDto_newCalculated = await RatesClient.GetRateShopMandantRecalculateRequestAsync(rsmrecalc);
+        RateShopMandantDto rsmDto_old = csmDto.RatesList.Where(x => x == rsmDto).First();
+        rsmDto_old.BookingLinesList = rsmDto_newCalculated.BookingLinesList;
+        rsmDto_old.PackagesValidDisplay = rsmDto_newCalculated.PackagesValidDisplay;
+        rsmDto_old.RateTotal = rsmDto_newCalculated.RateTotal;
+
+        rsmDto_old.BookingLineSummaries = rsmDto_newCalculated.BookingLineSummaries;
+
+        // _loaded = true;
+        this.StateHasChanged();
+        //return rsmDto;
+    }
+
+
+}

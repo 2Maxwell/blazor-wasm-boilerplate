@@ -1,0 +1,175 @@
+﻿@using Blazored.SessionStorage;
+
+@inject ISessionStorageService sessionstorage
+@inject IStringLocalizer<VCatVertical> L
+@inject IVCatClient VCatsClient
+@inject ICategorysClient CategoryClient
+@inject IMandantsClient MandantClient
+
+@if (_mandantId > 0 && vCatDtos != null && vCatDtos!.Count > 0 && categorySelectDtos != null)
+{
+    <MudCard Style="max-height:600px">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Category Availability vertical"]</MudButton>
+            </CardHeaderContent>
+            <CardHeaderActions>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+
+            <MudStack Spacing="4" AlignItems="AlignItems.Center" Row="true">
+                <MudIconButton OnClick="() => LoadNextOrPrevious(30)" Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="Color.Default" />
+                <MudIconButton OnClick="() => LoadNextOrPrevious(-30)" Icon="@Icons.Material.Filled.KeyboardDoubleArrowUp" Color="Color.Default" />
+                <MudDatePicker Class="" Editable="true" Variant="Variant.Outlined" Placeholder="Start Date" @bind-Date="@startDate" MinDate="@hotelDate" Label="@L["Start Date"]" />
+                <MudIconButton OnClick="() => LoadNextOrPrevious(0)" Icon="@Icons.Material.Filled.Search" Color="Color.Default" />
+
+                <MudSpacer></MudSpacer>
+                <MudIconButton OnClick="CalculateVCat" Icon="@Icons.Material.Filled.Autorenew" Color="Color.Default" />
+
+            </MudStack>
+
+            <MudSimpleTable Style="height:400px" FixedHeader="true" Striped="true" Bordered="true" Hover="true">
+                <thead>
+                    <tr>
+                        <th>@L["Event"]</th>
+                        <th></th>
+                        <th>@L["Date"]</th>
+                        <th>@L["Day"]</th>
+                        <th>@L["Total"]</th>
+                        @foreach (var item in categorySelectDtos!)
+                        {
+                            <th>@item.Kz</th>
+                        }
+                        <th><MudIcon Icon="@Icons.Material.Filled.Login" Title="@L["Arrival"]" /></th>
+                        <th><MudIcon Icon="@Icons.Material.Filled.ControlPoint" Title="@L["Stay"]" /></th>
+                        <th><MudIcon Icon="@Icons.Material.Filled.Logout" Title="@L["Departure"]" /></th>
+                        <th><MudIcon Icon="@Icons.Material.Filled.Block" Title="@L["Blocked"]" /></th>
+
+                        <th><MudIcon Icon="@Icons.Material.Filled.Bed"  Title="@L["Bed"]" /></th>
+                        <th>@L["XBeds"]</th>
+                        <th><MudIcon Icon="@Icons.Material.Filled.Man" Title="@L["Adult"]" /></th>
+                        <th><MudIcon Icon="@Icons.Material.Filled.Girl" Title="@L["Child"]" /></th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @{
+                        // erste Zeile mit Datumswerten
+                        DateTime startDate = vCatDtos![0].Date;
+
+                        for (int i = 0; i < 30; i++)
+                        {
+                            DateTime workDate = startDate.AddDays(i);
+                            //<tr style="height:@rowHeight;background-color :darkslategray;">
+                            <tr style="@(Convert.ToInt16(workDate.Date.DayOfWeek.ToString("D")) == 6 || Convert.ToInt16(workDate.Date.DayOfWeek.ToString("D")) == 0  ? "background-color:darkslategray;" : "") color:white; text-align:center;">
+                                <td class="@tdClass">Eventspalte</td>
+                                <td class="@tdClass pl-1 pr-1"><MudIconButton Icon="@Icons.Material.Filled.EditCalendar" OnClick="() => SetStartDate(workDate)" Color="Color.Secondary" aria-label="add to favorite" Size="Size.Small"></MudIconButton></td>
+                                <td class="@tdClass">@workDate.Date.ToShortDateString()</td>
+                                <td class="@tdClass">@workDate.Date.DayOfWeek</td>
+                                <td class="@tdClass">@vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.Amount - (x.Arrival + x.Blocked + x.Stay))</td>
+
+                                @foreach (var item in categorySelectDtos)
+                                {
+                                    <td
+                                        class="@tdClass">
+                                        @vCatDtos.Where(x => x.Date.Date == workDate && x.CategoryId == item.Id).Sum(x => x.Amount - (x.Arrival + x.Blocked + x.Stay)) |
+                                        @vCatDtos.Where(x => x.Date.Date == workDate && x.CategoryId == item.Id).Sum(x => x.Amount) |
+                                        @vCatDtos.Where(x => x.Date.Date == workDate && x.CategoryId == item.Id).Sum(x => x.Blocked)
+
+                                        @*<MudIconButton Icon="@Icons.Material.Filled.AddBox" OnClick="() => StartResQuery(workDate, item.Id)" Color="Color.Primary" Size="Size.Small" />
+                                        *@
+                                        </td>
+                                }
+                                <td class="@tdClass">@vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.Arrival)</td>
+                                <td class="@tdClass">@vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.Stay)</td>
+                                <td class="@tdClass">@vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.Departure)</td>
+                                <td class="@tdClass">@vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.Blocked)</td>
+
+                                <td class="@tdClass">@vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.Beds) | @vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.BedsInventory)</td>
+                                <td class="@tdClass">@vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.ExtraBeds) | @vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.ExtraBedsInventory)</td>
+                                <td class="@tdClass">@vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.Adult)</td>
+                                <td class="@tdClass">@vCatDtos.Where(x => x.Date.Date == workDate).Sum(x => x.Child)</td>
+                            </tr>
+                        }
+                    }
+
+                </tbody>
+            </MudSimpleTable>
+
+        </MudCardContent>
+
+    </MudCard>
+}
+
+
+@code {
+    public int _mandantId { get; set; }
+    public List<VCatDto> vCatDtos { get; set; }
+    public List<CategorySelectDto>? categorySelectDtos { get; set; }
+    public MandantDto? mandantDto { get; set; }
+    public DateTime? hotelDate { get; set; }
+    public DateTime? startDate { get; set; }
+
+    public string tdClass { get; set; } = "pt-1 pb-1";
+
+    // TODO Anreisen gesamt in Klammern und Anreisen noch offen davor = 24 (48)
+    // TODO Abreisen gesamt in Klammern und Abreisen noch offen dahinter = 24 (48)
+
+
+    protected async override Task OnInitializedAsync()
+    {
+
+        _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        mandantDto = await MandantClient.GetAsync(_mandantId);
+        hotelDate = mandantDto.HotelDate;
+        startDate = mandantDto.HotelDate;
+        LoadNextOrPrevious(0);
+
+        categorySelectDtos = (await CategoryClient.GetCategorySelectAsync(-1, _mandantId)).Adapt<List<CategorySelectDto>>();
+
+
+    }
+
+    public void SetStartDate(DateTime date)
+    {
+        startDate = date;
+    }
+
+    public async void LoadNextOrPrevious(int days)
+    {
+        startDate = startDate!.Value.AddDays(days);
+
+        if (startDate < hotelDate)
+        {
+            startDate = hotelDate;
+        }
+
+        SearchVCatRequest searchVCatRequest = new();
+        searchVCatRequest.MandantId = _mandantId;
+        searchVCatRequest.StartDate = startDate.Value;
+        vCatDtos = (await VCatsClient.SearchAsync(searchVCatRequest)).Adapt<List<VCatDto>>();
+        StateHasChanged();
+    }
+
+    public async void CalculateVCat()
+    {
+        await VCatsClient.CalculateVCatAsync(_mandantId);
+        LoadNextOrPrevious(0);
+    }
+
+    public async void StartResQuery(DateTime date, int categoryId)
+    {
+        ResQuery resQueryDto = new();
+        resQueryDto.Arrival = date;
+        int adult = categorySelectDtos.First(x => x.Id == categoryId).NumberOfBeds;
+        resQueryDto.BedsTotal = adult;
+
+
+
+
+
+        
+    }
+}

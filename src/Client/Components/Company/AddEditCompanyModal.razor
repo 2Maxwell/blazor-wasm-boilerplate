@@ -1,0 +1,265 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Company
+@using MudBlazor
+@inject ICompanysClient CompanysClient
+@inject ILanguagesClient LanguagesClient
+@inject ICountriesClient CountriesClient
+@inject ISalutationsClient SalutationsClient
+@inject IStateRegionsClient StateRegionsClient
+@inject IEnumsClient EnumsClient
+@inject IStringLocalizer<AddEditCompanyModal> L
+
+<EditForm Model="updateCompanyRequest" OnValidSubmit="SendData">
+    <MudDialog Style="width:1500px;max-height:95%; overflow-y: scroll;">
+        <TitleContent>
+            @if (_isCreate)
+            {
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Filled.Add" Class="mr-3" />
+                    @L["Add Company"]
+                </MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Filled.Edit" Class="mr-3" />
+                    @L["Edit Company"]
+                </MudText>
+            }
+        </TitleContent>
+        <DialogContent>
+            <MudGrid>
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updateCompanyRequest.Name1" For="()=>updateCompanyRequest.Name1" Label="@L["Name1"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updateCompanyRequest.Name2" For="()=>updateCompanyRequest.Name2" Label="@L["Name2"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider></MudDivider>
+                </MudItem>
+
+
+                <MudItem xs="4">
+                    <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updateCompanyRequest.LanguageId)" @bind-Value="@updateCompanyRequest.LanguageId" Label="@L["Language"]">
+                        @foreach (var item in languagesList)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updateCompanyRequest.CompanyTypEnumId)" @bind-Value="updateCompanyRequest.CompanyTypEnumId" Label="@L["CompanyType"]">
+
+                        @foreach (var item in companyTypeEnumList)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Value">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="updateCompanyRequest.Kz" For="()=>updateCompanyRequest.Kz" Label="@L["Short Sign"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+
+                <MudItem xs="12">
+                    <MudDivider></MudDivider>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updateCompanyRequest.Address1" For="()=>updateCompanyRequest.Address1" Label="@L["Address1"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updateCompanyRequest.Address2" For="()=>updateCompanyRequest.Address2" Label="@L["Address2"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="3">
+                    <MudTextField @bind-Value="updateCompanyRequest.Zip" For="()=>updateCompanyRequest.Zip" Label="@L["ZipCode"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="5">
+                    <MudTextField @bind-Value="updateCompanyRequest.City" For="()=>updateCompanyRequest.City" Label="@L["City"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updateCompanyRequest.CountryId)" @bind-Value="@updateCompanyRequest.CountryId" Label="@L["Country"]">
+                        @foreach (var item in countriesList)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                @if (updateCompanyRequest.CountryId == 226)
+                {
+                    <MudItem xs="12">
+                        <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updateCompanyRequest.StateRegionId)" @bind-Value="updateCompanyRequest.StateRegionId" Label="@L["StateRegion"]">
+                            @foreach (var item in stateRegionsList)
+                            {
+                                <MudSelectItem T="int?" Value="@item.Id">@item.Abbreviation @item.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
+
+                <MudItem xs="12">
+                    <MudDivider></MudDivider>
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="updateCompanyRequest.Telephone" For="()=>updateCompanyRequest.Telephone" Label="@L["Telephone"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="updateCompanyRequest.Telefax" For="()=>updateCompanyRequest.Telefax" Label="@L["Telefax"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudTextField @bind-Value="updateCompanyRequest.Mobil" For="()=>updateCompanyRequest.Mobil" Label="@L["Mobil"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updateCompanyRequest.Email" For="()=>updateCompanyRequest.Email" Label="@L["Email"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updateCompanyRequest.EmailInvoice" For="()=>updateCompanyRequest.EmailInvoice" Label="@L["EmailInvoice"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider></MudDivider>
+                </MudItem>
+
+                @if (updateCompanyRequest.CompanyTypEnumId == 200 || updateCompanyRequest.CompanyTypEnumId == 300)
+                {
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateCompanyRequest.CommissionRate" For="() => updateCompanyRequest.CommissionRate" Adornment="Adornment.End" AdornmentText="%" Label="@L["CommissionRate"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudCheckBox @bind-Checked="updateCompanyRequest.AddTax" For="() => updateCompanyRequest.AddTax" Size="Size.Medium" Color="Color.Secondary" Label="@L["CommissionRate Add Tax"]"></MudCheckBox>
+                    </MudItem>
+
+                }
+
+                <MudItem xs="6">
+                    <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updateCompanyRequest.PriceContractId)" @bind-Value="@updateCompanyRequest.PriceContractId" Label="@L["PriceContract"]">
+                        <MudSelectItem T="int?" Value="null">@L["Select PriceContract"]</MudSelectItem>
+
+                        @*                            @foreach (var item in countriesList)
+                        {
+                        <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                        *@
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <CompanyAutoComplete MaxItems="null" @bind-Value="@updateCompanyRequest.GroupHeadId" Label="@L["GroupHead Name, Zip, City"]" />
+                </MudItem>
+
+                @*
+                TODO: offene Felder:
+                - StatusId
+                - Text
+
+                *@
+
+                <MudItem xs="12">
+                    <MudDivider></MudDivider>
+                </MudItem>
+
+            </MudGrid>
+        </DialogContent>
+
+        <DialogActions>
+            <MudButton DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Cancel" OnClick="MudDialog!.Cancel">
+                @L["Cancel"]
+            </MudButton>
+            @if (_isCreate)
+            {
+                <MudButton DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Save" ButtonType="ButtonType.Submit" Color="Color.Success">
+                    @L["Save"]
+                </MudButton>
+            }
+            else
+            {
+                <MudButton DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Update" ButtonType="ButtonType.Submit" Color="Color.Secondary">
+                    @L["Update"]
+                </MudButton>
+            }
+        </DialogActions>
+
+
+    </MudDialog>
+</EditForm>
+
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance? MudDialog { get; set; }
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    [Parameter]
+    public bool _isCreate { get; set; }
+
+    [Parameter]
+    public int _mandantId { get; set; }
+
+    [Parameter]
+    public UpdateCompanyRequest updateCompanyRequest { get; set; } = new();
+
+    private EditContext? editContext;
+
+    public List<CountrySelectDto> countriesList { get; set; } = new();
+    public List<StateRegionSelectDto> stateRegionsList { get; set; } = new();
+    public List<LanguageSelectDto> languagesList { get; set; } = new();
+    public List<CompanyTypeEnumDto> companyTypeEnumList { get; set; } = new();
+
+    protected async override Task OnInitializedAsync()
+    {
+        editContext = new EditContext(updateCompanyRequest);
+        languagesList = (await LanguagesClient.GetLanguageSelectAsync()).ToList();
+        countriesList = (await CountriesClient.GetCountrySelectAsync()).ToList();
+        // stateRegionsList = (await StateRegionsClient.GetStateRegionsSelectAsync(0)).ToList();
+        companyTypeEnumList = (await EnumsClient.GetCompanyTypeEnumRequestAsync()).ToList();
+
+        if(updateCompanyRequest.Id == 0)
+        {
+            updateCompanyRequest.CompanyTypEnumId = 100;
+        } 
+
+        StateHasChanged();
+    }
+
+
+    private void SendData()
+    {
+        MudDialog!.Close(DialogResult.Ok(updateCompanyRequest));
+    }
+
+    private void Cancel()
+    {
+        MudDialog!.Cancel();
+    }
+
+    private async Task countryChanged(int countryId)
+    {
+        updateCompanyRequest.CountryId = countryId;
+        switch (countryId)
+        {
+            case 226:
+                stateRegionsList = (await StateRegionsClient.GetStateRegionsSelectAsync(countryId)).ToList();
+                break;
+            default:
+                stateRegionsList = new List<StateRegionSelectDto>();
+                break;
+        }
+    }
+
+}

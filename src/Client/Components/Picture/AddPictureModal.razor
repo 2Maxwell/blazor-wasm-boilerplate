@@ -1,0 +1,223 @@
+﻿@using System.Diagnostics
+@using static FSH.BlazorWebAssembly.Client.Pages.Environment.Pictures
+
+@inject IStringLocalizer<FSH.BlazorWebAssembly.Client.Pages.Environment.Pictures> L
+
+<EditForm EditContext="context" OnValidSubmit="HandlePicture">
+    <DataAnnotationsValidator />
+
+    <MudDialog Style="width:1000px;max-height:95%; overflow-y: scroll;">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.DeleteForever" Class="mr-3 mb-n1" />
+                Delete server?
+            </MudText>
+
+        </TitleContent>
+
+        <DialogContent>
+            <MudGrid>
+
+                <MudItem xs="12" md="12">
+                    <MudItem>
+                        @if (!string.IsNullOrEmpty(pic.ImageInBytes))
+                        {
+                            <MudAvatar Image="@pic.ImageInBytes" Square="true" Style="height: auto; width: auto; max-height: 100%"> </MudAvatar>
+                        }
+                        else
+                        {
+                            if (newPicture)
+                            {
+                                <MudAvatar Image="@(string.IsNullOrEmpty(pic.ImagePath) ? string.Empty : (Config[ConfigNames.ApiBaseUrl] + @pic.Image.Data))" Square="true" Style="height: auto; width: auto; max-height: 100%"> </MudAvatar>
+
+                            }
+                            else
+                            {
+                                <MudAvatar Image="@(string.IsNullOrEmpty(pic.ImagePath) ? string.Empty : (Config[ConfigNames.ApiBaseUrl] + @pic.ImagePath))" Square="true" Style="height: auto; width: auto; max-height: 100%"> </MudAvatar>
+
+                            }
+                        }
+                    </MudItem>
+                    <MudItem>
+                        <div>
+                            <MudButton HtmlTag="label" DisableElevation Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small"
+                                       StartIcon="@Icons.Filled.CloudUpload" for="fileInput">
+                                @L["Upload"]
+                            </MudButton>
+                            @if (!newPicture && !string.IsNullOrEmpty(pic.ImagePath) && string.IsNullOrEmpty(pic.ImageInBytes))
+                            {
+                                <MudButton HtmlTag="label" DisableElevation Variant="Variant.Filled" Color="Color.Info" Size="Size.Small" Target="_blank"
+                                       StartIcon="@Icons.Filled.RemoveRedEye" Link="@(Config[ConfigNames.ApiBaseUrl] + @pic.ImagePath)" Style="margin-left: 5px;">
+                                    @L["View"]
+                                </MudButton>
+
+                                <MudButton HtmlTag="label" DisableElevation Variant="Variant.Filled" Color="Color.Error" Size="Size.Small"
+                                       StartIcon="@Icons.Filled.Delete" OnClick="SetDeleteCurrentImageFlag" Style="margin-left: 5px;">
+                                    @L["Delete"]
+                                </MudButton>
+                            }
+                            @if (!string.IsNullOrEmpty(pic.ImageInBytes))
+                            {
+                                <MudButton HtmlTag="label" DisableElevation OnClick="ClearImageInBytes" Variant="Variant.Filled" Color="Color.Warning" Size="Size.Small" Target="_blank"
+                                       StartIcon="@Icons.Filled.Clear" Style="margin-left: 5px;">
+                                    @L["Clear"]
+                                </MudButton>
+                            }
+                        </div>
+                        <InputFile id="fileInput" hidden OnChange="UploadFiles" />
+                    </MudItem>
+                </MudItem>
+
+                <MudItem xs="8" md="8">
+                    <MudTextField Variant="Variant.Outlined" T="string" For="@(() => pic.Title)" @bind-Value="pic.Title" Label="@L["Title"]" />
+                </MudItem>
+                <MudItem xs="4" md="4">
+                    <MudNumericField Variant="Variant.Outlined" T="int" Min="1" For="@(() => pic.OrderNumber)" @bind-Value="pic.OrderNumber" Label="@L["OrderNumber"]" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudTextField Variant="Variant.Outlined" T="string" For="@(() => pic.Description)" @bind-Value="pic.Description" Label="@L["Description"]" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudTextField Variant="Variant.Outlined" T="string" For="@(() => pic.MatchCode)" @bind-Value="pic.MatchCode" HelperText="@L[", as devider"]" Label="@L["MatchCode"]" />
+                </MudItem>
+
+                @*                <MudItem xs="12" md="12">
+                @if (selected != null && selected.Length > 0)
+                {
+                <MudText>You selected @string.Join(", ", selected.Select(chip=>chip.Text)).</MudText>
+                }
+                else
+                {
+                <MudText>Nothing selected.</MudText>
+                }
+                </MudItem>
+
+                <MudChipSet @bind-SelectedChips="selected" MultiSelection="true" Filter="filter" >
+                @foreach (string item in matchCodes)
+                {
+                <MudChip Text="@item"></MudChip>
+                }
+                </MudChipSet>
+                *@
+                <MudItem xs="4" md="4">
+                    <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => pic.ShowPicture)" @bind-Checked="pic.ShowPicture" Label="@L["ShowPicture"]" />
+                </MudItem>
+                <MudItem xs="4" md="4">
+                    <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => pic.Publish)" @bind-Checked="pic.Publish" Label="@L["Publish"]" />
+                </MudItem>
+                <MudItem xs="4" md="4">
+                    <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => pic.DiaShow)" @bind-Checked="pic.DiaShow" Label="@L["DiaShow"]" />
+                </MudItem>
+
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Cancel" Variant="Variant.Text" StartIcon="@Icons.Filled.Cancel" Color="Color.Default" Size="Size.Small">cancel</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Success" ButtonType="ButtonType.Submit" Size="Size.Small">Save</MudButton>
+        </DialogActions>
+
+    </MudDialog>
+
+</EditForm>
+
+@code {
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public bool newPicture { get; set; }
+
+    //[Parameter]
+    //public List<string> matchCodes { get; set; }
+
+    [Parameter]
+    public PictureViewModel pic { get; set; } = new();
+
+    //bool filter = true;
+    //MudChip[] selected;
+
+    // public CreatePictureRequest createPictureRequest { get; set; } = new();
+    // public PictureViewModel pictureViewModel = new();
+
+    private EditContext? context;
+
+    protected override void OnInitialized()
+    {
+        if (newPicture)
+        {
+            context = new EditContext(pic);
+        }
+        else
+        {
+            //pic.Image = new();
+            context = new EditContext(pic);
+            // SetMudChipsMatchCodes();
+        }
+    }
+
+    private void HandlePicture()
+    {
+        MudDialog.Close(DialogResult.Ok(pic));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+
+    public void ClearImageInBytes()
+    {
+        pic.ImageInBytes = string.Empty;
+        this.StateHasChanged(); //AddPictureModal.ForceRender();
+    }
+
+
+    public void SetDeleteCurrentImageFlag()
+    {
+        pic.ImageInBytes = string.Empty;
+        pic.ImagePath = string.Empty;
+        // createPictureRequest.DeleteCurrentImage = true;
+        this.StateHasChanged(); // this.ForceRender();
+    }
+
+    private async Task UploadFiles(InputFileChangeEventArgs e)
+    {
+        if (e.File != null)
+        {
+            string? extension = Path.GetExtension(e.File.Name);
+            if (!ApplicationConstants.SupportedImageFormats.Contains(extension.ToLower()))
+            {
+                Snackbar.Add("Image Format Not Supported.", Severity.Error);
+                return;
+            }
+            pic.ImageExtension = extension;
+            var imageFile = await e.File.RequestImageFileAsync(ApplicationConstants.StandardImageFormat, ApplicationConstants.MaxImageWidth, ApplicationConstants.MaxImageHeight);
+            byte[]? buffer = new byte[imageFile.Size];
+            await imageFile.OpenReadStream(ApplicationConstants.MaxAllowedSize).ReadAsync(buffer);
+            pic.ImageInBytes = $"data:{ApplicationConstants.StandardImageFormat};base64,{Convert.ToBase64String(buffer)}";
+            StateHasChanged(); // Context.AddEditModal.ForceRender();
+        }
+    }
+
+    //private void SetMudChipsMatchCodes()
+    //{
+    //    if (pic.MatchCode != null)
+    //    {
+    //        string[] chips = pic.MatchCode.Split(',');
+    //        List<MudChip> mudChips = new();
+    //        foreach (string item in chips)
+    //        {
+    //            //if (item != string.Empty){
+    //                MudChip mc = new MudChip { Color = Color.Dark, Text = item.Trim(), IsSelected = true };
+    //            mudChips.Add(mc);
+    //            //}
+    //        }
+    //        selected = mudChips.ToArray();
+    //    }
+    //}
+
+
+}
+

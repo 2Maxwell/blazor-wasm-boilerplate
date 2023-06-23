@@ -1,0 +1,235 @@
+﻿@using System.Text.Json;
+
+
+@inject IStringLocalizer<RoomDetails> L
+@inject ICategorysClient CategoryClient
+@inject IRoomsClient RoomClient
+@inject IMandantsClient MandantClient
+
+@if (_loaded)
+{
+    <MudCard style="min-height:620px">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Room details"]</MudButton>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+                @{
+                    bool checkedIn = reservationDto.ResKz == "C" ? true : false;
+                    bool isPreCheckIn = reservationDto.ResKz == "P" || reservationDto.ResKz == "R" ? true : false;
+                    bool isPreCheckInOpposit = reservationDto.ResKz == "P" || reservationDto.ResKz == "R" ? false : true;
+                }
+
+
+
+                <MudItem xs="12" md="12">
+                    <MudSelect T="int" Variant="Variant.Outlined" ReadOnly="@isPreCheckInOpposit" AnchorOrigin="Origin.BottomCenter" For="@(() => reservationDto.CategoryId)" Value="@reservationDto.CategoryId" ValueChanged="((e) => OnCategoryValueChanged(e))" Label="@L["Category"]">
+                        <MudSelectItem T="int" Value="0">Select Category</MudSelectItem>
+                        @foreach (var item in categorySelectDtos.Where(x => (x.NumberOfBeds + x.NumberOfExtraBeds) >= bedsNeeded))
+                        {
+                            <MudSelectItem T="int" Value="@item.Id">@item.Name ( @item.NumberOfBeds | @item.NumberOfExtraBeds )</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="6">
+                    @if (reservationDto.RoomAmount > 1)
+                    {
+                        <MudNumericField T="int" Style="@($"color:{Colors.Red.Accent4};")" HideSpinButtons="false" Value="@reservationDto.RoomAmount" ValueChanged="((e) => OnRoomAmountValueChanged(e)) " Min="0" Label="@L["Room Amount"]" Variant="Variant.Outlined" />
+                    }
+                    else
+                    {
+                        <MudNumericField T="int" HideSpinButtons="false" Value="@reservationDto.RoomAmount" ValueChanged="((e) => OnRoomAmountValueChanged(e))" ReadOnly="@checkedIn" Min="0" Label="@L["Room Amount"]" Variant="Variant.Outlined" />
+                    }
+                </MudItem>
+
+                <MudItem xs="6" md="6">
+                    @if (reservationDto.RoomNumberId < 0)
+                    {
+                        <MudSelect T="int" Variant="Variant.Outlined" ReadOnly="@(reservationDto.RoomNumberId == -1 ? true : false)" AnchorOrigin="Origin.BottomCenter" For="@(() => reservationDto.RoomNumberId)" @bind-Value="reservationDto.RoomNumberId" Label="@L["Room"]">
+                            <MudSelectItem T="int" Value="0">Select Room</MudSelectItem>
+                            @if (reservationDto.IsGroupMaster)
+                            {
+                                <MudSelectItem T="int" Value="-1">@L["GROUPMASTER"]</MudSelectItem>
+                            }
+                        </MudSelect>
+                    }
+                    else
+                    {
+                        // Element nur anzeigen wenn ResKz = P,R
+
+
+                        @if (reservationDto.RoomAmount < 2)
+                        {
+                            if (reservationDto.ResKz == "P" || reservationDto.ResKz == "R")
+                            {
+                                           <MudSelect T="int" Variant="Variant.Outlined" ReadOnly="@(reservationDto.RoomNumberId == -1 ? true : false)" AnchorOrigin="Origin.BottomCenter" For="@(() => reservationDto.RoomNumberId)" Value="reservationDto.RoomNumberId" ValueChanged="((e) => OnRoomNumberIdValueChanged(e))" Label="@L["Room"]">
+                                <MudSelectItem T="int" Value="0">Select Room</MudSelectItem>
+                                @foreach (var item in roomSelectDtos.Where(x => x.CategoryId == reservationDto.CategoryId))
+                                {
+                                    string CLDI = item.Clean ? "Clean" : "Dirty";
+                                    <MudSelectItem T="int" Value="@item.Id">@item.Name      ( @item.Beds | @item.BedsExtra )  @CLDI</MudSelectItem>
+                                }
+                                </MudSelect>
+
+                            }
+                            else
+                            {
+                                <MudTextField @bind-Value="@reservationDto.RoomNumber" Label="@L["RoomNumber"]" ReadOnly="true" Variant="Variant.Outlined" />
+                            }
+                        }
+                    }
+                </MudItem>
+
+
+                @if (reservationDto.RoomNumberId > 0 || reservationDto.RoomNumberId == -1)
+                {
+                    <MudItem xs="6" Class="mt-n2">
+                        <MudCheckBox @bind-Checked="@reservationDto.RoomFixed" Size="Size.Large" Color="Color.Tertiary">@L["Room fixed"]</MudCheckBox>
+                    </MudItem>
+                }
+                @if (!reservationDto.IsGroupMaster && reservationDto.RoomAmount > 1 && reservationDto.RoomNumberId < 1)
+                {
+                    <MudItem xs="6" Class="mt-4">
+                        <MudButton OnClick="CreateGroupMaster" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.GroupAdd" Color="Color.Warning">@L["Create GroupMaster"]</MudButton>
+                    </MudItem>
+                }
+                @if (reservationDto.GroupMasterId > 0)
+                {
+                    <MudItem xs="6">
+                        <MudText Color="Color.Warning" Typo="Typo.h4">GM @reservationDto.GroupMasterId</MudText>
+                    </MudItem>
+                }
+                @if (reservationDto.GroupMasterId > 0)
+                {
+                    <MudItem xs="12">
+                        <MudTextField @bind-Value="@reservationDto.Transfer" Label="@L["Transfer"]" Variant="Variant.Outlined" />
+                    </MudItem>
+                }
+
+                @if (reservationDto.GroupMasterId == 0 && !reservationDto.IsGroupMaster)
+                {
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="@reservationDto.GroupMasterId" Label="@L["Join Group"]" Variant="Variant.Outlined" />
+                    </MudItem>
+                }
+
+            </MudGrid>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Primary">Read More</MudButton>
+            <MudText Typo="Typo.h6">RoomNumberId: @reservationDto.RoomNumberId</MudText>
+        </MudCardActions>
+    </MudCard>
+
+    //
+    // Bei den Groupmembers soll die GroupmasterId als Link zum Groupmaster angelegt werden. dafür ist die ReservationId des Groupmaster notwendig.
+    // TODO Aus Gruppe austreten.
+
+    // TODO Rooms müssen nach Category gefiltert werden und es muss geprüft werden ob das Zimmer im Reservierungszeitrum nicht
+    //      schon belegt ist. Dazu muss die RoomReservationDto erweitert werden.
+
+}
+
+@code {
+    public bool _loaded { get; set; } = false;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public MandantDto? mandantDto { get; set; }
+    public List<CategorySelectDto> categorySelectDtos { get; set; }
+    public List<RoomSelectDto> roomSelectDtos { get; set; }
+    public MandantSettingDto mandantSettingDto { get; set; } = new();
+    public Pax pax { get; set; }
+    public int bedsNeeded { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        // TODO Nur Category anzeigen die auch die Bettenanzahl leisten können
+        categorySelectDtos = (await CategoryClient.GetCategorySelectAsync(-1, reservationDto.MandantId)).ToList();
+
+        // GetRoomCleanReservationSelectRequest nur ausführen wenn reservationDto.ResKz = P,R
+        if (reservationDto.ResKz == "P" || reservationDto.ResKz == "R")
+        {
+            GetRoomCleanReservationSelectRequest getRoomCleanReservationSelectRequest = new GetRoomCleanReservationSelectRequest
+                {
+                    MandantId = reservationDto.MandantId,
+                    CategoryId = reservationDto.CategoryId,
+                    Arrival = Convert.ToDateTime(reservationDto.Arrival),
+                    Departure = Convert.ToDateTime(reservationDto.Departure),
+                    Clean = reservationDto.Arrival.Value.Date == mandantDto.HotelDate ? true : false,
+                };
+            roomSelectDtos = (await RoomClient.GetRoomCleanReservationRoomSelectDtoAsync(getRoomCleanReservationSelectRequest)).ToList();
+        }
+
+        pax = JsonSerializer.Deserialize<Pax?>(reservationDto.PaxString!);
+        bedsNeeded = pax.Adult + pax.Children.Where(x => x.ExtraBed == true).Count();
+        _loaded = true;
+    }
+
+    // OnCategoryValueChanged
+    private async void OnCategoryValueChanged(int categoryId)
+    {
+        reservationDto.CategoryId = categoryId;
+        SetRoomCleanReservationSelect();
+
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+
+    // OnRoomAmountValueChanged
+    private async void OnRoomAmountValueChanged(int roomAmount)
+    {
+        reservationDto.RoomAmount = roomAmount;
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+
+    //OnRoomNumberIdValueChanged
+    private async void OnRoomNumberIdValueChanged(int roomNumberId)
+    {
+        reservationDto.RoomNumberId = roomNumberId;
+        reservationDto.RoomNumber = roomSelectDtos.Where(x => x.Id == roomNumberId).FirstOrDefault()?.Name;
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+
+
+    private async void CreateGroupMaster()
+    {
+        GetMandantNumberRequest getMandantNumberRequest = new();
+        getMandantNumberRequest.MandantId = reservationDto.MandantId;
+        getMandantNumberRequest.NumberTyp = "GroupMaster";
+
+
+        reservationDto.RoomNumberId = -1;
+        reservationDto.IsGroupMaster = true;
+        reservationDto.RoomFixed = true;
+        reservationDto.GroupMasterId = await MandantClient.GetMandantNumberAsync(getMandantNumberRequest);
+        mandantSettingDto = await MandantClient.GetMandantSettingAsync(reservationDto.MandantId);
+        reservationDto.Transfer = mandantSettingDto.DefaultTransfer;
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+
+    private async void SetRoomCleanReservationSelect()
+    {
+        GetRoomCleanReservationSelectRequest getRoomCleanReservationSelectRequest = new GetRoomCleanReservationSelectRequest
+            {
+                MandantId = reservationDto.MandantId,
+                CategoryId = reservationDto.CategoryId,
+                Arrival = Convert.ToDateTime(reservationDto.Arrival),
+                Departure = Convert.ToDateTime(reservationDto.Departure),
+                Clean = true,
+            };
+        roomSelectDtos = (await RoomClient.GetRoomCleanReservationRoomSelectDtoAsync(getRoomCleanReservationSelectRequest)).ToList();
+
+    }
+
+}

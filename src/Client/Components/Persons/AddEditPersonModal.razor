@@ -1,0 +1,262 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Person
+@using MudBlazor
+@inject IPersonsClient PersonsClient
+@inject ILanguagesClient LanguagesClient
+@inject ICountriesClient CountriesClient
+@inject ISalutationsClient SalutationsClient
+@inject IVipStatesClient VipStatesClient
+@inject IStateRegionsClient StateRegionsClient
+@inject IStringLocalizer<AddEditPersonModal> L
+
+
+<EditForm Model="updatePersonRequest" OnValidSubmit="SendData">
+    <MudDialog Style="width:1500px;max-height:95%; overflow-y: scroll;">
+        <TitleContent>
+            @if (_isCreate)
+            {
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Filled.Add" Class="mr-3" />
+                    Add Person
+                </MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Filled.Edit" Class="mr-3" />
+                    Edit Person
+                </MudText>
+            }
+        </TitleContent>
+
+        <DialogContent>
+            <MudGrid>
+                <MudItem xs="5">
+                    <MudTextField @bind-Value="updatePersonRequest.Name" For="()=>updatePersonRequest.Name" Label="@L["Name"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="5">
+                    <MudTextField @bind-Value="updatePersonRequest.FirstName" For="()=>updatePersonRequest.FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="2">
+                    <MudTextField @bind-Value="updatePersonRequest.Title" For="()=>updatePersonRequest.Title" Label="@L["Title"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updatePersonRequest.LanguageId)" Value="@updatePersonRequest.LanguageId" ValueChanged="languageChanged" Label="@L["Language"]">
+                        <MudSelectItem T="int" Value="0">@L["Select Language"]</MudSelectItem>
+                        @foreach (var item in languagesList)
+                        {
+                            <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+
+                <MudItem xs="4">
+                    <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updatePersonRequest.SalutationId)" @bind-Value="updatePersonRequest.SalutationId" Label="@L["Salutation"]">
+                        <MudSelectItem T="int" Value="0">@L["Select Salutation"]</MudSelectItem>
+                        @foreach (var item in salutationsList)
+                        {
+                            <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updatePersonRequest.VipStatusId)" @bind-Value="updatePersonRequest.VipStatusId" Label="@L["VipStatus"]">
+                        @foreach (var item in vipStatesList)
+                        {
+                            <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider/>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updatePersonRequest.Address1" For="()=>updatePersonRequest.Address1" Label="@L["Address1"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updatePersonRequest.Address2" For="()=>updatePersonRequest.Address2" Label="@L["Address2"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="3">
+                    <MudTextField @bind-Value="updatePersonRequest.Zip" For="()=>updatePersonRequest.Zip" Label="@L["ZipCode"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="5">
+                    <MudTextField @bind-Value="updatePersonRequest.City" For="()=>updatePersonRequest.City" Label="@L["City"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updatePersonRequest.CountryId)" Value="@updatePersonRequest.CountryId" ValueChanged="countryChanged" Label="@L["Country"]">
+                        <MudSelectItem T="int" Value="0">@L["Select Country"]</MudSelectItem>
+                        @foreach (var item in countriesList)
+                        {
+                            <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+
+                @if (updatePersonRequest.CountryId == 226)
+                {
+                    <MudItem xs="12">
+                        <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updatePersonRequest.StateRegionId)" @bind-Value="updatePersonRequest.StateRegionId" Label="@L["StateRegion"]">
+                            @foreach (var item in stateRegionsList)
+                            {
+                                <MudSelectItem T="int" Value="@item.Id">@item.Abbreviation @item.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                }
+
+                <MudItem xs="12">
+                    <MudDivider></MudDivider>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="updatePersonRequest.DateOfBirth" For="()=>updatePersonRequest.DateOfBirth" MaxDate="DateTime.Today" DisableToolbar Label="@L["Date of Birth"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updatePersonRequest.NationalityId)" @bind-Value="@updatePersonRequest.NationalityId" Label="@L["Nationality"]">
+                        <MudSelectItem T="int" Value="0">@L["Select Nationality"]</MudSelectItem>
+                        @foreach (var item in countriesList)
+                        {
+                            <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider></MudDivider>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updatePersonRequest.Telephone" For="()=>updatePersonRequest.Telephone" Label="@L["Telephone"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updatePersonRequest.Telefax" For="()=>updatePersonRequest.Telefax" Label="@L["Telefax"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updatePersonRequest.Mobil" For="()=>updatePersonRequest.Mobil" Label="@L["Mobil"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="updatePersonRequest.Email" For="()=>updatePersonRequest.Email" Label="@L["Email"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDivider></MudDivider>
+                </MudItem>
+
+            </MudGrid>
+
+            @*      offen:
+                    - Wishes
+                    - RoomsPreferred
+                    - StatusID
+                    - Department (CompanyContact)
+                    - Position (CompanyContact)
+                    - Text
+                    - MandantId
+                    - Source
+            *@
+
+        </DialogContent>
+
+        <DialogActions>
+            <MudButton DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Cancel" OnClick="MudDialog!.Cancel">
+                @L["Cancel"]
+            </MudButton>
+            @if (_isCreate)
+            {
+                <MudButton DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Save" ButtonType="ButtonType.Submit" Color="Color.Success">
+                    @L["Save"]
+                </MudButton>
+            }
+            else
+            {
+                <MudButton DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Update" ButtonType="ButtonType.Submit" Color="Color.Secondary">
+                    @L["Update"]
+                </MudButton>
+            }
+        </DialogActions>
+
+    </MudDialog>
+
+</EditForm>
+
+
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance? MudDialog { get; set; }
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    [Parameter]
+    public bool _isCreate { get; set; }
+
+    [Parameter]
+    public int _mandantId { get; set; }
+
+    [Parameter]
+    public UpdatePersonRequest updatePersonRequest { get; set; } = new();
+
+    private EditContext? editContext;
+
+    public List<LanguageSelectDto> languagesList { get; set; } = new();
+    public List<CountrySelectDto> countriesList { get; set; } = new();
+    public List<SalutationSelectDto> salutationsList { get; set; } = new();
+    public List<VipStatusSelectDto> vipStatesList { get; set; } = new();
+    public List<StateRegionSelectDto> stateRegionsList { get; set; } = new();
+
+    protected async override Task OnInitializedAsync()
+    {
+        editContext = new EditContext(updatePersonRequest);
+        languagesList = (await LanguagesClient.GetLanguageSelectAsync()).ToList();
+        countriesList = (await CountriesClient.GetCountrySelectAsync()).ToList();
+        salutationsList = (await SalutationsClient.GetSalutationSelectAsync(_mandantId, 0)).ToList();
+        vipStatesList = (await VipStatesClient.GetVipStatusSelectAsync(_mandantId)).ToList();
+        // stateRegionsList = (await StateRegionsClient.GetStateRegionsSelectAsync(0)).ToList();
+        StateHasChanged();
+    }
+
+    private void SendData()
+    {
+        MudDialog!.Close(DialogResult.Ok(updatePersonRequest));
+    }
+
+    private void Cancel()
+    {
+        MudDialog!.Cancel();
+    }
+
+    private async Task languageChanged(int languageId)
+    {
+        updatePersonRequest.LanguageId = languageId;
+        salutationsList = (await SalutationsClient.GetSalutationSelectAsync(_mandantId, languageId)).ToList();
+        StateHasChanged();
+    }
+
+    private async Task countryChanged(int countryId)
+    {
+        updatePersonRequest.CountryId = countryId;
+        switch (countryId)
+        {
+            case 226:
+                stateRegionsList = (await StateRegionsClient.GetStateRegionsSelectAsync(countryId)).ToList();
+                break;
+            default:
+                stateRegionsList = new List<StateRegionSelectDto>();
+                break;
+        }
+    }
+}

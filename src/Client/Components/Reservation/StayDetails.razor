@@ -1,0 +1,247 @@
+﻿@using System.Text.Json;
+@using FSH.BlazorWebAssembly.Client.Components.Dialogs;
+@inject IMandantsClient MandantClient
+@inject IStringLocalizer<StayDetails> L
+
+@if (_loaded)
+{
+    <MudCard style="min-height:620px">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Stay details"]</MudButton>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+                @{
+                    bool arrivalReadOnly = reservationDto.ResKz == "C" ? true : false;
+                }
+
+                <MudItem xs="6">
+                    <MudDatePicker Label="Arrival" Editable="true" Date="@reservationDto.Arrival!.Value" DateChanged="((e) => OnArrivalDateChanged(e))" ReadOnly="arrivalReadOnly" MaxDate="@reservationDto.Departure" Variant="Variant.Outlined" Placeholder="Arrival Date" />
+                </MudItem>
+                <MudItem xs="4">
+                    <MudTimePicker Label="Arrivaltime" Editable="true" Time="@reservationDto.Arrival!.Value.TimeOfDay" TimeChanged="((e) => OnTimeChanged(e, 'a'))" ReadOnly="arrivalReadOnly" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="2">
+                    <MudNumericField T="int" HideSpinButtons="true" Value="@getNights(Convert.ToDateTime(@reservationDto.Arrival), Convert.ToDateTime(@reservationDto.Departure))" Label="@L["Nights"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="7">
+                    <MudDatePicker Label="Departure" Editable="true" Date="@reservationDto.Departure!.Value" DateChanged="((e) => OnDepartureDateChanged(e))" MinDate="@reservationDto.Arrival" Variant="Variant.Outlined" Placeholder="Departure Date" />
+                </MudItem>
+                <MudItem xs="5">
+                    <MudTimePicker Label="Departuretime" Editable="true" Time="@reservationDto.Departure!.Value.TimeOfDay" TimeChanged="((e) => OnTimeChanged(e, 'd'))" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="3">
+                    <MudNumericField T="int" HideSpinButtons="false" Value="@pax.Adult" ValueChanged="((e) => OnPaxValueChanged(e))" Label="@L["Adults"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="3">
+                    <MudNumericField T="int" HideSpinButtons="false" TextChanged="((e) => OpenDialog_Childs(e))" Value="@childs" Label="@L["Childs"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+
+                <MudItem xs="6">
+                    @if (pax.Children != null)
+                    {
+                        <MudText Typo="Typo.body1">@L["Children"]: @pax.Children.Count()</MudText>
+                        <MudList Clickable="false" Dense="true">
+                            <MudListItem Icon="@Icons.Material.Filled.Girl" Dense="true" Text="@L["Children"]" InitiallyExpanded="true">
+                                <NestedList>
+                                    @foreach (Child item in pax.Children)
+                                    {
+                                        <MudListItem>
+                                            @L["Age"]: @item.Age @L["ExtraBed"]:
+                                            @if (item.ExtraBed is true)
+                                            {
+                                                @L["Yes"]
+                                            }
+                                            else
+                                            {
+                                                @L["No"]
+                                            }
+                                        </MudListItem>
+                                    }
+                                </NestedList>
+                            </MudListItem>
+                        </MudList>
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body1">@L["Children"]: 0</MudText>
+                    }
+
+                </MudItem>
+            </MudGrid>
+
+
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Primary">Read More</MudButton>
+        </MudCardActions>
+    </MudCard>
+}
+
+@code {
+    // ??? PromotionCode
+    public bool _loaded { get; set; } = false;
+    //public bool _eventOK { get; set; } = true;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+
+    public TimeSpan? arrivalTime { get; set; }
+    public TimeSpan? departureTime { get; set; }
+    public Pax pax { get; set; } = new();
+    public int childs { get; set; } = 0;
+    public int childsShow { get; set; } = 0;
+    public bool openChildDialog { get; set; } = false;
+    public MandantSettingDto mandantSettingDto { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        mandantSettingDto = await MandantClient.GetMandantSettingAsync(reservationDto.MandantId);
+
+        arrivalTime = Convert.ToDateTime(reservationDto.Arrival).TimeOfDay;
+        // Wenn arrivalTime = 00:00:00 dann arrivalTime auf mandantSettingDto.DefaultArrivaltime setzen mit Convert nach TimeSpan
+
+
+
+        if (arrivalTime == TimeSpan.Zero)
+        {
+            arrivalTime = mandantSettingDto.DefaultArrivalTime.TimeOfDay;
+            reservationDto.Arrival = reservationDto.Arrival.Value.Date.Add((TimeSpan)arrivalTime.Value);
+        }
+
+        departureTime = Convert.ToDateTime(reservationDto.Departure).TimeOfDay;
+        // Wenn departureTime = 00:00:00 dann Time auf mandantSettingDto.DefaultDeparturetime setzen
+        if (departureTime == TimeSpan.Zero)
+        {
+            departureTime = mandantSettingDto.DefaultDepartureTime.TimeOfDay;
+            reservationDto.Departure = reservationDto.Departure.Value.Date.Add((TimeSpan)departureTime.Value);
+        }
+
+        pax = JsonSerializer.Deserialize<Pax>(reservationDto.PaxString);
+
+        _loaded = true;
+    }
+
+    private async void OnArrivalDateChanged(DateTime? date)
+    {
+        if (reservationDto.Arrival!.Value != date)
+        {
+            reservationDto.Arrival = Convert.ToDateTime(date).Add((TimeSpan)arrivalTime.Value);
+            await reservationDtoChanged.InvokeAsync(reservationDto);
+
+        }
+    }
+
+    private async void OnDepartureDateChanged(DateTime? date)
+    {
+        if (reservationDto.Departure!.Value != date)
+        {
+            reservationDto.Departure = Convert.ToDateTime(date).Add((TimeSpan)departureTime.Value);
+            await reservationDtoChanged.InvokeAsync(reservationDto);
+
+        }
+    }
+
+    private async void OnTimeChanged(TimeSpan? time, char AorD)
+    {
+        if (AorD == 'a')
+        {
+            if (reservationDto.Arrival!.Value.TimeOfDay != time)
+            {
+                reservationDto.Arrival = reservationDto.Arrival.Value.Date + time;
+                await reservationDtoChanged.InvokeAsync(reservationDto);
+            }
+        }
+        else
+        {
+            if (reservationDto.Departure!.Value.TimeOfDay != time)
+            {
+                reservationDto.Departure = reservationDto.Departure.Value.Date + time;
+                await reservationDtoChanged.InvokeAsync(reservationDto);
+            }
+        }
+    }
+
+    private async void OnPaxValueChanged(int value)
+    {
+        pax.Adult = value;
+        reservationDto.PaxString = JsonSerializer.Serialize<Pax>(pax);
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+
+    private void OpenDialog_Childs(string value)
+    {
+        if (openChildDialog)
+        {
+            childs = Convert.ToInt16(value);
+            OpenDialog();
+        }
+        openChildDialog = true;
+    }
+
+    private async void OpenDialog()
+    {
+        if (openChildDialog)
+        {
+            if (pax.Children == null)
+            {
+                pax.Children = new List<Child>();
+                for (int i = 1; i <= childs; i++)
+                {
+                    Child child = new Child();
+                    pax.Children.Add(child);
+                }
+
+            }
+            else
+            {
+                if (childs < pax.Children.Count())
+                {
+                    List<Child> childsNew = new();
+                    for (int i = 0; i < childs; i++)
+                    {
+                        childsNew.Add(pax.Children.ToList()[i]);
+                    }
+                    pax.Children = childsNew;
+                }
+                if (childs > pax.Children.Count())
+                {
+                    for (int i = 0; i < childs; i++)
+                    {
+                        if (i >= pax.Children.Count())
+                        {
+                            Child child = new Child();
+                            pax.Children.Add(child);
+                        }
+                    }
+                }
+            }
+
+            List<Pax> paxes = new();
+            paxes.Add(pax);
+            reservationDto.PaxString = JsonSerializer.Serialize<Pax>(pax);
+
+            var parameters = new DialogParameters
+                {
+                    ["paxes"] = paxes,
+                    ["childsR1"] = pax.Children
+                };
+            var dialog = DialogService.ShowModal<RoomOccupancyDialog>(parameters);
+            var result = await dialog.Result;
+            //if (!result.Cancelled) startShopMandantCatRatePrice();
+            StateHasChanged();
+        }
+    }
+
+    private int getNights(DateTime arrival, DateTime departure)
+    {
+        int result = Convert.ToInt32((departure.Date - arrival.Date).Days);
+        return result;
+    }
+
+}

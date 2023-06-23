@@ -38,11 +38,11 @@
                 </MudItem>
         }
 
-        <MudItem xs="3" md="3">
+        <MudItem xs="2" md="2">
             <MudTextField Variant="Variant.Outlined" T="int" For="@(() => context.CountryId)" @bind-Value="context.CountryId" Label="@L["CountryId"]" />
         </MudItem>
 
-        <MudItem xs="4" md="4">
+        <MudItem xs="5" md="5">
             <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.TaxSystemEnumId)" @bind-Value="context.TaxSystemEnumId" Label="@L["TaxSystemEnum"]">
                 <MudSelectItem T="int" Value="0">@L["Select TaxSystem"]</MudSelectItem>
                 @foreach (var item in TaxSystemEnumList)

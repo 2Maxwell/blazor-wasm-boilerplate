@@ -1,0 +1,103 @@
+﻿@inject IStringLocalizer<ReservationCompanyDetails> L
+@inject ICompanysClient CompanysClient
+
+@if (_loaded)
+{
+    <MudCard style="min-height:620px">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                    <MudText Typo="Typo.subtitle1">
+                        @L["Company details"]
+                    </MudText>
+                </MudButton>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (reservationDto.CompanyId != null)
+            {
+                <FSH.BlazorWebAssembly.Client.Components.Company.BookerCompanyShopMandant _mandantId="@reservationDto.MandantId"
+                                                                                  companyId="(int)reservationDto.CompanyId!"
+                                                                                  companyIdChanged="((e) => OnCompanyIdChanged(e))"
+                                                                                  contactId="reservationDto.CompanyContactId != null ? (int)reservationDto.CompanyContactId! : 0"
+                                                                                  contactIdChanged="((e) => OnCompanyContactIdChanged(e))">
+                </FSH.BlazorWebAssembly.Client.Components.Company.BookerCompanyShopMandant>
+            }
+            else
+            {
+                <CompanyAutoComplete MaxItems="null" Value="0" ValueChanged="((e) => OnCompanyIdChanged(e))" Label="@L["Company Name, Zip, City"]" />
+
+                <MudIconButton OnClick="((e) => AddCompany(maxWidth))" Icon="@Icons.Filled.Add" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
+
+@*                <MudIconButton OnClick="((e) => EditCompany(maxWidth))" Icon="@Icons.Filled.Edit" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" Title="@L["Edit Company"]" aria-label="Edit Company"></MudIconButton>
+*@
+            }
+        </MudCardContent>
+        <MudCardActions>
+        </MudCardActions>
+    </MudCard>
+}
+
+@code {
+    public bool _loaded { get; set; } = false;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+
+    public int CompanyContactId { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loaded = true;
+    }
+
+    private async void OnBookerIdChanged(int value)
+    {
+        reservationDto.BookerId = value;
+        //setPersonList();
+    }
+
+    private async void OnCompanyIdChanged(int value)
+    {
+        reservationDto.CompanyId = value;
+    }
+
+    private async void OnCompanyContactIdChanged(int value)
+    {
+        reservationDto.CompanyContactId = value;
+    }
+
+    private UpdateCompanyRequest _updateCompanyRequest { get; set; } = new();
+
+    private async Task AddCompany(DialogOptions options)
+    {
+        _updateCompanyRequest = new();
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] =  reservationDto.MandantId,
+                ["_isCreate"] = true,
+                ["updateCompanyRequest"] = _updateCompanyRequest,
+            };
+        var dialog = DialogService.Show<AddEditCompanyModal>("", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            UpdateCompanyRequest updateCompanyRequest = (UpdateCompanyRequest)result.Data;
+
+            if (updateCompanyRequest.Id > 0) // Edit
+            {
+
+            }
+            else // Create
+            {
+                updateCompanyRequest.MandantId = reservationDto.MandantId;
+                int id = await CompanysClient.CreateAsync(updateCompanyRequest.Adapt<CreateCompanyRequest>());
+                reservationDto.CompanyId = id;
+            }
+        }
+    }
+
+
+}

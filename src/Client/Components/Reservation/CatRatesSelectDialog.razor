@@ -1,0 +1,93 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Shop
+@inject IStringLocalizer<CatRatesSelectDialog> L
+
+<MudDialog Style="min-height:80%; min-width:85%">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3 mb-n1" />
+            @L["CateRatesSelect"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+
+        @foreach (CategoryShopMandantDto categoryShopMandantDto in catRatesDto.CategoryShopMandantDtos!)
+        {
+            <CatRatesSelectItem categoryShopMandantDto="categoryShopMandantDto" reservationDto="reservationDto"></CatRatesSelectItem>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton style="height:70px" Color="Color.Primary" Variant="Variant.Filled" FullWidth="true" OnClick="ContinueToReservation">@L["Continue"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public CategoryRatesDto catRatesDto { get; set; }
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+
+    private async void ContinueToReservation()
+    {
+        bool reservationFilled = false;
+        foreach (CategoryShopMandantDto csmDto in catRatesDto.CategoryShopMandantDtos!)
+        {
+            foreach (RateShopMandantDto rsmDto in csmDto.RatesList)
+            {
+                if (rsmDto.Amount != null && rsmDto.Amount > 0)
+                {
+                    reservationDto.CategoryId = csmDto.Id;
+                    reservationDto.RoomAmount = (int)rsmDto.Amount;
+                    reservationDto.BookingPolicyId = rsmDto.BookingPolicyId;
+                    reservationDto.CancellationPolicyId = rsmDto.CancellationPolicyId;
+                    reservationDto.LogisTotal = rsmDto.RateTotal;
+                    reservationDto.RatePackages = rsmDto.Packages;
+                    reservationDto.RateId = rsmDto.Id;
+                    reservationDto.PackageExtendOptionDtos = new List<PackageExtendDto>();
+                    reservationDto.RoomNumberId = 0;
+                    reservationDto.BookingLineSummaries = new List<BookingLineSummary>();
+                    reservationDto.BookingLineSummaries = rsmDto.BookingLineSummaries;
+
+                    reservationDto.PriceTagDto = new PriceTagDto();
+                    reservationDto.PriceTagDto.MandantId = reservationDto.MandantId;
+                    reservationDto.PriceTagDto.Arrival = Convert.ToDateTime(reservationDto.Arrival);
+                    reservationDto.PriceTagDto.Departure = Convert.ToDateTime(reservationDto.Departure);
+                    decimal average = csmDto.PriceCatDtos.Sum(x => x.RateCurrent) / csmDto.PriceCatDtos.Count;
+                    reservationDto.PriceTagDto.AverageRate = average;
+                    reservationDto.PriceTagDto.RateSelected = 1;
+                    reservationDto.PriceTagDto.CategoryId = csmDto.Id;
+                    reservationDto.PriceTagDto.PriceTagDetails = new List<PriceTagDetailDto>();
+
+                    foreach (PriceCatDto priceCat in csmDto.PriceCatDtos)
+                    {
+                        PriceTagDetailDto ptd = new PriceTagDetailDto();
+                        ptd.CategoryId = reservationDto.CategoryId;
+                        ptd.RateId = reservationDto.RateId;
+                        ptd.DatePrice = priceCat.DatePrice;
+                        ptd.PaxAmount = priceCat.Pax;
+                        ptd.RateCurrent = priceCat.RateCurrent;
+                        ptd.RateStart = priceCat.RateStart;
+                        ptd.RateAutomatic = priceCat.RateAutomatic;
+                        ptd.AverageRate = average;
+                        ptd.RateTypeEnumId = priceCat.RateTypeEnumId;
+                        ptd.NoShow = false;
+                        reservationDto.PriceTagDto.PriceTagDetails.Add(ptd);
+                    }
+
+                    reservationFilled = true;
+                break;
+
+                }
+
+            }
+
+            if (reservationFilled) break;
+        }
+
+        if (reservationFilled) MudDialog.Close(DialogResult.Ok(reservationDto));
+    }
+
+
+}

@@ -1,10 +1,12 @@
 ﻿@page "/accounts/items"
 @using System.Diagnostics
 @using Blazored.SessionStorage
+@using FSH.BlazorWebAssembly.Client.Components.ItemPriceTaxes;
 @attribute [MustHavePermission(FSHAction.View, FSHResource.Items)]
 
 @inject IStringLocalizer<Items> L
 @inject IItemClient ItemsClient
+@inject IItemPriceTaxClient ItemPriceTaxClient
 @inject IItemGroupsClient ItemGroupsClient
 @inject ISessionStorageService sessionstorage
 @inject ITaxesClient TaxesClient
@@ -14,12 +16,17 @@
 <EntityTable TEntity="ItemDto" TId="int" TRequest="UpdateItemRequest" Context="@Context">
 
     <EditFormContent>
+
         <MudItem xs="3" md="3">
             <MudNumericField Variant="Variant.Outlined" T="int" Min="1000" Max="99999" For="@(() => context.ItemNumber)" @bind-Value="context.ItemNumber" Label="@L["ItemNumber"]" />
         </MudItem>
 
-        <MudItem xs="9" md="9">
-            <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+        <MudItem xs="6" md="6">
+            <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]"/>
+        </MudItem>
+
+        <MudItem xs="3" md="3">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.Automatic)" @bind-Checked="context.Automatic" Label="@L["Automatic"]" />
         </MudItem>
 
         <MudItem xs="4" md="4">
@@ -32,22 +39,41 @@
             </MudSelect>
         </MudItem>
 
-        <MudItem xs="9" md="9">
-            <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="decimal" For="@(() => context.Price)" @bind-Value="context.Price" Label="@L["Price"]" />
-        </MudItem>
-
-        <MudItem xs="3" md="3">
-            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.TaxId)" @bind-Value="context.TaxId" Label="@L["TaxId"]">
-                <MudSelectItem T="int" Value="0">@L[" Select Tax"]</MudSelectItem>
-                @foreach (var item in TaxesList)
-                {
-                    <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
-                }
-            </MudSelect>
+        <MudItem xs="4" md="4">
+            <MudNumericField Variant="Variant.Outlined" ReadOnly="false" T="int" For="@(() => context.InvoicePosition)" @bind-Value="context.InvoicePosition" Label="@L["InvoicePosition"]" />
         </MudItem>
 
         <MudItem xs="4" md="4">
-            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.Automatic)" @bind-Checked="context.Automatic" Label="@L["Automatic"]" />
+            <MudNumericField Variant="Variant.Outlined" ReadOnly="false" T="int" For="@(() => context.AccountNumber)" @bind-Value="context.AccountNumber" Label="@L["AccountNumber"]" />
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudTable Items="@context.PriceTaxesDto" T="ItemPriceTaxDto" Breakpoint="Breakpoint.None" Dense="true" Hover="true" Bordered="true" @bind-SelectedItem="selectedPriceTax">
+
+                <ToolBarContent>
+                    <MudButton OnClick="(() => AddItemPriceTax())" Color="Color.Primary" IconColor="Color.Surface" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add">Create ItemPriceTax</MudButton>
+                    <MudSpacer />
+                </ToolBarContent>
+
+                <HeaderContent>
+                    <MudTh>Actions</MudTh>
+                    <MudTh>Price</MudTh>
+                    <MudTh>Start</MudTh>
+                    <MudTh>End</MudTh>
+                    <MudTh>TaxId</MudTh>
+                </HeaderContent>
+
+                <RowTemplate Context="itemPriceTax">
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton OnClick="()=>EditItemPriceTax(itemPriceTax)" Icon="@Icons.Filled.Edit" aria-label="Edit"></MudIconButton>
+                        <MudIconButton OnClick="()=>DeleteItemPriceTax(itemPriceTax)" Icon="@Icons.Filled.Delete" aria-label="Delete"></MudIconButton>
+                    </MudTd>
+                    <MudTd DataLabel="Price" Style="text-align:right">@itemPriceTax.Price</MudTd>
+                    <MudTd DataLabel="Start">@Convert.ToDateTime(itemPriceTax.Start).ToShortDateString()</MudTd>
+                    <MudTd DataLabel="End">@Convert.ToDateTime(itemPriceTax.End).ToShortDateString()</MudTd>
+                    <MudTd DataLabel="TaxId">@itemPriceTax.TaxId</MudTd>
+                </RowTemplate>
+            </MudTable>
         </MudItem>
 
     </EditFormContent>
@@ -60,6 +86,10 @@
     public int _mandantId { get; set; } = 0;
     public List<ItemGroupDto> ItemGroupsList { get; set; } = new List<ItemGroupDto>();
     public List<TaxSelectDto> TaxesList { get; set; } = new();
+    public ItemPriceTaxDto selectedPriceTax { get; set; } = new ItemPriceTaxDto();
+    public UpdateItemRequest? selectedItem { get; set; }
+
+
 
     protected EntityServerTableContext<ItemDto, int, UpdateItemRequest> Context { get; set; } = default!;
 
@@ -69,13 +99,14 @@
             entityNamePlural: L["Items"],
             entityResource: FSHResource.Items,
             fields: new()
-                    {
+                                    {
                     //new(item => item.Id, L["Id"], "Id"),
                     new(item => item.ItemNumber, L["ItemNumber"], "ItemNumber"),
                     new(item => item.Name, L["Name"], "Name"),
-                    new(item => item.Price, L["Price"], "Price"),
+                    // new(item => item.Price, L["Price"], "Price"),
                     new(item => item.Automatic, L["Automatic"], "Automatic"),
-                },
+
+                                },
             idFunc: item => item.Id,
             idMandantFunc: item => item.MandantId,
             editNotAsModal: true,
@@ -83,6 +114,8 @@
             searchFunc: async filter =>
             {
                 var itemfilter = filter.Adapt<SearchItemsRequest>();
+                itemfilter.PageSize = 40;
+
                 if (_mandantId == 0)
                 {
                     itemfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
@@ -90,6 +123,7 @@
                 else
                 {
                     itemfilter.MandantId = _mandantId;
+
                 }
                 // _mandantId = itemfilter.MandantId;
                 var result = await ItemsClient.SearchAsync(itemfilter);
@@ -102,12 +136,6 @@
             },
             updateFunc: async (id, item) => await ItemsClient.UpdateAsync(id, item.Adapt<UpdateItemRequest>()),
             exportAction: string.Empty
-            //getMandantIdFunc: async (id) =>
-            //{
-            //    ItemDto item = new();
-            //    item = await ItemsClient.GetAsync(id);
-            //    return item.MandantId;
-            //}
             );
 
     protected async override Task OnInitializedAsync()
@@ -118,5 +146,57 @@
         TaxesList = (await TaxesClient.GetTaxSelectDtoAsync(_mandantId)).ToList();
     }
 
+    private async Task AddItemPriceTax()
+    {
+        selectedItem = Context.AddEditModal.RequestModel;
+        selectedPriceTax = new();
+        selectedPriceTax.MandantId = _mandantId;
+        var parameters = new DialogParameters
+            {
+                ["selectedPriceTax"] = selectedPriceTax,
+                ["taxesList"] = TaxesList
+            };
 
+        var dialog = DialogService.Show<AddEditItemPriceTaxModal>("", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            var itemPriceTax = result.Data as ItemPriceTaxDto;
+            itemPriceTax.MandantId = _mandantId;
+            itemPriceTax.ItemId = selectedItem.Id;
+            selectedItem.PriceTaxesDto!.Add(itemPriceTax);
+            Context.AddEditModal.ForceRender();
+        }
+    }
+
+    private async Task EditItemPriceTax(ItemPriceTaxDto itemPriceTax)
+    {
+        selectedPriceTax = itemPriceTax;
+        var parameters = new DialogParameters
+            {
+                ["selectedPriceTax"] = selectedPriceTax,
+                ["taxesList"] = TaxesList
+            };
+
+        var dialog = DialogService.Show<AddEditItemPriceTaxModal>("", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            // var itemPriceTax = result.Data as ItemPriceTaxDto;
+            Context.AddEditModal.ForceRender();
+        }
+    }
+
+    private async Task DeleteItemPriceTax(ItemPriceTaxDto itemPriceTax)
+    {
+        Context.AddEditModal.RequestModel.PriceTaxesDto.Remove(itemPriceTax);
+        if (itemPriceTax.Id > 0)
+        {
+            await ItemPriceTaxClient.DeleteAsync(itemPriceTax.Id);
+        }
+
+        Context.AddEditModal.ForceRender();
+    }
 }

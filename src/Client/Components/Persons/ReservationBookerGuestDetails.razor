@@ -1,0 +1,133 @@
+﻿@inject IStringLocalizer<ReservationBookerGuestDetails> L
+
+@if (_loaded)
+{
+
+    <MudCard Style="@($"height:{ExpandHeight}px;max-height:{ExpandHeight}px; overflow-y: scroll;")">
+        <MudCardHeader Class="mb-n10">
+            <CardHeaderContent>
+
+@*                <MudGrid>
+                    <MudItem xs="11">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                            <MudText Typo="Typo.subtitle1">
+                                @if (!isGuest)
+                                {
+                                    if (reservationDto.BookerId == reservationDto.GuestId)
+                                    {
+                                        @L["Booker / Guest details"]  <MudText Typo="Typo.overline">@reservationDto.BookerId</MudText>
+
+                                    }
+                                    else
+                                    {
+                                        @L["Booker details"] <MudText Typo="Typo.overline">@reservationDto.BookerId</MudText>
+                                    }
+                                }
+                                else
+                                {
+                                    @L["Guest details"] <MudText Typo="Typo.overline">@reservationDto.GuestId</MudText>
+                                }
+                            </MudText>
+                        </MudButton>
+                    </MudItem>
+                    <MudItem xs="1" Class="pr-4">
+                        <MudToggleIconButton @bind-Toggled="@AlarmOn"
+                                             Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="@Color.Primary" Title="Down"
+                                             ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp" ToggledColor="@Color.Success" ToggledTitle="Up" />
+                    </MudItem>
+                </MudGrid>
+*@
+                <MudStack Row="true">
+                    <MudToggleIconButton Toggled="@ExpandOn" ToggledChanged="ExpandBookerGuestCard"
+                                         Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="@Color.Primary" Title="Down"
+                                         ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp" ToggledColor="@Color.Primary" ToggledTitle="Up" />
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                        <MudText Typo="Typo.subtitle1">
+                            @if (!isGuest)
+                            {
+                                if (reservationDto.BookerId == reservationDto.GuestId)
+                                {
+                                    @L["Booker / Guest details"]  <MudText Typo="Typo.overline">@reservationDto.BookerId</MudText>
+
+                                }
+                                else
+                                {
+                                    @L["Booker details"] <MudText Typo="Typo.overline">@reservationDto.BookerId</MudText>
+                                }
+                            }
+                            else
+                            {
+                                @L["Guest details"] <MudText Typo="Typo.overline">@reservationDto.GuestId</MudText>
+                            }
+
+                        </MudText>
+
+                    </MudButton>
+
+
+
+                </MudStack>
+
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (isGuest)
+            {
+                <BookerGuestShopMandant bookerId="(int)reservationDto.GuestId!" bookerIdChanged="((e) => OnGuestIdChanged(e))"></BookerGuestShopMandant>
+            }
+            else
+            {
+                <BookerGuestShopMandant bookerId="reservationDto.BookerId" bookerIdChanged="((e) => OnBookerIdChanged(e))"></BookerGuestShopMandant>
+            }
+        </MudCardContent>
+        <MudCardActions>
+        </MudCardActions>
+    </MudCard>
+}
+
+@code {
+    public bool _loaded { get; set; } = false;
+    //public bool _eventOK { get; set; } = true;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    [Parameter]
+    public bool isGuest { get; set; }
+
+
+    public bool ExpandOn { get; set; }
+    public int ExpandHeight { get; set; } = 160;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loaded = true;
+    }
+
+    private async void OnBookerIdChanged(int value)
+    {
+        reservationDto.BookerId = value;
+        reservationDto.RemarksHelper += "BOOKER";
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+
+    private async void OnGuestIdChanged(int value)
+    {
+        reservationDto.GuestId = value;
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+
+    private void ExpandBookerGuestCard()
+    {
+        ExpandOn = !ExpandOn;
+        if (ExpandOn)
+        {
+            ExpandHeight = 820;
+        }
+        else
+        {
+            ExpandHeight = 160;
+        }
+    }
+
+}

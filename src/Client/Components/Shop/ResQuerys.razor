@@ -1,0 +1,401 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Dialogs
+@using FSH.BlazorWebAssembly.Client.Components.Persons;
+@using FSH.BlazorWebAssembly.Client.Pages.Shop
+@using Blazored.SessionStorage
+@using MudBlazor;
+@using FSH.BlazorWebAssembly.Client.Components.Person
+@using FSH.BlazorWebAssembly.Client.Components.Company
+@using System.Text.Json;
+
+@inject IStringLocalizer<ResQuery> L
+@inject IResQueryClient ResQueryClient
+@inject IDialogService DialogService
+@inject ISessionStorageService sessionstorage
+@inject IPersonsClient PersonsClient
+@inject ICompanysClient CompanysClient
+
+
+@if (!_loaded)
+{
+    <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudItem Class="pl-0 pr-0" xs="12">
+
+        <MudPaper Elevation="25" Class=" pl-3 pt-1 pb-4 ma-2">
+            <MudGrid Justify="Justify.Center">
+                @if (UserCase != "Mandant")
+                {
+                    <MudItem xs="12" sm="6" md="2">
+                        <MudAutocomplete T="string" Label="@L["Country"]" @bind-Value="@resQuery.DestinationCountry" SearchFunc="@Search1"
+                                 ResetValueOnEmptyText="@resetValueOnEmptyText" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6" md="2">
+                        <MudAutocomplete T="string" Label="@L["City"]" @bind-Value="@resQuery.DestinationTown" SearchFunc="@Search2"
+                                 ResetValueOnEmptyText="@resetValueOnEmptyText" Variant="Variant.Outlined" />
+                    </MudItem>
+                }
+
+                @if (UserCase == "Mandant")
+                {
+                    <MudItem xs="12" sm="6" md="2" Class="mt-n2">
+                        <PersonAutoComplete MaxItems="null" @bind-Value="@resQuery.SearchPersonId" />
+
+                        <MudIconButton OnClick="((e) => AddPerson(maxWidth))" Icon="@Icons.Filled.Add" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success" Title="@L["Add new Person"]" aria-label="Add new Person"></MudIconButton>
+                        <MudIconButton OnClick="@(() => @resQuery.SearchPersonId = gastnamefolgt)" Icon="@Icons.Filled.PersonAdd" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Warning" Title="@L["Default Person"]" aria-label="Default Person"></MudIconButton>
+                        @if (resQuery.SearchPersonId != default && resQuery.SearchPersonId != gastnamefolgt)
+                        {
+                            <MudIconButton OnClick="((e) => EditPerson(maxWidth))" Icon="@Icons.Filled.Edit" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" Title="@L["Edit Person"]" aria-label="Edit Person"></MudIconButton>
+                        }
+
+                    </MudItem>
+
+                    <MudItem xs="12" sm="6" md="2" Class="mt-n2">
+                        <CompanyAutoComplete MaxItems="null" @bind-Value="@resQuery.SearchCompanyId" Label="@L["Company Name, Zip, City"]" />
+
+                        <MudIconButton OnClick="((e) => AddCompany(maxWidth))" Icon="@Icons.Filled.Add" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
+                        <MudIconButton OnClick="((e) => EditCompany(maxWidth))" Icon="@Icons.Filled.Edit" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" Title="@L["Edit Company"]" aria-label="Edit Company"></MudIconButton>
+
+                    </MudItem>
+
+                }
+
+                <MudItem xs="12" sm="6" md="2">
+                    <MudTextField T="string" @bind-Text="@resQuery.PromotionCode" Label="@L["PromotionCode"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12" sm="6" md="3">
+                    <MudDateRangePicker Label="@L["Arrival - Departure"]" @bind-DateRange="_dateRange" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6" sm="3" md="1">
+                    <MudNumericField @bind-Value="@adults" Label="@L["Adults"]" HideSpinButtons="true" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6" sm="3" md="1">
+                    <MudNumericField @bind-Value="@childs" TextChanged="OpenDialog_Pre" HideSpinButtons="true" Label="@L["Child(s)"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="1" sm="1" md="1" Class="mt-1">
+                    <MudFab OnClick="startShopMandantCatRatePrice" Color="Color.Tertiary" StartIcon="@Icons.Filled.Search" DisableElevation="true" />
+                </MudItem>
+
+            </MudGrid>
+
+        </MudPaper>
+
+    </MudItem>
+
+}
+
+
+
+
+@code {
+
+    [Parameter]
+    public ResQuery resQuery { get; set; }
+    [Parameter]
+    public string? UserCase { get; set; }                // Mandant, MandantReservierung, Group, Public _  blendet DestinationCountry und DestinationTown aus
+    [Parameter]
+    public int adults { get; set; } = 1;
+    private bool _loaded = false;
+    public int? childs { get; set; }
+    //private PersonDto updatePersonRequestDto { get; set; } = new();
+    private UpdatePersonRequest _updatePersonRequest { get; set; } = new();
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    public int _mandantId { get; set; }
+    int gastnamefolgt = 46861;
+    public bool openChildDialog { get; set; } = true;
+
+
+    private bool resetValueOnEmptyText;
+    private DateRange? _dateRange;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        if (resQuery == null)
+        {
+            resQuery = new();
+            Pax pax = new();
+            pax.Children = new List<Child>();
+            resQuery.RoomOccupancy = new List<Pax>();
+            resQuery.RoomOccupancy.Add(pax);
+#if DEBUG
+    _dateRange = new DateRange(new DateTime(2022, 09, 01).Date, new DateTime(2022,09,02).Date);
+#else
+            _dateRange = new DateRange(DateTime.Now.Date, DateTime.Now.AddDays(1).Date);
+#endif
+        }
+        else
+        {
+            List<Pax> paxliste = resQuery.RoomOccupancy.ToList();
+            adults = paxliste[0].Adult;
+            if (paxliste[0].Children != null)
+            {
+                openChildDialog = false;
+                childs = paxliste[0].Children!.Count();
+            }
+            else
+            {
+                childs = 0;
+            }
+            _dateRange = new DateRange((Convert.ToDateTime(resQuery.Arrival)).Date, (Convert.ToDateTime(resQuery.Departure)).Date);
+        }
+
+        _loaded = true;
+    }
+
+    private async Task<IEnumerable<string>> Search1(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return states;
+        return states.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private string[] states =
+    {
+        "Alabama", "Alaska", "American Samoa", "Arizona",
+        "Arkansas", "California", "Colorado", "Connecticut",
+        "Delaware", "District of Columbia", "Federated States of Micronesia",
+        "Florida", "Georgia", "Guam", "Hawaii", "Idaho",
+        "Illinois", "Indiana", "Iowa", "Kansas", "Kentucky",
+        "Louisiana", "Maine", "Marshall Islands", "Maryland",
+        "Massachusetts", "Michigan", "Minnesota", "Mississippi",
+        "Missouri", "Montana", "Nebraska", "Nevada",
+        "New Hampshire", "New Jersey", "New Mexico", "New York",
+        "North Carolina", "North Dakota", "Northern Mariana Islands", "Ohio",
+        "Oklahoma", "Oregon", "Palau", "Pennsylvania", "Puerto Rico",
+        "Rhode Island", "South Carolina", "South Dakota", "Tennessee",
+        "Texas", "Utah", "Vermont", "Virgin Island", "Virginia",
+        "Washington", "West Virginia", "Wisconsin", "Wyoming",
+    };
+
+    private async Task<IEnumerable<string>> Search2(string value)
+    {
+        // In real life use an asynchronous function for fetching data from an api.
+        await Task.Delay(5);
+
+        // if text is null or empty, show complete list
+        if (string.IsNullOrEmpty(value))
+            return citys;
+        return citys.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase));
+    }
+
+    private string[] citys =
+    {
+        "Hannover", "Hamburg", "Hildesheim", "Braunschweig", "Leipzig",
+        "Dresden", "Berlin", "Magdeburg",
+    };
+
+    private void OpenDialog_Pre()
+    {
+        if (openChildDialog)
+        {
+            OpenDialog();
+        }
+        openChildDialog = true;
+    }
+
+    private async void OpenDialog()
+    {
+        if (openChildDialog)
+        {
+            if (childs == 0)
+            {
+                resQuery.RoomOccupancy = new List<Pax>();
+                Pax pax = new();
+                pax.Adult = adults;
+                resQuery.RoomOccupancy.Add(pax);
+            }
+            else
+            {
+                resQuery.RoomOccupancy = new List<Pax>();
+                Pax pax = new();
+                pax.Adult = adults;
+                pax.Children = new List<Child>();
+                for (int i = 1; i <= childs; i++)
+                {
+                    Child child = new Child();
+                    pax.Children.Add(child);
+                }
+                resQuery.RoomOccupancy.Add(pax);
+
+                Console.WriteLine("Childs | ListCount Children: " + childs + " | " + pax.Children.Count);
+
+                var parameters = new DialogParameters
+                    {
+                        ["paxes"] = resQuery.RoomOccupancy,
+                        ["childsR1"] = pax.Children
+                    };
+                var dialog = DialogService.ShowModal<RoomOccupancyDialog>(parameters);
+                var result = await dialog.Result;
+                if (!result.Cancelled) startShopMandantCatRatePrice();
+            }
+        }
+    }
+
+    private void startShopMandantCatRatePrice()
+    {
+        resQuery.Arrival = _dateRange!.Start;
+        resQuery.Departure = _dateRange.End;
+
+        ResQueryTransferService resQueryTransferService = new(resQuery);
+        resQueryTransferService.PaxTransferServiceList[0].Adults = adults;
+
+        string testResQuery = resQueryTransferService.ToString();
+        List<Pax> paxes = resQuery.RoomOccupancy!.ToList();
+        Pax pax = paxes[0];
+        // string paxStringJson = JsonSerializer.Serialize<List<Pax>>(resQuery.RoomOccupancy!.ToList());
+        Navigation.NavigateTo($"/shop/CatRatePrices/{resQueryTransferService.ToString()}");
+    }
+
+    #region "Person AddPerson, EditPerson"
+
+
+    private async Task AddPerson(DialogOptions options)
+    {
+        if (_mandantId == 0) _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] = _mandantId,
+                ["_isCreate"] = true,
+                ["updatePersonRequest"] = _updatePersonRequest,
+            };
+        var dialog = DialogService.Show<AddEditPersonModal>("", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            UpdatePersonRequest updatePersonRequest = (UpdatePersonRequest)result.Data;
+
+            if (updatePersonRequest.Id > 0) // Edit
+            {
+
+            }
+            else // Create
+            {
+                updatePersonRequest.MandantId = _mandantId;
+                updatePersonRequest.Source = (updatePersonRequest.Source != null || updatePersonRequest.Source != string.Empty ? "HotelGuest" : string.Empty);
+                int id = await PersonsClient.CreateAsync(updatePersonRequest.Adapt<CreatePersonRequest>());
+                resQuery.SearchPersonId = id;
+                //StateHasChanged();
+            }
+        }
+    }
+
+    private async Task EditPerson(DialogOptions options)
+    {
+        if (resQuery.SearchPersonId == gastnamefolgt) return;
+
+        if (_mandantId == 0) _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        PersonDto personDto = await PersonsClient.GetAsync(resQuery.SearchPersonId);
+        _updatePersonRequest = (personDto.Adapt<UpdatePersonRequest>());
+
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] = _mandantId,
+                ["_isCreate"] = false,
+                ["updatePersonRequest"] = _updatePersonRequest,
+            };
+        var dialog = DialogService.Show<AddEditPersonModal>("", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            UpdatePersonRequest updatePersonRequest = (UpdatePersonRequest)result.Data;
+
+            if (updatePersonRequest.Id > 0) // Edit
+            {
+                int id = await PersonsClient.UpdateAsync(updatePersonRequest.Id, updatePersonRequest);
+                resQuery.SearchPersonId = id;
+            }
+            else // Create
+            {
+                updatePersonRequest.MandantId = _mandantId;
+                updatePersonRequest.Source = (updatePersonRequest.Source != null || updatePersonRequest.Source != string.Empty ? "HotelGuest" : string.Empty);
+                int id = await PersonsClient.CreateAsync(updatePersonRequest.Adapt<CreatePersonRequest>());
+                resQuery.SearchPersonId = id;
+            }
+        }
+    }
+
+    #endregion
+
+    #region "Company AddCompany, EditCompany"
+
+    private UpdateCompanyRequest _updateCompanyRequest { get; set; } = new();
+
+    private async Task AddCompany(DialogOptions options)
+    {
+        if (_mandantId == 0) _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        _updateCompanyRequest = new();
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] = _mandantId,
+                ["_isCreate"] = true,
+                ["updateCompanyRequest"] = _updateCompanyRequest,
+            };
+        var dialog = DialogService.Show<AddEditCompanyModal>("", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            UpdateCompanyRequest updateCompanyRequest = (UpdateCompanyRequest)result.Data;
+
+            if (updateCompanyRequest.Id > 0) // Edit
+            {
+
+            }
+            else // Create
+            {
+                updateCompanyRequest.MandantId = _mandantId;
+                int id = await CompanysClient.CreateAsync(updateCompanyRequest.Adapt<CreateCompanyRequest>());
+                resQuery.SearchCompanyId = id;
+            }
+        }
+    }
+
+    private async Task EditCompany(DialogOptions options)
+    {
+        if (resQuery.SearchCompanyId == gastnamefolgt) return;
+
+        if (_mandantId == 0) _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        CompanyDto personDto = await CompanysClient.GetAsync(resQuery.SearchCompanyId);
+        _updateCompanyRequest = (personDto.Adapt<UpdateCompanyRequest>());
+
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] = _mandantId,
+                ["_isCreate"] = false,
+                ["updateCompanyRequest"] = _updateCompanyRequest,
+            };
+        var dialog = DialogService.Show<AddEditCompanyModal>("", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            UpdateCompanyRequest updateCompanyRequest = (UpdateCompanyRequest)result.Data;
+
+            if (updateCompanyRequest.Id > 0) // Edit
+            {
+                int id = await CompanysClient.UpdateAsync(updateCompanyRequest.Id, updateCompanyRequest);
+                resQuery.SearchCompanyId = id;
+            }
+            else // Create
+            {
+                updateCompanyRequest.MandantId = _mandantId;
+                int id = await CompanysClient.CreateAsync(updateCompanyRequest.Adapt<CreateCompanyRequest>());
+                resQuery.SearchCompanyId = id;
+            }
+        }
+    }
+
+    #endregion
+
+}

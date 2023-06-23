@@ -1,0 +1,248 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Package;
+@using FSH.BlazorWebAssembly.Client.Pages.Shop;
+
+@inject IStringLocalizer<CartMandantSideBar> L
+@inject IPackagesClient PackagesClient
+
+
+<MudItem xs="12">
+    <MudGrid>
+
+        <MudItem xs="12" Style="align-content:center">
+            <MudText Style="align-self:center" Typo="Typo.h6">@L["ShoppingCart"] Total: @Convert.ToDecimal(cartHelper.CartPrice(cartMandant!.CartItemList!.ToList())).ToString("C2") </MudText>
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudDivider></MudDivider>
+        </MudItem>
+
+        @foreach (CartItemMandantDto cartItem in cartMandant!.CartItemList!)
+        {
+            <MudItem xs="1" Class="mt-n3">
+                <MudAvatar Image="@(string.IsNullOrEmpty(@cartItem.ImagePath) ? string.Empty : (Config[ConfigNames.ApiBaseUrl] + @cartItem.ImagePath))" Alt="Image of CartItem" />
+            </MudItem>
+            <MudItem xs="4">
+                <MudText Typo="Typo.body1">@L["Room(s)"]:  @cartItem.Amount</MudText>
+            </MudItem>
+            <MudItem xs="7">
+                <MudText Class="mt-n1" Typo="Typo.h6">@cartItem.Name</MudText>
+            </MudItem>
+                <MudItem xs="5">
+                <MudText Typo="Typo.body1">@L["Arrival"]:  @Convert.ToDateTime(cartItem.Start).ToShortDateString()</MudText>
+            </MudItem>
+            <MudItem xs="7">
+                <MudText Typo="Typo.body1">@L["Departure"]:  @Convert.ToDateTime(cartItem.End).ToShortDateString()</MudText>
+            </MudItem>
+            <MudItem xs="5">
+                <MudText Typo="Typo.body1">@L["Adults"]: @cartItem.Pax.Adult </MudText>
+            </MudItem>
+            <MudItem xs="7">
+                @if (cartItem.Pax.Children != null)
+                {
+                    <MudText Typo="Typo.body1">@L["Children"]: @cartItem.Pax.Children.Count()</MudText>
+                    <MudList Clickable="false" Dense="true">
+                        <MudListItem Icon="@Icons.Material.Filled.Girl" Dense="true" Text="@L["Children"]" InitiallyExpanded="true">
+                            <NestedList>
+                                @foreach (Child item in cartItem.Pax.Children)
+                                {
+                                    <MudListItem>
+                                        @L["Age"]: @item.Age @L["ExtraBed"]:
+                                        @if (item.ExtraBed is true)
+                                        {
+                                            @L["Yes"]
+                                        }
+                                        else
+                                        {
+                                            @L["No"]
+                                        }
+                                    </MudListItem>
+                                }
+                            </NestedList>
+                        </MudListItem>
+                    </MudList>
+                }
+                else
+                {
+                    <MudText Typo="Typo.body1">@L["Children"]: 0</MudText>
+                }
+
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudDivider></MudDivider>
+            </MudItem>
+
+            @if (cartItem.PackageExtendedList.Count > 0)
+            {
+
+
+                string[] headings = { "", "Option", "Amount", "Price", "Total" };
+
+                <MudItem xs="12" Class="ma-2">
+                    <MudSimpleTable>
+                        <thead>
+                            <tr>
+                                @foreach (var h in headings)
+                                {
+                                    <th>@h</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (PackageExtendDto packageExtendDto in cartItem.PackageExtendedList)
+                            {
+                                <tr>
+                                    <td>
+                                        <MudIconButton OnClick="(() => DeleteOption(cartItem, packageExtendDto))" Icon="@Icons.Material.Filled.Delete" Color="Color.Secondary" aria-label="delete"></MudIconButton>
+                                    </td>
+                                    <td>
+                                        <MudText Typo="Typo.body1">@packageExtendDto.PackageDto.Name</MudText>
+                                    </td>
+                                    <td>
+                                        @cartItem.PackageExtendedBookingLines.Where(x => x.Description == packageExtendDto.PackageDto.InvoiceName).Sum(x => x.Amount)
+                                    </td>
+                                    <td>
+                                        @cartItem.PackageExtendedBookingLines.First(x => x.Description == packageExtendDto.PackageDto.InvoiceName).Price.ToString("N2")
+                                    </td>
+                                    <td>
+                                        @cartItem.PackageExtendedBookingLines.Where(x => x.Description == packageExtendDto.PackageDto.InvoiceName).Sum(x => x.Total).ToString("N2")
+                                    </td>
+                                </tr>
+
+                            }
+
+                            <tr>
+                                <td></td>
+                                <td>
+                                    @L["Total"]:
+                                </td>
+                                <td></td>
+                                <td></td>
+                                <td>
+                                    @cartItem.PackageExtendedBookingLines.Sum(x => x.Total).ToString("N2")
+                                </td>
+                            </tr>
+
+
+                        </tbody>
+                    </MudSimpleTable>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Style="height:250px">
+                        <thead>
+                            <tr>
+                                <th>@L["Date"]</th>
+                                <th>@L["Description"]</th>
+                                <th style="text-align:right">@L["Amount"]</th>
+                                <th style="text-align:right">@L["Price"]</th>
+                                <th style="text-align:right">@L["Total"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                decimal total = 0;
+                            }
+
+                            @foreach (BookingLineSummary bl in cartItem.PackageExtendedBookingLines.OrderBy(x => x.Date))
+                            {
+                                <tr>
+                                    <td>
+                                        @bl.Date.ToString("dd.MM.yyyy")
+                                    </td>
+                                    <td>
+                                        @bl.Description
+                                        @bl.TaxLine
+                                    </td>
+                                    <td style="text-align:right">
+                                        @Convert.ToDecimal(bl.Amount).ToString("N2")
+                                    </td>
+                                    <td style="text-align:right">
+                                        @bl.Price.ToString("N2")
+                                    </td>
+                                    <td style="text-align:right">
+                                        @bl.Total.ToString("N2")
+                                    </td>
+                                </tr>
+                                total += @bl.Total;
+                            }
+
+                            <tr>
+                                <td>
+                                </td>
+                                <td>
+                                    @L["Total"]
+                                </td>
+                                <td>
+                                </td>
+                                <td>
+                                </td>
+                                <td style="text-align:right">
+                                    @total.ToString("N2")
+                                </td>
+                            </tr>
+                        </tbody>
+                    </MudSimpleTable>
+                </MudItem>
+
+
+                <MudItem xs="12">
+                    <MudDivider></MudDivider>
+                </MudItem>
+            }
+            decimal roomRateTotal = @cartItem.Amount * @cartItem.Price;
+            <MudItem xs="6">
+                <MudText Typo="Typo.h6">@cartItem.Amount X @cartItem.Price.ToString("N2") @L["Roomrate"] = @roomRateTotal.ToString("N2")</MudText>
+            </MudItem>
+
+            <MudItem xs="4">
+                <MudText Class="mt-n1" Typo="Typo.h5">@L["Itemtotal"]: @cartHelper.ItemPriceTotal(cartItem).ToString("C2")</MudText>
+            </MudItem>
+
+            <MudItem xs="2" Class="mt-n3">
+                <MudIconButton OnClick="(() => DeleteCartItem(cartItem))" Icon="@Icons.Material.Filled.RemoveShoppingCart" Color="Color.Secondary" aria-label="remove CartItem"></MudIconButton>
+            </MudItem>
+
+            <MudItem xs="12">
+                <MudDivider></MudDivider>
+            </MudItem>
+        }
+
+        <MudItem xs="12">
+            <MudButton Style="height:100px;" OnClick="CheckOutShoppingCart" Variant="Variant.Filled" Color="Color.Warning" FullWidth="true"><MudText Class="mt-n1" Typo="Typo.h5">@L["CheckOut"] @Convert.ToDecimal(cartHelper.CartPrice(cartMandant!.CartItemList!.ToList())).ToString("C2")</MudText></MudButton>
+            </MudItem>
+
+
+
+        </MudGrid>
+    </MudItem>
+
+    @code {
+    [Parameter]
+    public EventCallback OnCheckOutShoppingCart { get; set; }
+
+    [Parameter]
+    public CartMandantDto? cartMandant { get; set; } = new();
+
+    public CartHelper cartHelper { get; set; } = new();
+
+    public async void DeleteOption(CartItemMandantDto cartItem, PackageExtendDto packageExtendDto)
+    {
+        // cartItem.PackageExtendedList!.Remove(packageExtendDto.Adapt<PackageExtendDto>());
+        cartItem.PackageExtendedList!.Remove(packageExtendDto);
+        PackageHelper packageHelper = new(PackagesClient);
+        cartItem.PackageExtendedBookingLines = await packageHelper.Calculate_PackageExtendeds(cartItem, cartMandant.MandantId);
+        StateHasChanged();
+    }
+
+    public async void DeleteCartItem(CartItemMandantDto cartItem)
+    {
+        cartMandant.CartItemList.Remove(cartItem);
+        StateHasChanged();
+    }
+
+    public async Task CheckOutShoppingCart()
+    {
+        await OnCheckOutShoppingCart.InvokeAsync();
+    }
+}

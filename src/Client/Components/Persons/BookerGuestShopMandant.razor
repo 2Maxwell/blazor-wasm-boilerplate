@@ -1,0 +1,219 @@
+﻿@using Blazored.SessionStorage
+
+@inject IStringLocalizer<BookerGuestShopMandant> L
+@inject IPersonsClient PersonsClient
+@inject ISessionStorageService sessionstorage
+@inject ILanguagesClient LanguagesClient
+@inject ICountriesClient CountriesClient
+@inject IStateRegionsClient StateRegionsClient
+@inject ISalutationsClient SalutationsClient
+
+<MudGrid>
+    <MudItem xs="12">
+        <FSH.BlazorWebAssembly.Client.Components.Person.PersonAutoComplete MaxItems="null" Value="bookerId" ValueChanged="((e) => BookerIdChanged(e))" />
+
+    </MudItem>
+    <MudItem xs="6">
+        <MudTextField @bind-Value="booker.Name" For="()=>booker.Name" Label="@L["Name"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="booker.FirstName" For="()=>booker.FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => booker.LanguageId)" Value="@booker.LanguageId" ValueChanged="languageChanged" Label="@L["Language"]">
+            <MudSelectItem T="int" Value="0">@L["Select Language"]</MudSelectItem>
+            @foreach (var item in languagesList)
+            {
+                <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => booker.SalutationId)" @bind-Value="booker.SalutationId" Label="@L["Salutation"]">
+            <MudSelectItem T="int" Value="0">@L["Select Salutation"]</MudSelectItem>
+            @foreach (var item in salutationsList)
+            {
+                <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudDivider></MudDivider>
+    </MudItem>
+
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="booker.Address1" For="()=>booker.Address1" Label="@L["Address1"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="booker.Address2" For="()=>booker.Address2" Label="@L["Address2"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="3">
+        <MudTextField @bind-Value="booker.Zip" For="()=>booker.Zip" Label="@L["ZipCode"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="5">
+        <MudTextField @bind-Value="booker.City" For="()=>booker.City" Label="@L["City"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="4">
+        <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => booker.CountryId)" Value="@booker.CountryId" Label="@L["Country"]">
+            <MudSelectItem T="int" Value="0">@L["Select Country"]</MudSelectItem>
+            @foreach (var item in countriesList)
+            {
+                <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </MudItem>
+
+    <MudItem xs="12">
+        <MudDivider></MudDivider>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="booker.Telephone" For="()=>booker.Telephone" Label="@L["Telephone"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="booker.Telefax" For="()=>booker.Telefax" Label="@L["Telefax"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="booker.Mobil" For="()=>booker.Mobil" Label="@L["Mobil"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudTextField @bind-Value="booker.Email" For="()=>booker.Email" Label="@L["Email"]" Variant="Variant.Outlined" />
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudButton OnClick="AddEditBooker" DisableElevation Variant="Variant.Filled" StartIcon="@Icons.Filled.Save" Color="Color.Success">
+            @L["Save"] 
+        </MudButton>
+    </MudItem>
+
+
+</MudGrid>
+
+
+@code {
+    [Parameter]
+    public int bookerId { get; set; }
+    [Parameter]
+    public int? amountRooms { get; set; }
+    [Parameter]
+    public int adults { get; set; }
+    [Parameter]
+    public int _mandantId { get; set; }
+    [Parameter]
+    public EventCallback<int> bookerIdChanged { get; set; }
+    //[Parameter]
+    //public List<Child>? childsList { get; set; }
+
+    public UpdatePersonRequest booker { get; set; } = new();
+
+    public List<LanguageSelectDto> languagesList { get; set; } = new();
+    public List<CountrySelectDto> countriesList { get; set; } = new();
+    public List<SalutationSelectDto> salutationsList { get; set; } = new();
+    public List<StateRegionSelectDto> stateRegionsList { get; set; } = new();
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_mandantId == 0) _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+
+        if (bookerId != 0)
+        {
+            PersonDto personDto = await PersonsClient.GetAsync(bookerId);
+            booker = (personDto.Adapt<UpdatePersonRequest>());
+        }
+        else
+        {            
+            booker = new UpdatePersonRequest();
+        }
+
+        languagesList = (await LanguagesClient.GetLanguageSelectAsync()).ToList();
+        countriesList = (await CountriesClient.GetCountrySelectAsync()).ToList();
+        salutationsList = (await SalutationsClient.GetSalutationSelectAsync(_mandantId, 0)).ToList();
+        stateRegionsList = (await StateRegionsClient.GetStateRegionsSelectAsync(0)).ToList();
+
+        StateHasChanged();
+    }
+
+    private void BookerIdChanged(int value)
+    {
+        bookerIdChanged.InvokeAsync(value);
+        bookerId = value;
+        LoadBooker();
+    }
+
+    private async void LoadBooker()
+    {
+        if (bookerId != 0)
+        {
+            PersonDto personDto = await PersonsClient.GetAsync(bookerId);
+            booker = (personDto.Adapt<UpdatePersonRequest>());
+        }
+
+        StateHasChanged();
+    }
+
+    private async void AddEditBooker()
+    {
+        if (booker.Id == 0) // CREATE
+        {
+            booker.MandantId = _mandantId;
+            booker.Source = "BookerWithOutLogin,";
+            //updatePersonRequest.CompanyId = companyId;
+            int id = await PersonsClient.CreateAsync(booker.Adapt<CreatePersonRequest>());
+            bookerId = id;
+        }
+        else
+        {
+            if (!booker.Source!.Contains("BookerWithOutLogin"))
+            {
+                if (booker.Source.Length > 0)
+                {
+                    string s = booker.Source.Trim();
+                    s += " BookerWithOutLogin,";
+                    booker.Source = s;
+                }
+                else
+                {
+                    booker.Source = "BookerWithOutLogin,";
+                }
+            }
+            int id = await PersonsClient.UpdateAsync(booker.Id, booker);
+            bookerId = id;
+        }
+
+    }
+
+    private async Task languageChanged(int languageId)
+    {
+        booker.LanguageId = languageId;
+        salutationsList = (await SalutationsClient.GetSalutationSelectAsync(_mandantId, languageId)).ToList();
+        StateHasChanged();
+    }
+
+    private async Task countryChanged(int countryId)
+    {
+        booker.CountryId = countryId;
+        switch (countryId)
+        {
+            case 226:
+                stateRegionsList = (await StateRegionsClient.GetStateRegionsSelectAsync(countryId)).ToList();
+                break;
+            default:
+                stateRegionsList = new List<StateRegionSelectDto>();
+                break;
+        }
+    }
+}

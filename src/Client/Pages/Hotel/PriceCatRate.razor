@@ -20,31 +20,18 @@
     .align-right input {
         text-align: right;
     }
+    .mud-table input {
+        padding:2px;
+    }
 </style>
 
 <MudGrid>
 
-    @*    <MudItem xs="1">
-    <MudButton OnClick="@ToggleValue" Variant="Variant.Filled" Size="Size.Large" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Edit" DisableElevation="true">Edit Prices</MudButton>
-    </MudItem>
-    *@
     <MudItem xs="6">
-        <MudExpansionPanel Text="Edit Prices for Periods" MaxHeight="450">
+        <MudExpansionPanel Text="@L["Edit Prices for Periods"]" MaxHeight="450">
 
-            @*            <EditForm Model="@updatePriceCatBulkRequest" OnValidSubmit="SavePriceChanges">
-            *@
             <MudGrid>
 
-                @*                <MudItem xs="6">
-                <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="priceEditRateScopeEnumId" Label="@L["RateScopeEnum"]">
-                <MudSelectItem T="int" Value="0">@L["Select RateScope"]</MudSelectItem>
-                @foreach (var item in RateScopeEnumList)
-                {
-                <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
-                }
-                </MudSelect>
-                </MudItem>
-                *@
                 <div class="mud-grid-spacing-xs-3"></div>
 
                 <MudItem xs="6">
@@ -55,8 +42,6 @@
                     <MudDatePicker Label="EndDate" Editable="true" Variant="Variant.Outlined" Placeholder="End Date" @bind-Date="updatePriceCatBulkRequest.EndDate" MinDate="updatePriceCatBulkRequest.StartDate" />
                 </MudItem>
 
-                @*                <div class="mud-grid-spacing-xs-3"></div>
-                *@
                 <MudItem xs="6">
                     <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="updatePriceCatBulkRequest.PriceSchemaId" Label="@L["PriceSchema"]">
                         <MudSelectItem T="int" Value="0">@L["Select PriceSchema"]</MudSelectItem>
@@ -89,7 +74,6 @@
                     <MudCheckBox @bind-Checked="updatePriceCatBulkRequest.IsOverwriteRateType" Size="Size.Large" Label="Overwrite RateType" Color="Color.Warning"></MudCheckBox>
                 </MudItem>
 
-
                 <MudItem xs="12" Class="">
                     <MudButton OnClick="@SavePricePeriodChanges" Variant="Variant.Filled" Size="Size.Large" Color="Color.Success" StartIcon="@Icons.Material.Filled.Save" DisableElevation="true">Save Price Period Changes</MudButton>
                 </MudItem>
@@ -97,13 +81,30 @@
 
             </MudGrid>
 
-            @*            </EditForm>
-            *@
         </MudExpansionPanel>
+    </MudItem>
+    <MudItem xs="2">
+        <MudExpansionPanel Text="@L["Create Default Prices Periods"]" MaxHeight="150">
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudDatePicker Label="Default EndDate" Editable="true" Variant="Variant.Outlined" Placeholder="Default End Date" @bind-Date="priceCatDefaultEndDate" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudButton OnClick="SetNewPriceCatDefault" FullWidth="true" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Info" Size="Size.Small">Save</MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudExpansionPanel>
+
+    </MudItem>
+    <MudItem xs="4">
+
+
     </MudItem>
 
     <MudPaper Class="d-flex flex-row flex-grow-1 gap-6" Height="70px" Width="100%">
-
+        <MudItem Class="ml-5 mt-2">
+            <MudFab OnClick="@ReloadBack" Size="Size.Medium" Color="Color.Primary" StartIcon="@Icons.Filled.KeyboardDoubleArrowLeft" />
+        </MudItem>
         <MudItem>
             <MudDatePicker Class="ml-5" Label="Startdate" Style="max-width:200px" Editable="true" @bind-Date="startDate" Placeholder="Select Date" />
         </MudItem>
@@ -111,17 +112,10 @@
         <MudItem>
             <MudDatePicker Label="EndDate" Style="max-width:200px" Editable="true" @bind-Date="endDate" Placeholder="Select Date" MinDate="@(Convert.ToDateTime(startDate).AddDays(1))" />
         </MudItem>
-
-        @*        <MudItem>
-        <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Label="@L["RateScopeEnum"]">
-        <MudSelectItem T="int" Value="0">@L["Select RateScope"]</MudSelectItem>
-        @foreach (var item in RateScopeEnumList)
-        {
-        <MudSelectItem T="int" Value="@item.Value">@item.Text</MudSelectItem>
-        }
-        </MudSelect>
+        <MudItem Class="ml-5 mt-2">
+            <MudFab OnClick="@ReloadForward" Size="Size.Medium" Color="Color.Primary" StartIcon="@Icons.Filled.KeyboardDoubleArrowRight" />
         </MudItem>
-        *@
+
         <MudItem Class="mt-3">
             <MudButton OnClick="@Reload" Variant="Variant.Filled" Size="Size.Large" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Autorenew" DisableElevation="true">Reload</MudButton>
         </MudItem>
@@ -136,17 +130,12 @@
             <MudCheckBox @bind-Checked="@show_RateAutomatic" Label="RateAutomatic" Color="Color.Primary"></MudCheckBox>
         </MudItem>
 
-
         <MudSpacer></MudSpacer>
 
         <MudBadge Icon="@Icons.Material.Filled.Check" Color="Color.Primary" Overlap="true" Bordered="true" Class="mx-6 my-4">
             <MudButton Color="Color.Error" Variant="Variant.Filled" DisableElevation="true">@successSingleUpdate</MudButton>
         </MudBadge>
 
-        @*        <MudItem Class="mt-3 mr-5">
-        <MudButton OnClick="@SavePriceChanges" Variant="Variant.Filled" Size="Size.Large" Color="Color.Success" StartIcon="@Icons.Material.Filled.Save" DisableElevation="true">Save Detail Changes</MudButton>
-        </MudItem>
-        *@
     </MudPaper>
 
     <MudSimpleTable xs="12" Class="mt-5">
@@ -194,13 +183,13 @@
 
                         @foreach (PriceCatDto pcr in item.PriceCats.Where(p => p.Pax == i))
                         {
-                            string helpertext = pcr.RateStart + " + " + pcr.RateAutomatic;
+                            string helpertext = pcr.RateStart + "|" + pcr.RateAutomatic;
                             <td style="height:@priceRowHeight">
                                 <MudNumericField Class="align-right" HideSpinButtons="true" InputMode="InputMode.numeric" T="decimal"
                                      OnKeyDown="@(e => KeyDownHandler(e, @pcr.Id, pcr.RateCurrent))"
                                      TextChanged="@(e => ValueChangedHandler(e, @pcr.Id))"
                                      @bind-Value="pcr.RateCurrent"
-                                     Label="Price" Variant="Variant.Outlined" Step=".2M" Format="N2" />
+                                     Label="@L["Price"]" HelperText="@helpertext" Variant="Variant.Outlined" Step=".2M" Format="N2" />
                             </td>
                         }
                     </tr>
@@ -275,6 +264,7 @@
     public bool show_RateStart { get; set; } = false;
     public bool show_RateAutomatic { get; set; } = false;
     public bool renderDone { get; set; }
+    public bool reload { get; set; } = false;
     private double lastPriceChanged { get; set; }
     private int lastPriceChangedId { get; set; }
     private string successSingleUpdate { get; set; } = "no SingleAction now";
@@ -286,6 +276,8 @@
     public List<RateTypeEnumDto> RateTypeEnumList { get; set; } = new();
     public List<PriceSchemaDto> PriceSchemaList { get; set; } = new();
     public UpdatePriceCatBulkRequest updatePriceCatBulkRequest { get; set; } = new();
+    // public CreatePriceCatDefaultRequest createPriceCatDefaultRequest { get; set; } = new();
+    public DateTime? priceCatDefaultEndDate { get; set; } = new DateTime(2022, 12, 15);
 
 
     //public DateTime? priceEditStart = new DateTime(2022, 9, 1);
@@ -351,9 +343,32 @@
     private async void Reload()
     {
         renderDone = true;
+        reload = true;
+
         categoryPriceList = (await CategoryClient.SearchCategoryPricesAsync(_mandantId, Convert.ToDateTime(startDate), Convert.ToDateTime(endDate))).ToList();
         this.StateHasChanged();
         renderDone = false;
+        reload = false;
+    }
+
+    private async void ReloadBack()
+    {
+        DateTime backstart = Convert.ToDateTime(startDate);
+        DateTime backend = Convert.ToDateTime(endDate);
+
+        startDate = backstart.AddDays(-30);
+        endDate = backstart;
+        Reload();
+    }
+
+    private async void ReloadForward()
+    {
+        DateTime backstart = Convert.ToDateTime(startDate);
+        DateTime backend = Convert.ToDateTime(endDate);
+
+        startDate = backend;
+        endDate = backend.AddDays(30);
+        Reload();
     }
 
     private void KeyDownHandler(object args, int id, decimal rateCurrent)
@@ -362,9 +377,31 @@
         lastPriceChanged = Convert.ToDouble(rateCurrent);
     }
 
+    private async void SetNewPriceCatDefault()
+    {
+        bool result = false;
+        CreatePriceCatDefaultRequest createPriceCatDefaultRequest = new();
+        createPriceCatDefaultRequest.MandantId = _mandantId;
+        createPriceCatDefaultRequest.EndDate = (DateTime)priceCatDefaultEndDate;
+        if (createPriceCatDefaultRequest.EndDate > DateTime.Today.AddDays(-200))
+        {
+            result = await PriceCatsClient.CreatePriceCatDefaultAsync(createPriceCatDefaultRequest);
+        }
+        if (result)
+        {
+            Snackbar.Add($"new DefaultPrices saved till: {createPriceCatDefaultRequest.EndDate}", Severity.Success, config => { config.ShowCloseIcon = false; });
+        }
+        else
+        {
+            Snackbar.Add($"Problem could not save new DefaultPrices", Severity.Warning, config => { config.ShowCloseIcon = false; });
+
+        }
+
+    }
+
     private async void ValueChangedHandler(string args, int id)
     {
-        if (renderDone)
+        if (renderDone & reload == false)
         {
             double argsValue = Convert.ToDouble(args);
             Console.WriteLine("ValueChangedHandler Args: " + args + " | " + lastPriceChanged + ",  Id: " + id + " | " + lastPriceChangedId);
@@ -401,7 +438,6 @@
     {
         UpdatePriceCatsListRequest updatePriceCatsListRequest = new();
         updatePriceCatsListRequest.PriceCatDtos = new List<PriceCatDto>();
-
 
         foreach (CategoryPriceDto item in categoryPriceList)
         {

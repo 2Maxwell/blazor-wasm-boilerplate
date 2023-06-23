@@ -1,0 +1,470 @@
+﻿@using System.Text.Json;
+@using System.Text;
+@using FSH.BlazorWebAssembly.Client.Components.Person
+@inject IStringLocalizer<PersonsDetails> L
+@inject IPersonsClient PersonsClient
+@inject IMandantsClient MandantsClient
+@inject IReservationsClient ReservationClient
+
+@if (_loaded)
+{
+    <MudCard style="max-height:500px; overflow-y: scroll;">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Guest Sharer details"]</MudButton>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+
+            <MudGrid>
+
+                @{
+                    int counter = 0;
+                    // Button:
+                    // Button dürfen nur gehen wenn reservationDto.Id > 0
+                    // Zimmer abspalten mit Gast und Sharerdaten ohne Gruppe dafür mit MatchCode
+                    // Zimmer in der Gruppe abspalten
+                    // Wenn IsGroupMaster bis auf 0 RoomAmount abspalten ansonsten bis auf 1 RoomAmount
+                }
+
+                @for (int r = 0; r < reservationDto.RoomAmount; r++)
+                {
+                    int room = r;
+                    <MudPaper Style="border-style: double; width:100%;" Class="border-double mud-border-primary border-4 ml-3 mr-3 mb-2 pl-3 pr-3 pb-2 pt-2">
+                        @{
+                        int persons = pax.Adult + pax.Children.Count;
+                    }
+                    @for (int p = 0; p < persons; p++)
+                    {
+                                Console.WriteLine($"persons: {persons} aktPerson: {p}");
+
+                                @*PersonShopItem person = reservationDto.PersonShopItems.ToList()[counter];*@
+                                string roomPersonIndex = $"{room}R{p+1}P";
+                                Console.WriteLine($"roomPersonIndex: {roomPersonIndex}");
+                                Console.WriteLine($"room: {room}");
+                            PersonShopItem person = reservationDto.PersonShopItems.ToList().First(x => x.Index == roomPersonIndex );
+
+
+                            @if (person.PersonShopType == "booker")
+                            {
+                                <MudStack Row="true">
+                                    <MudChip Class="mt-3" Style="min-width:90px" Variant="Variant.Outlined" Color="Color.Info">@L["Booker"]</MudChip>
+                                    <MudTextField @bind-Value="person.Name" Label="@L["Name"]" Variant="Variant.Outlined" />
+                                    <MudTextField @bind-Value="person.FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+                                </MudStack>
+
+                            }
+
+                            @if (person.PersonShopType == "guest")
+                            {
+                                <MudStack Row="false">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center">
+                                        <MudChip Class="mt-3" Style="min-width:90px" Variant="Variant.Outlined" Color="Color.Success">@L["Guest"]</MudChip>
+                                        <PersonAutoComplete MaxItems="null" Margin="Margin.Dense" Value="@person.PersonId" ValueChanged="((e) => OnPersonValueChanged(e, person))" />
+                                    </MudStack>
+
+                                    <MudStack Row="true">
+                                        <MudTextField @bind-Value="person.Name" Label="@L["Name"]" Variant="Variant.Outlined" />
+                                        <MudTextField @bind-Value="person.FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+                                    </MudStack>
+
+                                </MudStack>
+
+                            }
+
+                            @if (person.PersonShopType == "sharer")
+                            {
+                                <MudStack Row="true">
+
+                                    <MudChip Class="mt-3" Style="min-width:90px" Variant="Variant.Outlined" Color="Color.Default">@L["Sharer"]</MudChip>
+                                    <MudTextField @bind-Value="person.Name" Label="@L["Name"]" Variant="Variant.Outlined" />
+                                    <MudTextField @bind-Value="person.FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+
+                                </MudStack>
+                            }
+
+                            @if (person.PersonShopType == "child")
+                            {
+                                <MudStack Row="true">
+
+                                    <MudChip Class="mt-3" Style="min-width:90px" Variant="Variant.Outlined" Color="Color.Tertiary">@L["Child"]</MudChip>
+                                    <MudTextField @bind-Value="person.FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+                                    <MudTextField Style="max-width:80px" @bind-Value="person.ChildAge" Label="@L["Age"]" Variant="Variant.Outlined" />
+                                    <MudCheckBox @bind-Checked="person.ExtraBed" Size="Size.Large" Color="Color.Tertiary">@L["Extrabed"]</MudCheckBox>
+
+                                </MudStack>
+                            }
+
+                            counter++;
+                            <MudSpacer></MudSpacer>
+                            <MudText Typo="Typo.overline">Value: @person.Index | @person.PersonId</MudText>
+                            @if (person.PersonShopType == "booker" || person.PersonShopType == "guest")
+                            {
+                                <MudCheckBox Checked="person.PersonId > 0 ? true : false" Size="Size.Large" Color="Color.Tertiary">Verified</MudCheckBox>
+                            }
+
+                        }
+
+                        @*                        @if (reservationDto.Id > 0) //TODO wenn Testabgeschlossen dann auf gespeicherte Reservierung begrnzen!!!
+                {
+                *@
+                        <MudStack Row="true" AlignItems="AlignItems.Center " Justify="Justify.FlexStart">
+
+
+                            @if ((reservationDto.GuestId == null || reservationDto.GuestId == 0) && room == 0)
+                            {
+                                <MudIconButton OnClick="@(() => SetNewGuestForReservationByRoomCounter(room))" Icon="@Icons.Material.Filled.Person" aria-label="@L["Save as Guest"]" Title="@L["Save as Guest"]"></MudIconButton>
+                            }
+
+                            @if ((reservationDto.RoomAmount > 1 && room > 0) || (reservationDto.IsGroupMaster && reservationDto.RoomAmount > 0))
+                            {
+                                <MudIconButton OnClick="@(() => SetNewReservationByRoomCounter(room))" Icon="@Icons.Material.Filled.PersonAdd" aria-label="@L["Save as new Reservation"]" Title="@L["Save in new Reservation"]"></MudIconButton>
+                            }
+
+                            @if (reservationDto.IsGroupMaster && reservationDto.RoomAmount > 0)
+                            {
+                                <MudIconButton Icon="@Icons.Material.Filled.GroupAdd" aria-label="@L["Save as new GroupMember"]" Title="@L["Save as new GroupMember"]"></MudIconButton>
+                            }
+                        </MudStack>
+
+                    </MudPaper>
+
+                }
+            </MudGrid>
+
+        </MudCardContent>
+        <MudCardActions>
+        </MudCardActions>
+    </MudCard>
+}
+
+
+
+@code {
+    public bool _loaded { get; set; } = false;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    public Pax? pax { get; set; } // = JsonSerializer.Deserialize<Pax>(reservationDto.PaxString!);
+
+
+    // public List<PersonShopItem> personList { get; set; }
+    int loopCount = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        pax = JsonSerializer.Deserialize<Pax>(reservationDto.PaxString!);
+
+        if (reservationDto.Booker == null) reservationDto.Booker = (await PersonsClient.GetAsync(Convert.ToInt32(reservationDto.BookerId))).Adapt<PersonDto>();
+        if (reservationDto.Persons != null)
+        {
+            reservationDto.PersonShopItems = JsonSerializer.Deserialize<List<PersonShopItem>>(reservationDto.Persons);
+            // Anzahl PersonShopItem mit der Summe RoomAmount * (Pax.Adult + PaxChildren) vergleichen
+            // Wenn nicht gleich, dann fehlen noch Personen
+            if (reservationDto.PersonShopItems.Count != reservationDto.RoomAmount * (pax!.Adult + pax!.Children.Count))
+            {
+                EditPersonShopItemList();
+            }
+
+
+        }
+        else
+        {
+
+            SetNewPersonShopItemList();
+        }
+
+        _loaded = true;
+    }
+
+    // Parameter changed
+    protected override async Task OnParametersSetAsync()
+    {
+            pax = JsonSerializer.Deserialize<Pax>(reservationDto.PaxString!);
+
+        if (reservationDto.PersonShopItems.Count != reservationDto.RoomAmount * (pax!.Adult + pax!.Children.Count))
+        {
+            EditPersonShopItemList();
+        }
+    }
+
+    private async void EditPersonShopItemList()
+    {
+        int personNeeded = (int)reservationDto.RoomAmount * (pax.Adult + pax.Children.Count);
+        int personCount = reservationDto.PersonShopItems.Count;
+
+        if (personNeeded > personCount)
+        {
+
+            for (int i = 0; i < reservationDto.RoomAmount; i++) // Zimmeranzahl
+            {
+                for (int person = 1; person <= pax!.Adult; person++) // Anzahl Erw im Zimmer
+                {
+                    string index = $"{i}R{person}P";
+
+                    if (reservationDto.PersonShopItems.Where(x => x.Index == index).Count() == 0)
+                    {
+                        // wenn person = 1 dann Guest erzeugen, wenn person = 2 dann Sharer erzeugen
+                        PersonShopItem psi = new();
+                        psi.Index = index;
+                        psi.PersonId = 0;
+                        psi.PersonShopType = person == 1 ? "guest" : "sharer";
+                        psi.Name = string.Empty;
+                        psi.FirstName = string.Empty;
+                        reservationDto.PersonShopItems.Add(psi);
+                    }
+                }
+
+                if (pax.Children != null)
+                {
+                    List<Child> childs = pax.Children.ToList();
+
+                    for (int i2 = 0; i2 < childs.Count; i2++)
+                    {
+                        string index = $"{i}R{i2}Child";
+                        if (reservationDto.PersonShopItems.Where(x => x.Index == index).Count() == 0)
+                        {
+                            PersonShopItem psi = new();
+                            psi.PersonShopType = "child";
+                            psi.ChildAge = childs[i2].Age;
+                            psi.ExtraBed = childs[i2].ExtraBed;
+                            psi.Index = index;
+                            reservationDto.PersonShopItems.Add(psi);
+                        }
+                    }
+                }
+            }
+
+            reservationDto.Persons = JsonSerializer.Serialize<List<PersonShopItem>>(reservationDto.PersonShopItems.ToList());
+
+        }
+
+        if (personNeeded < personCount)
+        {
+            for (int i = 0; i < reservationDto.RoomAmount; i++) // Zimmeranzahl
+            {
+                for (int person = 1; person <= pax!.Adult; person++) // Anzahl Erw im Zimmer
+                {
+                    int iIndex = i + reservationDto.RoomAmount + 1;
+                    int personIndex = person + pax.Adult + 1;
+                    string index = $"{iIndex}R{personIndex}P";
+                    var psi = reservationDto.PersonShopItems.Where(x => x.Index == index).FirstOrDefault();
+                    if (psi != null)
+                    {
+                        reservationDto.PersonShopItems.Remove(psi);
+                    }
+                    else
+                    {
+                        // for-Schleife beenden
+                        break;
+                    }
+                }
+            }
+
+            reservationDto.Persons = JsonSerializer.Serialize<List<PersonShopItem>>(reservationDto.PersonShopItems.ToList());
+
+        }
+    }
+
+    private async void SetNewPersonShopItemList()
+    {
+        reservationDto.PersonShopItems = new List<PersonShopItem>();
+
+        for (int i = 0; i < reservationDto.RoomAmount; i++) // Zimmeranzahl
+        {
+            for (int person = 1; person <= pax!.Adult; person++) // Anzahl Erw im Zimmer
+            {
+                if ((reservationDto.BookerId == reservationDto.GuestId) & person == 1 & i == 0)
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonId = reservationDto.BookerId;
+                    psi.PersonShopType = "booker";
+                    psi.Name = reservationDto.Booker != null ? reservationDto.Booker.Name : string.Empty;
+                    psi.FirstName = reservationDto.Booker != null ? reservationDto.Booker.FirstName : string.Empty;
+                    psi.PersonId = reservationDto.BookerId;
+                    psi.Index = $"{i}R{person}P";
+                    reservationDto.PersonShopItems.Add(psi);
+                }
+                else if ((reservationDto.GuestId == null || reservationDto.GuestId != reservationDto.BookerId) & person == 1)
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "guest";
+                    psi.Index = $"{i}R{person}P";
+                    reservationDto.PersonShopItems.Add(psi);
+                }
+                else if ((reservationDto.GuestId == null || reservationDto.GuestId == reservationDto.BookerId) & person == 1 & i > 0)
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "guest";
+                    psi.Index = $"{i}R{person}P";
+                    reservationDto.PersonShopItems.Add(psi);
+                }
+                else
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "sharer";
+                    psi.Index = $"{i}R{person}P";
+                    reservationDto.PersonShopItems.Add(psi);
+                }
+            }
+
+            if (pax.Children != null)
+            {
+                List<Child> childs = pax.Children.ToList();
+
+                for (int i2 = 0; i2 < childs.Count; i2++)
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "child";
+                    psi.ChildAge = childs[i2].Age;
+                    psi.ExtraBed = childs[i2].ExtraBed;
+                    psi.Index = $"{i}R{i2}Child";
+                    reservationDto.PersonShopItems.Add(psi);
+                }
+            }
+        }
+
+        reservationDto.Persons = JsonSerializer.Serialize<List<PersonShopItem>>(reservationDto.PersonShopItems.ToList());
+    }
+
+    private async void SetGuestData()
+    {
+
+    }
+
+    private async void OnPersonValueChanged(int id, PersonShopItem person)
+    {
+        person.PersonId = id;
+        PersonDto pers = await PersonsClient.GetAsync(id);
+        person.Name = pers.Name;
+        person.FirstName = pers.FirstName;
+        reservationDto.Persons = JsonSerializer.Serialize<List<PersonShopItem>>(reservationDto.PersonShopItems.ToList());
+
+        StateHasChanged();
+    }
+
+    private async void SetNewGuestForReservationByRoomCounter(int roomCounter)
+    {
+        MandantSettingDto mandantSettingDto = await MandantsClient.GetMandantSettingAsync(reservationDto.MandantId);
+        PersonShopItem person = reservationDto.PersonShopItems.First(x => x.PersonShopType == "guest");
+        // reservationDto.PersonShopItems.Remove(person);
+
+        if (reservationDto.GuestId == null || reservationDto.GuestId == reservationDto.BookerId)
+        {
+            if (person.PersonId != 0)
+            {
+                reservationDto.GuestId = person.PersonId;
+            }
+            else
+            {
+                if (reservationDto.Guest == null) reservationDto.Guest = new();
+                reservationDto.Guest.Name = person.Name;
+                reservationDto.Guest.FirstName = person.FirstName;
+                reservationDto.Guest.SalutationId = 4; //TODO Default SalutationId ermitteln
+                reservationDto.Guest.MandantId = reservationDto.MandantId;
+                reservationDto.Guest.CountryId = mandantSettingDto.DefaultCountryId; //80; // Hotel Default Werte
+                reservationDto.Guest.LanguageId = mandantSettingDto.DefaultLanguageId; // 1; // Hotel Default Werte
+                reservationDto.Guest.Source = "GuestWithOutLogin,";
+                if (reservationDto.CompanyId != null) reservationDto.Guest.CompanyId = reservationDto.CompanyId;
+                reservationDto.Guest.PersonDelete = true;
+
+                int id = await PersonsClient.CreateAsync(reservationDto.Guest.Adapt<CreatePersonRequest>());
+                reservationDto.GuestId = id; //Convert.ToInt32(personId);
+                                             // reservationDto.GuestId = 0;
+                person.PersonId = id;
+                reservationDto.Persons = reservationDto.PersonShopItems.Count > 0 ? JsonSerializer.Serialize(reservationDto.PersonShopItems) : null;
+                reservationDto.Persons = JsonSerializer.Serialize(reservationDto.PersonShopItems.ToList());
+
+            }
+            await reservationDtoChanged.InvokeAsync(reservationDto);
+
+        }
+
+    }
+
+    private async void SetNewReservationByRoomCounter(int roomCounter)
+    {
+
+        List<PersonShopItem> persons = new();
+        var personList = reservationDto.PersonShopItems.Where(x => x.Index.Contains($"{roomCounter}R"));
+        persons = personList.Adapt<List<PersonShopItem>>();
+        PersonShopItem person = persons[0];
+
+        if (person.PersonId > 0 || person.Name != string.Empty)
+        {
+            MandantSettingDto mandantSettingDto = await MandantsClient.GetMandantSettingAsync(reservationDto.MandantId);
+
+            CreateReservationRequest res = new();
+            res = reservationDto.Adapt<CreateReservationRequest>();
+            res.RoomAmount = 1;
+            res.CartId = null;
+            res.Confirmations = null;
+
+            if (person.PersonId != 0)
+            {
+                res.GuestId = person.PersonId;
+                reservationDto.PersonShopItems.Remove(person);
+                reservationDto.Persons = JsonSerializer.Serialize(reservationDto.PersonShopItems.ToList());
+
+
+            }
+            else
+            {
+                CreatePersonRequest Guest = new();
+                Guest.Name = person.Name;
+                Guest.FirstName = person.FirstName;
+                Guest.SalutationId = 4; //TODO Default SalutationId ermitteln
+                Guest.MandantId = res.MandantId;
+                Guest.CountryId = mandantSettingDto.DefaultCountryId; //80; // Hotel Default Werte
+                Guest.LanguageId = mandantSettingDto.DefaultLanguageId; // 1; // Hotel Default Werte
+                Guest.Source = "GuestWithOutLogin,";
+                if (res.CompanyId != null) Guest.CompanyId = res.CompanyId;
+                Guest.PersonDelete = true;
+
+                int GuestId = await PersonsClient.CreateAsync(Guest);
+                res.GuestId = GuestId; //Convert.ToInt32(personId);
+
+
+                person.PersonId = GuestId;
+                reservationDto.PersonShopItems.Remove(person);
+                // reservationDto.Persons = reservationDto.PersonShopItems.Count > 0 ? JsonSerializer.Serialize(reservationDto.PersonShopItems) : null;
+                reservationDto.Persons = JsonSerializer.Serialize(reservationDto.PersonShopItems.ToList());
+
+            }
+
+            // res.Persons = JsonSerializer.Serialize<List<PersonShopItem>>(persons);
+            res.PriceTag = new();
+            //res.PriceTag = reservationDto.PriceTagDto.Adapt<PriceTag>();
+            res.PriceTag.Arrival = reservationDto.PriceTagDto.Arrival;
+            res.PriceTag.Departure = reservationDto.PriceTagDto.Departure;
+            // res.PriceTag.ReservationId = reservationDto.PriceTagDto.ReservationId;
+            res.PriceTag.MandantId = reservationDto.PriceTagDto.MandantId;
+            res.PriceTag.AverageRate = reservationDto.PriceTagDto.AverageRate;
+            res.PriceTag.RateSelected = reservationDto.PriceTagDto.RateSelected;
+            res.PriceTag.CategoryId = reservationDto.PriceTagDto.CategoryId;
+
+            res.PriceTag.PriceTagDetails = new List<PriceTagDetailDto>();
+            res.PriceTag.PriceTagDetails = reservationDto.PriceTagDto.PriceTagDetails;
+
+            reservationDto.RoomAmount = reservationDto.RoomAmount - res.RoomAmount;
+            int idResNew = await ReservationClient.CreateAsync(res);
+            int idResSource = await ReservationClient.UpdateAsync(reservationDto.Id, reservationDto.Adapt<UpdateReservationRequest>());
+            await reservationDtoChanged.InvokeAsync(reservationDto);
+
+        }
+
+
+
+
+
+    }
+
+    //TODO Wenn Persons leer ist aber mehr als ein Zimmer reserviert wurde, dann einträge für Person erzeugen um die Namen auszufüllen
+    // ????? Soll Persons auch als Liste für die Gruppe angezeigt werden, oder soll es eine eigene Liste mit den Gruppenmitgliedern geben.
+    // dann könnten noch einige Funktionen in der Liste verfügbar sein.
+    //
+    // Bei den Groupmembers soll die GroupmasterId als Link zum Groupmaster angelegt werden. dafür ist die ReservationId des Groupmaster notwendig.
+    //
+}
+

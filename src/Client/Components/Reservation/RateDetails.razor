@@ -1,0 +1,193 @@
+﻿@inject IStringLocalizer<RateDetails> L
+@inject IRatesClient RateClient
+@inject IPackagesClient PackagesClient
+@inject IBookingPolicysClient BookingPolicyClient
+@inject ICancellationPolicysClient CancellationPolicyClient
+
+
+@if (_loaded)
+{
+    <MudCard style="min-height:620px">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Rate details"]</MudButton>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+
+
+                <MudItem xs="12">
+                    <MudText Typo="Typo.h6">@rateDto.Name ( @rateDto.Kz )</MudText>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" MultiSelection="true" @bind-Value="rateDto.Packages"
+                           SelectedValues="reservationDto.RatePackages!.Split(',', StringSplitOptions.TrimEntries).AsEnumerable().ToHashSet<string>()" Label="@L["Packages included"]">
+                        @foreach (var item in packagesKzMultiSelectList)
+                        {
+                            <MudSelectItem T="string" Value="@item.Kz">@item.Kz</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Label="@L["BookingPolicy"]" MultiSelection="false" @bind-Value="reservationDto.BookingPolicyId">
+                                <MudSelectItem T="int" Value="0">@L["Select BookingPolicy"]</MudSelectItem>
+                        @foreach (var item in bookingPolicySelectKzDtoList)
+                        {
+                            <MudSelectItem T="int" Value="@item.Id">@item.Kz</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" Label="@L["CancellationPolicy"]" MultiSelection="false" @bind-Value="reservationDto.CancellationPolicyId">
+                        <MudSelectItem T="int" Value="0">@L["Select CancellationPolicy"]</MudSelectItem>
+                        @foreach (var item in cancellationPolicySelectKzDtoList)
+                        {
+                            <MudSelectItem T="int" Value="@item.Id">@item.Kz</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+
+@*                <MudItem xs="6">
+                    <MudText Typo="Typo.h6">@bookingPolicyDto.Name</MudText>
+                </MudItem>
+                <MudItem xs="12">
+                    <MudGrid>
+                        <MudItem xs="6">
+                            <MudCheckBox @bind-Checked="@bookingPolicyDto.CreditCard" Size="Size.Medium" Color="Color.Secondary">@L["CreditCard required"]</MudCheckBox>
+                        </MudItem>
+                        <MudItem xs="6">
+                            <MudCheckBox @bind-Checked="@bookingPolicyDto.Deposit" Size="Size.Medium" Color="Color.Secondary">@L["Deposit required"]</MudCheckBox>
+                        </MudItem>
+                    </MudGrid>
+                </MudItem>
+*@
+                <MudItem xs="6">
+                    <MudText Typo="Typo.body1">@L["BookingPolicy"]</MudText>
+                    <MudText Typo="Typo.body1">@bookingPolicyDto.Name</MudText>
+                    @{
+                        string[] highlightBookingPolicyArray = @bookingPolicyDto.DisplayHighLight.Split(';');
+                        foreach (var item in highlightBookingPolicyArray)
+                        {
+                            if (item != string.Empty)
+                            {
+                                <MudItem>
+                                    <MudText Typo="Typo.body2"><MudIcon Class="pt-2" Icon="@Icons.Filled.ArrowRight" Size="Size.Small" /> @item.Trim()</MudText>
+                                </MudItem>
+                            }
+                        }
+                    }
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudText Typo="Typo.body1">@L["CancellationPolicy"]</MudText>
+                    <MudText Typo="Typo.body1">@cancellationPolicyDto.Name</MudText>
+                    @{
+                        string[] highlightCancellationPolicyArray = @cancellationPolicyDto.DisplayHighLight.Split(';');
+                        foreach (var item in highlightCancellationPolicyArray)
+                        {
+                            if (item != string.Empty)
+                            {
+                                <MudText Typo="Typo.body2"><MudIcon Class="pt-2" Icon="@Icons.Filled.ArrowRight" Size="Size.Small" /> @item.Trim()</MudText>
+                            }
+                        }
+                    }
+                </MudItem>
+
+
+
+
+
+                @*                <MudItem xs="5">
+            <MudTimePicker Label="Arrivaltime" Editable="true" Time="@reservationDto.Arrival!.Value.TimeOfDay" TimeChanged="((e) => OnTimeChanged(e, 'a'))" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12">
+            <MudNumericField T="int" HideSpinButtons="true" Value="@getNights(Convert.ToDateTime(@reservationDto.Arrival), Convert.ToDateTime(@reservationDto.Departure))" Label="@L["Nights"]" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="7">
+            <MudDatePicker Label="Departure" Editable="true" Date="@reservationDto.Departure!.Value" DateChanged="((e) => OnDepartureDateChanged(e))" MinDate="@reservationDto.Arrival" Variant="Variant.Outlined" Placeholder="Departure Date" />
+            </MudItem>
+            <MudItem xs="5">
+            <MudTimePicker Label="Departuretime" Editable="true" Time="@reservationDto.Departure!.Value.TimeOfDay" TimeChanged="((e) => OnTimeChanged(e, 'd'))" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="5">
+            <MudNumericField T="int" HideSpinButtons="false" Value="@pax.Adult" Label="@L["Adults"]" Variant="Variant.Outlined" />
+            </MudItem>
+
+            <MudItem xs="7">
+            @if (pax.Children != null)
+            {
+            <MudText Typo="Typo.body1">@L["Children"]: @pax.Children.Count()</MudText>
+            <MudList Clickable="false" Dense="true">
+            <MudListItem Icon="@Icons.Material.Filled.Girl" Dense="true" Text="@L["Children"]" InitiallyExpanded="true">
+            <NestedList>
+            @foreach (Child item in pax.Children)
+            {
+            <MudListItem>
+            @L["Age"]: @item.Age @L["ExtraBed"]:
+            @if (item.ExtraBed is true)
+            {
+            @L["Yes"]
+            }
+            else
+            {
+            @L["No"]
+            }
+            </MudListItem>
+            }
+            </NestedList>
+            </MudListItem>
+            </MudList>
+            }
+            else
+            {
+            <MudText Typo="Typo.body1">@L["Children"]: 0</MudText>
+            }
+
+            </MudItem>
+
+            *@
+            </MudGrid>
+
+
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Primary">Read More</MudButton>
+        </MudCardActions>
+    </MudCard>
+}
+
+@code {
+    public bool _loaded { get; set; } = false;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    public RateDto rateDto { get; set; }
+    public List<PackageKzMultiSelectDto> packagesKzMultiSelectList { get; set; } = new List<PackageKzMultiSelectDto>();
+    public BookingPolicyDto bookingPolicyDto { get; set; }
+    public CancellationPolicyDto cancellationPolicyDto { get; set; }
+    public List<BookingPolicySelectKzDto> bookingPolicySelectKzDtoList { get; set; }
+    public List<CancellationPolicySelectKzDto> cancellationPolicySelectKzDtoList { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (reservationDto.RateId > 0) rateDto = await RateClient.GetAsync(reservationDto.RateId);
+        packagesKzMultiSelectList = (await PackagesClient.GetPackageKzMultiSelectAsync(reservationDto.MandantId, PackageTargetEnum.HotelReservation)).ToList();
+        bookingPolicyDto = await BookingPolicyClient.GetAsync(reservationDto.BookingPolicyId);
+        bookingPolicySelectKzDtoList = (await BookingPolicyClient.GetBookingPolicySelectKzAsync(reservationDto.MandantId)).ToList();
+cancellationPolicySelectKzDtoList = (await CancellationPolicyClient.GetCancellationPolicySelectKzAsync(reservationDto.MandantId)).ToList();
+        cancellationPolicyDto = await CancellationPolicyClient.GetAsync(reservationDto.CancellationPolicyId);
+        _loaded = true;
+    }
+
+
+}

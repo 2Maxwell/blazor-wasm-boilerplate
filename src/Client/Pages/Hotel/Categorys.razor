@@ -1,4 +1,4 @@
-﻿    @page "/hotel/categorys"
+﻿@page "/hotel/categorys"
 @using System.Diagnostics
 @using Blazored.SessionStorage
 @attribute [MustHavePermission(FSHAction.View, FSHResource.Categorys)]
@@ -63,12 +63,28 @@
         </MudItem>
 
         <MudItem xs="12" md="12">
-            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayDescriptionShort)" @bind-Value="context.DisplayDescriptionShort" Label="@L["DisplayDescriptionShort"]" />
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayShort)" @bind-Value="context.DisplayShort" Label="@L["DisplayShort"]" />
         </MudItem>
 
         <MudItem xs="12" md="12">
-            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayHightlights)" @bind-Value="context.DisplayHightlights" Label="@L["DisplayHighlights"]" />
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayHighLight)" @bind-Value="context.DisplayHighLight" Label="@L["DisplayHighLight (; is separator)"]" />
         </MudItem>
+
+        @if (context.ChipIcon != null || context.ChipIcon != string.Empty)
+        {
+            <MudItem xs="2" Class="mt-3">
+                <MudChip Icon="@context.ChipIcon" Color="Color.Primary">@context.ChipText</MudChip>
+            </MudItem>
+        }
+
+        <MudItem xs="4">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.ChipIcon)" @bind-Value="context.ChipIcon" Label="@L["ChipIcon"]" />
+        </MudItem>
+
+        <MudItem xs="6">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.ChipText)" @bind-Value="context.ChipText" Label="@L["ChipText"]" />
+        </MudItem>
+
 
         <MudItem xs="4" md="4">
             <MudNumericField Variant="Variant.Outlined" T="int" Min="1" For="@(() => context.CategoryDefaultQuantity)" @bind-Value="context.CategoryDefaultQuantity" Label="@L["CategoryDefaultQuantity"]" />
@@ -85,14 +101,6 @@
                          CheckedChanged ="HandleCheckedChanged" Label="@L["CategoryIsVirtual"]"
                           />
         </MudItem>
-
-        @*                          @onclick="@(() => {Console.WriteLine("onclick: " + context.CategoryIsVirtual); cbCategoryIsVirtual_changed();})"
-            @oninput="HandleCheck"  @bind-Checked:event="oninput"                            @bind-Checked="context.CategoryIsVirtual" Label="@L["CategoryIsVirtual"]"
-
-
-        *@
-
-
 
         <MudItem xs="4" md="4">
             <MudSelect id="selVirtualSourceCategoryId" T="int" Disabled="!context.CategoryIsVirtual" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.VirtualSourceCategoryId)" @bind-Value="context.VirtualSourceCategoryId" Label="@L["VirtualSourceCategory"]">

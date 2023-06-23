@@ -34,13 +34,13 @@
             </MudItem>
 
             <MudItem xs="9" md="9">
-                <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="decimal" For="@(() => updateRequest.Price)" @bind-Value="updateRequest.Price" Label="@L["Price"]" />
-            </MudItem>
+@*                <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="decimal" For="@(() => updateRequest.Price)" @bind-Value="updateRequest.Price" Label="@L["Price"]" />
+*@            </MudItem>
 
-            <MudItem xs="3" md="3">
+@*            <MudItem xs="3" md="3">
                 <MudNumericField Variant="Variant.Outlined" T="int" Min="1" Max="999" For="@(() => updateRequest.TaxId)" @bind-Value="updateRequest.TaxId" Label="@L["TaxId"]" />
             </MudItem>
-
+*@
             <MudItem xs="4" md="4">
                 <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => updateRequest.Automatic)" @bind-Checked="updateRequest.Automatic" Label="@L["Automatic"]" />
             </MudItem>

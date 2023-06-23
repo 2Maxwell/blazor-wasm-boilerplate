@@ -1,0 +1,394 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Shop;
+@using FSH.BlazorWebAssembly.Client.Pages.Shop;
+@inject IStringLocalizer<DeleteConfirmation> L
+@inject IReservationsClient reservationsClient
+
+<MudDialog Style="min-height:80%; min-width:85%">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3 mb-n1" />
+            @L["CheckOut"]
+        </MudText>
+    </TitleContent>
+
+    <DialogContent>
+
+        <MudTabs Elevation="2" Rounded="true" Centered="true" Class="my-6" Color="Color.Dark">
+
+            <MudTabPanel Icon="@Icons.Material.Filled.Person" Text="Contact" BadgeData='"!"' BadgeColor="Color.Error">
+
+                <MudGrid>
+
+                    <MudItem xs="4">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">@L["Booker"] @cartMandant.PersonId</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <FSH.BlazorWebAssembly.Client.Components.Persons.BookerGuestShopMandant bookerId="cartMandant.PersonId" bookerIdChanged="((e) => OnBookerIdChanged(e))"></FSH.BlazorWebAssembly.Client.Components.Persons.BookerGuestShopMandant>
+                                @if (cartMandant.PersonId > 0)
+                                {
+                                    <MudCheckBox Class="ml-n4" Checked="@cartMandant.BookerIsGuest" CheckedChanged="((bool value) => BookerIsGuestCheckedChanged(value))" Size="Size.Large" Color="Color.Tertiary">@L["Booker is Guest"]</MudCheckBox>
+                                }
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+
+                    <MudItem xs="4">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">@L["Company & Contact"] @cartMandant.CompanyId | @cartMandant.CompanyContactId</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <FSH.BlazorWebAssembly.Client.Components.Company.BookerCompanyShopMandant _mandantId="@cartMandant.MandantId" companyId="cartMandant.CompanyId" companyIdChanged="((e) => OnCompanyIdChanged(e))" @bind-contactId="cartMandant.CompanyContactId"></FSH.BlazorWebAssembly.Client.Components.Company.BookerCompanyShopMandant>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+
+                    <MudItem xs="4">
+                        <MudCard>
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">@L["Travelagent & Contact"] @cartMandant.TravelAgentId | @cartMandant.TravelAgentContactId</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <FSH.BlazorWebAssembly.Client.Components.Company.BookerCompanyShopMandant _mandantId="@cartMandant.MandantId" companyId="cartMandant.TravelAgentId" companyIdChanged="((e) => OnTravelAgentIdChanged(e))" @bind-contactId="cartMandant.TravelAgentContactId"></FSH.BlazorWebAssembly.Client.Components.Company.BookerCompanyShopMandant>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+
+                </MudGrid>
+
+            </MudTabPanel>
+
+            <MudTabPanel Icon="@Icons.Material.Filled.Build" Text="@L["Guests"]" BadgeData="@cartMandant.CartItemList.ToList()[0].Pax.Adult" BadgeColor="Color.Success">
+                <MudGrid>
+                    <MudItem xs="3">
+                        <MudText Typo="Typo.h6">@L["Guest"]</MudText>
+                        <MudCheckBox @bind-Checked="@BusinessTrip" Size="Size.Large" Color="Color.Tertiary">@L["Business Travel"]</MudCheckBox>
+
+                    </MudItem>
+
+                    <MudItem xs="9">
+                        @foreach (CartItemMandantDto cartItemMandant in cartMandant.CartItemList)
+                        {
+                            <FSH.BlazorWebAssembly.Client.Components.Persons.GuestSharerChildMandant cartItem="cartItemMandant" @bind-bookerIsGuest="@cartMandant.BookerIsGuest" BookerId="@cartMandant.PersonId"></FSH.BlazorWebAssembly.Client.Components.Persons.GuestSharerChildMandant>
+                        }
+                    </MudItem>
+
+                </MudGrid>
+            </MudTabPanel>
+
+            <MudTabPanel Icon="@Icons.Material.Filled.Mail" Text="@L["Confirmation"]" BadgeData="0">
+                @if (cartMandant.PersonId > 0)
+                {
+                    <FSH.BlazorWebAssembly.Client.Components.Persons.BookerGuestConfirmationMethodMandant personId="cartMandant.PersonId" personType="Booker" @bind-confirmationResult="@bookerCommunicationResult" />
+                }
+                @if (cartMandant.CompanyId > 0)
+                {                    
+                    <FSH.BlazorWebAssembly.Client.Components.Company.CompanyTravelAgentConfirmationMethodMandant companyId="cartMandant.CompanyId" companyType="Company" @bind-confirmationResult="companyCommunicationResult" />
+                }
+                @if (cartMandant.CompanyContactId > 0)
+                {
+                    <FSH.BlazorWebAssembly.Client.Components.Persons.BookerGuestConfirmationMethodMandant personId="cartMandant.CompanyContactId" personType="CompanyContact" @bind-confirmationResult="companyContactCommunicationResult" />
+                }
+                @if (cartMandant.TravelAgentId > 0)
+                {
+                    <FSH.BlazorWebAssembly.Client.Components.Company.CompanyTravelAgentConfirmationMethodMandant companyId="cartMandant.TravelAgentId" companyType="TravelAgent" @bind-confirmationResult="travelAgentCommunicationResult" />
+                }
+                @if (cartMandant.TravelAgentContactId > 0)
+                {
+                    <FSH.BlazorWebAssembly.Client.Components.Persons.BookerGuestConfirmationMethodMandant personId="cartMandant.TravelAgentContactId" personType="TravelAgentContact" @bind-confirmationResult="travelAgentContactCommunicationResult" />
+                }
+
+
+
+            </MudTabPanel>
+
+            <MudTabPanel Icon="@Icons.Material.Filled.AttachMoney" Text="@L["Payment"]" BadgeData="@(cartMandant != null ? @Convert.ToDecimal(cartMandant.CartPrice).ToString("C2") : string.Empty)" BadgeColor="Color.Error">
+                <MudGrid>
+
+                    <MudItem xs="3">
+                        <MudText Typo="Typo.body1">@L["BookingPolicy"]</MudText>
+                        <MudText Typo="Typo.body1">@cartMandant.BookingPolicyDto.Name</MudText>
+                        @{
+                            string[] highlightBookingPolicyArray = @cartMandant.BookingPolicyDto.DisplayHighLight.Split(';');
+                            foreach (var item in highlightBookingPolicyArray)
+                            {
+                                if (item != string.Empty)
+                                {
+                                    <MudItem>
+                                        <MudText Typo="Typo.body2"><MudIcon Class="pt-2" Icon="@Icons.Filled.ArrowRight" Size="Size.Small" /> @item.Trim()</MudText>
+                                    </MudItem>
+                                }
+                            }
+                        }
+                    </MudItem>
+
+                    <MudItem xs="3">
+                        <MudText Typo="Typo.body1">@L["CancellationPolicy"]</MudText>
+                        <MudText Typo="Typo.body1">@getValidCancellationPolicyDto(cartMandant.CartItemList.ToList()).Name @cartMandant.CancellationPolicyDto.Name</MudText>
+                        @{
+                            string[] highlightCancellationPolicyArray = @cartMandant.CancellationPolicyDto.DisplayHighLight.Split(';');
+                            foreach (var item in highlightCancellationPolicyArray)
+                            {
+                                if (item != string.Empty)
+                                {
+                                    <MudText Typo="Typo.body2"><MudIcon Class="pt-2" Icon="@Icons.Filled.ArrowRight" Size="Size.Small" /> @item.Trim()</MudText>
+                                }
+                            }
+                        }
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudSimpleTable Dense="true">
+                            <thead>
+                                <tr>
+                                    <th style="width:50%;">
+                                        @L["Description"]
+                                        Description
+                                    </th>
+                                    <th style="text-align:right; width:25%">
+                                        @L["Debit"]
+                                    </th>
+                                    <th style="text-align:right; width:25%">
+                                        @L["Credit"]
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (CartItemMandantDto item in cartMandant.CartItemList)
+                                {
+                                    <tr>
+                                        <td>
+                                            @item.Amount @item.Name @Convert.ToDateTime(@item.Start).ToString("dd.MM.yyyy") - @Convert.ToDateTime(@item.End).ToString("dd.MM.yyyy")
+                                        </td>
+                                        <td style="text-align:right">
+                                            @cartHelper.ItemPriceTotal(item).ToString("N2")
+                                        </td>
+                                        <td style="text-align:right">
+                                        </td>
+                                    </tr>
+                                }
+                                <tr>
+                                    <td>
+                                        @L["Cart Total"]
+                                    </td>
+                                    <td style="text-align:right">
+                                        @cartHelper.CartPrice(cartMandant.CartItemList.ToList()).ToString("N2")
+                                    </td>
+                                    <td style="text-align:right">
+                                    </td>
+                                </tr>
+
+
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudDivider></MudDivider>
+                    </MudItem>
+
+                    <MudItem xs="6">
+
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body1">@L["InHouse Payment"]</MudText>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudCheckBox @bind-Checked="@noPayment" Size="Size.Large" Color="Color.Tertiary">@L["No Payment"]</MudCheckBox>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudCheckBox @bind-Checked="@companyInvoiceCC" Size="Size.Large" Color="Color.Tertiary">@L["Company Invoice CreditCard for Guarantee"]</MudCheckBox>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudCheckBox @bind-Checked="@creditCard" Size="Size.Large" Color="Color.Tertiary">@L["CreditCard as Guarantee"]</MudCheckBox>
+                        </MudItem>
+
+                        <MudItem xs="3">
+                            <MudNumericField @bind-Value="depositPercentage" Label="@L["Deposit %"]" Variant="Variant.Outlined" Min="0" Max="100"></MudNumericField>
+                        </MudItem>
+
+                    </MudItem>
+
+                    <MudItem xs="6">
+
+                        <MudItem xs="12">
+                            <MudText Typo="Typo.body1">@L["Payment Service"]</MudText>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudCheckBox @bind-Checked="@noPayment" Size="Size.Large" Color="Color.Tertiary">@L["Klarna"]</MudCheckBox>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudCheckBox @bind-Checked="@companyInvoiceCC" Size="Size.Large" Color="Color.Tertiary">@L["Stripe"]</MudCheckBox>
+                        </MudItem>
+
+                        <MudItem xs="12">
+                            <MudCheckBox @bind-Checked="@creditCard" Size="Size.Large" Color="Color.Tertiary">@L["Concardis"]</MudCheckBox>
+                        </MudItem>
+
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudButton Style="Height:100px" Variant="Variant.Filled" OnClick="@(() => EndShoppingCart())" Color="Color.Primary" FullWidth="true"><MudText Typo="Typo.h3">Add to Cart</MudText></MudButton>
+                    </MudItem>
+
+                </MudGrid>
+
+            </MudTabPanel>
+
+        </MudTabs>
+
+    </DialogContent>
+
+
+</MudDialog>
+
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter]
+    public CartMandantDto cartMandant { get; set; }
+    private CartHelper cartHelper = new();
+
+    public bool BookerIsGuest { get; set; }
+    public bool BusinessTrip { get; set; }
+
+    public bool noPayment { get; set; }
+    public bool companyInvoiceCC { get; set; }
+    public bool creditCard { get; set; }
+    public int depositPercentage { get; set; }
+
+    public bool BookerConfirmation { get; set; }
+    public string BookerMail { get; set; }
+    public string BookerFax { get; set; }
+
+    public string bookerCommunicationResult { get; set; } = string.Empty;
+    public string companyContactCommunicationResult { get; set; } = string.Empty;
+    public string travelAgentContactCommunicationResult { get; set; } = string.Empty;
+    public string companyCommunicationResult { get; set; } = string.Empty;
+    public string travelAgentCommunicationResult { get; set; } = string.Empty;
+
+    // TabPanel Person = Booker, Company, Travelagent, BookerIsGuest ...
+    // TabPanel RoomDetails = Guestname, Sharer
+    // TabPanel Miscellaneous = Create GroupAccount, Create PhantomAccount,
+    // TabPanel Payment = PaymentLink, Deposit, NonPayment, Debitor
+
+    protected override async Task OnInitializedAsync()
+    {
+        cartMandant.BookingPolicyDto = getValidBookingPolicyDto(cartMandant.CartItemList.ToList());
+        cartMandant.CancellationPolicyDto = getValidCancellationPolicyDto(cartMandant.CartItemList.ToList());
+    }
+
+
+    private async void OnCompanyIdChanged(int value)
+    {
+        cartMandant.CompanyId = value;
+    }
+
+    private async void OnBookerIdChanged(int value)
+    {
+        cartMandant.PersonId = value;
+        setPersonList();
+    }
+
+    private async void OnTravelAgentIdChanged(int value)
+    {
+        cartMandant.TravelAgentId = value;
+    }
+
+    private async void BookerIsGuestCheckedChanged(bool value)
+    {
+        cartMandant.BookerIsGuest = value;
+        setPersonList();
+        StateHasChanged();
+    }
+
+    private async void EndShoppingCart()
+    {
+        cartMandant.CartId = Guid.NewGuid();
+        cartMandant.Confirmations = bookerCommunicationResult + companyContactCommunicationResult + travelAgentContactCommunicationResult;
+        cartMandant.BookingPolicyId = cartMandant.BookingPolicyDto.Id;
+        cartMandant.CancellationPolicyId = cartMandant.CancellationPolicyDto.Id;
+        int reservationId = 0;
+        string cartItemsConfirmed = string.Empty;
+        foreach (CartItemMandantDto item in cartMandant.CartItemList)
+        {
+            CreateReservationByCartMandantRequest request = new();
+            request.Cart = cartMandant;
+            request.Item = item;
+            reservationId = await reservationsClient.CreateReservationByCartMandantCartItemAsync(request);
+            cartItemsConfirmed += reservationId.ToString() + ",";
+        }
+    }
+
+    private BookingPolicyDto getValidBookingPolicyDto(List<CartItemMandantDto> liste)
+    {
+        BookingPolicyDto result = null;
+        if (liste == null) return result;
+        if (liste.Count == 1)
+        {
+            return liste[0].BookingPolicy;
+        }
+        else
+        {
+            int prio = 0;
+            foreach (CartItemMandantDto item in liste)
+            {
+                if (item.BookingPolicy.Priority > prio)
+                {
+                    result = item.BookingPolicy;
+                }
+            }
+        }
+        return result;
+    }
+
+    private CancellationPolicyDto getValidCancellationPolicyDto(List<CartItemMandantDto> liste)
+    {
+        CancellationPolicyDto result = null;
+        if (liste == null) return result;
+        if (liste.Count == 1)
+        {
+            return liste[0].CancellationPolicy;
+        }
+        else
+        {
+            int prio = 0;
+            foreach (CartItemMandantDto item in liste)
+            {
+                if (item.CancellationPolicy.Priority > prio)
+                {
+                    result = item.CancellationPolicy;
+                }
+            }
+        }
+        return result;
+    }
+
+    private void setPersonList()
+    {
+        foreach (var item in cartMandant.CartItemList)
+        {
+            if (item.PersonList == null) item.PersonList = new List<PersonShopItem>();
+        }
+    }
+
+    // Optionsdatum
+    // Keep CartItem mit Datum und Uhrzeit
+    // Gruppenkonto einrichten
+    // Buchungsbestätigung versenden mit entsprechendem Empfänger
+
+
+}

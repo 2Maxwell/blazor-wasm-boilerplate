@@ -1,4 +1,5 @@
-﻿using FSH.BlazorWebAssembly.Client.Infrastructure.Auth;
+﻿using Blazored.SessionStorage;
+using FSH.BlazorWebAssembly.Client.Infrastructure.Auth;
 using FSH.BlazorWebAssembly.Client.Infrastructure.Common;
 using FSH.WebApi.Shared.Authorization;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +14,8 @@ public partial class NavMenu
     protected Task<AuthenticationState> AuthState { get; set; } = default!;
     [Inject]
     protected IAuthorizationService AuthService { get; set; } = default!;
+    [Inject]
+    protected ISessionStorageService sessionStorage { get; set; } = default!;
 
     private string? _hangfireUrl;
     private bool _canViewHangfire;
@@ -23,6 +26,8 @@ public partial class NavMenu
     private bool _canViewBrands;
     private bool _canViewTenants;
     private bool CanViewAdministrationGroup => _canViewUsers || _canViewRoles || _canViewTenants;
+
+    public string? MandantId { get; set; } = string.Empty;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -35,5 +40,7 @@ public partial class NavMenu
         _canViewProducts = await AuthService.HasPermissionAsync(user, FSHAction.View, FSHResource.Products);
         _canViewBrands = await AuthService.HasPermissionAsync(user, FSHAction.View, FSHResource.Brands);
         _canViewTenants = await AuthService.HasPermissionAsync(user, FSHAction.View, FSHResource.Tenants);
+        MandantId = await sessionStorage.GetItemAsStringAsync("currentMandantId");
+
     }
 }

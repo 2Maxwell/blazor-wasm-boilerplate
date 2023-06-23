@@ -1,0 +1,98 @@
+﻿@inject IStringLocalizer<ResQuerySummaryShopMandant> L
+
+
+<MudPaper Class="pa-5 ma-2" Outlined="true">
+    <MudGrid Justify="Justify.Center">
+
+        <MudChip Class="mt-8" Variant="Variant.Outlined" Color="Color.Secondary" Icon="@Icons.Material.Filled.LockClock">@L["Last Query:"]</MudChip>
+
+        <MudDivider Vertical="true" Class="ml-7 mr-7" FlexItem="true" />
+
+        <MudItem xs="2">
+            <MudTextField Value="ArrivalWeekday" Label="@L["Arrival"]" ReadOnly="true" Variant="Variant.Outlined"/>
+
+        </MudItem>
+        <MudItem xs="2">
+            <MudTextField Value="DepartureWeekday" Label="@L["Departure"]" ReadOnly="true" Variant="Variant.Outlined" />
+
+        </MudItem>
+        <MudItem xs="1">
+            <MudTextField Value="catRatesDto.Adults" Label="@L["Adults"]" ReadOnly="true" Variant="Variant.Outlined" />
+        </MudItem>
+
+        @if (ChildStringReady.Length > 26)
+        {
+            <MudItem xs="3">
+                <MudTextField Value="ChildStringReady" Label="@L["Child(s)"]" ReadOnly="true" Variant="Variant.Outlined" />
+            </MudItem>
+        }
+        else
+        {
+        <MudItem xs="1">
+            <MudTextField Value="ChildStringReady" Label="@L["Child(s)"]" ReadOnly="true" Variant="Variant.Outlined" />
+        </MudItem>
+
+        }
+        <MudItem xs="2">
+                <MudTextField @bind-Value="catRatesDto.PromotionCode" Label="@L["PromotionCode"]" ReadOnly="true" Variant="Variant.Outlined" />        
+        </MudItem>
+
+
+    </MudGrid>
+
+</MudPaper>
+@code {
+    [Parameter]
+    public CategoryRatesDto catRatesDto { get; set; } = new();
+
+    public string ArrivalWeekday
+    {
+        get
+        {
+            string value = string.Empty;
+            value = catRatesDto.Arrival.ToString("D");
+            return value;
+        }
+    }
+
+    public string DepartureWeekday
+    {
+        get
+        {
+            string value = string.Empty;
+            value = catRatesDto.Departure.ToString("D");
+            return value;
+        }
+    }
+
+
+    private string ChildStringReady
+    {
+        get
+        {
+            string value = string.Empty;
+            if(catRatesDto.ChildsString != string.Empty)
+            {
+                string[] childArr = catRatesDto.ChildsString.Split(';');
+                for (var i = 0; i < childArr.Length; i++)
+                {
+                    if (childArr[i] != string.Empty)
+                    {
+                        string[] ageArr = childArr[i].Split(',');
+                        value += "Child Age: " + ageArr[0];
+                        if (ageArr[1] == "True")
+                        {
+                            value += " ExtraBed ";
+                        }else
+                        {
+                            value += " no ExtraBed ";
+                        };
+                    }
+                }
+            }
+            if (value == string.Empty) value = "No Children";
+            return value;
+        }
+    }
+
+}

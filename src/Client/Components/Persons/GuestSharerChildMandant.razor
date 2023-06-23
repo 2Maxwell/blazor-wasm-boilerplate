@@ -1,0 +1,178 @@
+﻿@using FSH.BlazorWebAssembly.Client.Pages.Shop;
+
+@inject IStringLocalizer<GuestSharerChildMandant> L
+@inject IPersonsClient PersonsClient
+
+
+<MudGrid>
+    @{
+        int PersonIndex = 0;
+        int children = 0;
+        if (@cartItem.Pax.Children != null)
+        {
+            children = cartItem.Pax.Children.Count;
+        }
+    }
+    @if (loaded)
+    {
+        @for (int r = 0; r < cartItem.Amount; r++) // RoomAmount
+        {
+
+            var roomAmountCounter = r + 1;
+            Console.WriteLine("Room: " + r);
+            // int indexRoomRange = roomAmountCounter * (cartItem.Pax.Adult + children);
+
+
+            <MudItem xs="6">
+                <MudGrid>
+                    <MudPaper Style="border-style: double;" Class="border-double mud-border-warning border-4 pl-3 pr-3 pb-2 pt-2">
+
+                        <MudItem xs="12">
+                            <MudText>@L["Room"] @roomAmountCounter: <b>@cartItem.Name</b> @Convert.ToDateTime(cartItem.Start).ToString("dd.MM.yyyy") - @Convert.ToDateTime(cartItem.End).ToString("dd.MM.yyyy")</MudText>
+                        </MudItem>
+
+                        @for (int i = 0; i < cartItem.Pax.Adult + (_ = cartItem.Pax.Children != null ? cartItem.Pax.Children.Count : 0) ; i++)
+                        {
+                            int personIndex = PersonIndex;
+                            Console.WriteLine("RoomAmountCounter: " + roomAmountCounter);
+                            Console.WriteLine("Room: " + r);
+                            Console.WriteLine("PersonIndex: " + personIndex);
+
+
+                            @if (cartItem.PersonList.ToList()[personIndex].PersonShopType == "booker")
+                            {
+                                <MudStack Row="true">
+
+                                    <MudChip Class="mt-4" Style="min-width:110px" Variant="Variant.Outlined" Color="Color.Info">@L["Booker"]</MudChip>
+                                    <MudTextField @bind-Value="cartItem.PersonList.ToList()[personIndex].Name" For="()=>cartItem.PersonList.ToList()[personIndex].Name" Label="@L["Name"]" Variant="Variant.Outlined" />
+                                    <MudTextField @bind-Value="cartItem.PersonList.ToList()[personIndex].FirstName" For="()=>cartItem.PersonList.ToList()[personIndex].FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+
+                                </MudStack>
+
+                            }
+                            @if (cartItem.PersonList.ToList()[personIndex].PersonShopType == "guest")
+                            {
+                                <MudStack Row="true">
+
+                                    <MudChip Class="mt-4" Style="min-width:110px" Variant="Variant.Outlined" Color="Color.Info">@L["Guest"]</MudChip>
+                                    <MudTextField @bind-Value="cartItem.PersonList.ToList()[personIndex].Name" For="()=>cartItem.PersonList.ToList()[personIndex].Name" Label="@L["Name"]" Variant="Variant.Outlined" />
+                                    <MudTextField @bind-Value="cartItem.PersonList.ToList()[personIndex].FirstName" For="()=>cartItem.PersonList.ToList()[personIndex].FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+
+                                </MudStack>
+
+                            }
+                            @if (cartItem.PersonList.ToList()[personIndex].PersonShopType == "sharer")
+                            {
+                                <MudStack Row="true">
+
+                                    <MudChip Class="mt-4" Style="min-width:110px" Variant="Variant.Outlined" Color="Color.Default">@L["Sharer"]</MudChip>
+                                    <MudTextField @bind-Value="cartItem.PersonList.ToList()[personIndex].Name" For="()=>cartItem.PersonList.ToList()[personIndex].Name" Label="@L["Name"]" Variant="Variant.Outlined" />
+                                    <MudTextField @bind-Value="cartItem.PersonList.ToList()[personIndex].FirstName" For="()=>cartItem.PersonList.ToList()[personIndex].FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+
+                                </MudStack>
+                            }
+                            @if (cartItem.PersonList.ToList()[personIndex].PersonShopType == "child")
+                            {
+                                <MudStack Row="true">
+
+                                    <MudChip Class="mt-4" Style="min-width:110px" Variant="Variant.Outlined" Color="Color.Tertiary">@L["Child"]</MudChip>
+                                    <MudTextField @bind-Value="cartItem.PersonList.ToList()[personIndex].FirstName" For="()=>cartItem.PersonList.ToList()[personIndex].FirstName" Label="@L["FirstName"]" Variant="Variant.Outlined" />
+                                    <MudTextField Style="max-width:80px" @bind-Value="@cartItem.PersonList.ToList()[personIndex].ChildAge" For="()=>cartItem.PersonList.ToList()[personIndex].ChildAge" Label="@L["Age"]" Variant="Variant.Outlined" />
+                                    <MudCheckBox @bind-Checked="cartItem.PersonList.ToList()[personIndex].ExtraBed" Size="Size.Large" Color="Color.Tertiary">@L["Extrabed"]</MudCheckBox>
+
+                                </MudStack>
+                            }
+
+                            PersonIndex++;
+                        }
+
+                    </MudPaper>
+                </MudGrid>
+            </MudItem>
+        }
+
+    }
+
+</MudGrid>
+
+@code {
+    [Parameter]
+    public CartItemMandantDto cartItem { get; set; }
+    [Parameter]
+    public bool bookerIsGuest { get; set; }
+    [Parameter]
+    public int? BookerId { get; set; }
+
+    public PersonDto? Booker { get; set; }
+    [Parameter]
+    public EventCallback<bool> bookerIsGuestChanged { get; set; }
+
+    public bool loaded { get; set; } = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (bookerIsGuest && BookerId != null)
+        {
+            Booker = await PersonsClient.GetAsync(Convert.ToInt32(BookerId));
+        }
+
+        cartItem.PersonList = new List<PersonShopItem>();
+        for (int i = 1; i <= cartItem.Amount; i++) // Zimmeranzahl
+        {
+            for (int person = 1; person <= cartItem.Pax.Adult; person++) // Anzahl Erw im Zimmer
+            {
+                int iForIndex = i - 1;
+                string index = $"{iForIndex}R{person}P";
+
+                if (bookerIsGuest & person == 1)
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonId = (int)BookerId;
+                    psi.PersonShopType = "booker";
+                    psi.Name = Booker != null ? Booker.Name : string.Empty;
+                    psi.FirstName = Booker != null ? Booker.FirstName : string.Empty;
+                    psi.PersonId = (int)BookerId;
+                    psi.Index = index;
+                    cartItem.PersonList.Add(psi);
+                }
+                else if (!bookerIsGuest & person == 1)
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "guest";
+                    psi.Index = index;
+                    cartItem.PersonList.Add(psi);
+                }
+                else
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "sharer";
+                    psi.Index = index;
+                    cartItem.PersonList.Add(psi);
+                }
+            }
+
+            if (cartItem.Pax.Children != null)
+            {
+                List<Child> childs = cartItem.Pax.Children.ToList();
+
+                for (int i2 = 0; i2 < childs.Count; i2++)
+                {
+                    string index = $"{i}R{i2}Child";
+
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "child";
+                    psi.ChildAge = childs[i2].Age;
+                    psi.ExtraBed = childs[i2].ExtraBed;
+                    psi.Index = index;
+
+                    cartItem.PersonList.Add(psi);
+                }
+            }
+
+        }
+        loaded = true;
+
+    }
+
+}

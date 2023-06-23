@@ -1,0 +1,376 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Cashier;
+@inject IStringLocalizer<CashierDialog> L
+@inject IItemClient ItemsClient
+@inject IMandantsClient MandantsClient
+
+
+<style>
+    .align-right input {
+        text-align: right;
+    }
+
+    .mud-table input {
+        padding: 2px;
+    }
+</style>
+
+
+@if (_loaded)
+{
+    <MudDialog Style="min-height:80%; min-width:85%">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3 mb-n1" />
+                @L["Cashier"]
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudPaper Height="70px" Width="100%" Class="ma-2">
+                        <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+
+                            <MudItem Style="width:200px;">
+                                <MudTextField T="int" @bind-Value="bookingLine.ItemNumber" Label="Item / Package Number" Variant="Variant.Text"></MudTextField>
+                            </MudItem>
+
+                            <MudItem Style="width:500px;">
+                                <MudTextField @ref="refName" T="string" @bind-Value="bookingLine.Name" Label="Item / Package Name" Variant="Variant.Text"></MudTextField>
+                            </MudItem>
+
+                            <MudItem Style="width:150px">
+                                <MudNumericField @ref="refAmount" T="decimal" Class="align-right" Value="@bookingLine.Amount" ValueChanged="((e) => AmountValueChanged(e)) " Format="F2" HideSpinButtons="true" Label="Amount" Variant="Variant.Text" />
+                            </MudItem>
+
+                            <MudItem Style="width:150px">
+                                <MudNumericField @ref="refPrice" T="decimal" Class="align-right" Value="@bookingLine.Price" ValueChanged="((e) => PriceValueChanged(e))" Format="F2" HideSpinButtons="true" Label="Price" Variant="Variant.Text" />
+                            </MudItem>
+
+                            <MudItem Style="width:150px">
+                                <MudNumericField T="decimal" Class="align-right" @bind-Value="bookingLine.PriceTotal" Format="F2" ReadOnly="true" HideSpinButtons="true" Label="Total" Variant="Variant.Text" />
+                            </MudItem>
+
+                            <MudFab Color="Color.Tertiary" OnClick="AddBookingLine" StartIcon="@Icons.Material.Filled.Check" DisableElevation="true" />
+
+                            @if (bookingsTotalClickable)
+                            {
+                                <MudButton OnClick="PaymentSetValues" Style="min-width:300px; min-height:65px; margin-left:15px" Variant="Variant.Filled" Color="Color.Secondary">@bookingsTotal.ToString("N2")</MudButton>
+                            }
+                            else
+                            {
+                                <MudButton Style="min-width:300px; min-height:65px; margin-left:15px " Variant="Variant.Filled" Color="Color.Secondary"><MudText Typo="Typo.h5">@bookingsTotal.ToString("N2")</MudText></MudButton>
+                            }
+
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+                @*                <MudItem xs="3">
+            <MudPaper Height="400px" Width="100%" Class="mud-theme-primary">
+            </MudPaper>
+
+            </MudItem>
+            *@
+            <MudItem xs="8">
+                    <MudTabs Elevation="4" Rounded="true" AlwaysShowScrollButtons="true" Color="@Color.Secondary">
+                        <MudTabPanel Class="mb-3" Text="Items">
+                            <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-3 mb-2">
+                                <MudGrid Style="height:180px;">
+                                    @foreach (var item in itemsDto.Where(x => x.ItemNumber < 9000))
+                                    {
+                                        string formattedTaxRate = item.TaxRate.ToString("N2");
+                                        <MudButton OnClick="(() => BonItemClick(item))">
+                                            <FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard MD="3" itemNumber="@item.ItemNumber" itemGroup="GroupId" productName="@item.Name" vatTitle="Vat" vat="@formattedTaxRate" priceTitle="Price" price="@item.Price"></FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard>
+                                        </MudButton>
+                                    }
+                                </MudGrid>
+
+                            </MudPaper>
+
+
+                        </MudTabPanel>
+                        <MudTabPanel Text="Packages">
+                            <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-center align-content-start">
+
+                            </MudPaper>
+                        </MudTabPanel>
+                        <MudTabPanel Text="Options">
+                            <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-3">
+
+                            </MudPaper>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="Payments">
+                            <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-3">
+                                @foreach (var item in itemsDto.Where(x => x.ItemNumber >= 9000))
+                                {
+                                    string formattedTaxRate = item.TaxRate.ToString("N2");
+                                    <MudButton OnClick="(() => BonItemClick(item))">
+                                        <FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard MD="3" itemNumber="@item.ItemNumber" itemGroup="GroupId" productName="@item.Name" vatTitle="Vat" vat="@formattedTaxRate" priceTitle="Price" price="@item.Price"></FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard>
+                                    </MudButton>
+                                }
+                            </MudPaper>
+                        </MudTabPanel>
+
+                    </MudTabs>
+
+                </MudItem>
+
+                <MudItem xs="4">
+                    <MudPaper Height="100vh" Width="100%" Square="true" Class="mud-theme-primary">
+                        <MudStack Class="gap-0">
+@*                            @foreach (var item in bookingLinesBooked)
+                            {
+                                <MudPaper Class="mt-2 ml-2 mr-2 mb-n2 pa-4">
+
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+
+                                        <MudIconButton OnClick="()=>DeleteBookingLine(item)" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton>
+
+                                        <MudText Style="width:17%; text-align:right" Typo="Typo.h4">@item.Amount.ToString("N2")</MudText>  <MudText Style="width:3%;" Typo="Typo.h5"> X </MudText>
+
+                                        <MudStack Style="width:50%; margin-left:10px;" Justify="Justify.Center" Spacing="0">
+                                            <MudText Typo="Typo.body1">@item.Name</MudText>
+                                            <MudText Typo="Typo.body2">@item.Price.ToString("N2")</MudText>
+                                        </MudStack>
+
+                                        <MudText Style="width:30%; text-align:right" Typo="Typo.h4">@item.PriceTotal.ToString("N2")</MudText>
+
+                                    </MudStack>
+
+                                </MudPaper>
+                            }
+*@
+                            @foreach (BookingLineSummaryLocal item in blSummaries)
+                            {
+                                <MudPaper Class="mt-2 ml-2 mr-2 mb-n2 pa-4">
+                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+
+                                        <MudIconButton OnClick="() => DeleteBookingLineSummary(item)" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton>
+
+                                        <MudText Style="width:17%; text-align:right" Typo="Typo.h4">@Convert.ToDecimal(item.Amount).ToString("N2")</MudText>  <MudText Style="width:3%;" Typo="Typo.h5"> X </MudText>
+
+                                        <MudStack Style="width:50%; margin-left:10px;" Justify="Justify.Center" Spacing="0">
+                                            <MudText Typo="Typo.body1">@item.Description</MudText>
+                                            <MudText Typo="Typo.body2">@item.Price.ToString("N2")</MudText>
+                                             @item.Description @item.TaxLine @item.InvoicePosition
+                                        </MudStack>
+
+                                        <MudText Style="width:30%; text-align:right" Typo="Typo.h4">@item.Total.ToString("N2")</MudText>
+
+                                    </MudStack>
+
+                                </MudPaper>
+
+
+
+
+
+                            }
+
+
+
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+
+        </DialogContent>
+        <DialogActions>
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudButton Style="Height:90px" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                        <MudText Typo="Typo.h3">
+                            @L["Check Out Cashier"]
+                        </MudText>
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </DialogActions>
+
+    </MudDialog>
+}
+
+@code {
+    [Parameter]
+    public MandantDto mandantDto { get; set; }
+    public bool _loaded { get; set; } = false;
+    public BookingLine bookingLine { get; set; } = new();
+    // public List<BookingLine> bookingLinesBooked { get; set; } = new();
+    public List<ItemCashierDto> itemsDto { get; set; }
+    private MudTextField<string> refName;
+    private MudNumericField<decimal> refAmount;
+    private MudNumericField<decimal> refPrice;
+    public decimal bookingsTotal { get; set; } = 0;
+    public bool bookingsTotalClickable { get; set; }
+    public List<BookingLineSummaryLocal> blSummaries { get; set; } = new List<BookingLineSummaryLocal>();
+
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        GetItemsCashierRequest getItemsCashierRequest = new();
+        getItemsCashierRequest.MandantId = mandantDto.Id;
+        getItemsCashierRequest.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
+
+        itemsDto = (await ItemsClient.GetItemsCashierAsync(getItemsCashierRequest)).ToList();
+        _loaded = true;
+    }
+
+    private async void BonItemClick(ItemCashierDto item)
+    {
+        bookingLine = new();
+        bookingLine.DateBooking = DateTime.Now;
+        bookingLine.Amount = 1;
+        bookingLine.ItemNumber = item.ItemNumber;
+        bookingLine.ItemId = item.Id;
+        bookingLine.Name = item.Name;
+        bookingLine.Price = item.Price;
+        bookingLine.TaxId = item.TaxId;
+        bookingLine.TaxRate = item.TaxRate;
+        bookingLine.InvoicePos = item.InvoicePosition;
+        bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
+        bookingsTotalClickable = item.ItemNumber >= 9000 ? true : false;
+        refName.SelectAsync();
+    }
+
+    private async void AddBookingLine()
+    {
+        // bookingLinesBooked.Add(bookingLine);
+        BookingLineSummaryLocal bls = new BookingLineSummaryLocal();
+        bls.SourceList = new List<BookingLine>();
+        bls.SourceList.Add(bookingLine);
+        blSummaries.Add(bls);
+        bookingLine = new();
+        SumBookingLinesList();
+        StateHasChanged();
+    }
+
+    private async void SumBookingLinesList()
+    {
+        // bookingsTotal = bookingLinesBooked.Where(x => x.ItemNumber < 9000).Sum(x => x.PriceTotal) - bookingLinesBooked.Where(x => x.ItemNumber >= 9000).Sum(x => x.PriceTotal);
+
+        // in blSummaries sind die Summen der einzelnen Buchungszeilen summieren
+        decimal summariesSumme = 0; 
+        foreach (var item in blSummaries)
+        {
+            // summariesSumme += item.SourceList.Sum(x => x.PriceTotal);
+            // summariesSumme += item.Total;
+            summariesSumme += item.SourceList.Where(x => x.ItemNumber < 9000).Sum(x => x.PriceTotal);
+            summariesSumme -= item.SourceList.Where(x => x.ItemNumber >= 9000).Sum(x => x.PriceTotal);
+        }
+        bookingsTotal = summariesSumme;
+
+        StateHasChanged();
+    }
+
+    private async void AmountValueChanged(decimal value)
+    {
+        bookingLine.Amount = value;
+        bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
+
+        StateHasChanged();
+        refPrice.SelectAsync();
+
+    }
+
+    private async void PriceValueChanged(decimal value)
+    {
+        bookingLine.Price = value;
+        bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
+
+        StateHasChanged();
+    }
+
+    private async void PaymentSetValues()
+    {
+        bookingLine.Amount = 1;
+        bookingLine.Price = bookingsTotal;
+        bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
+        bookingLine.DateBooking = DateTime.Now;
+        bookingsTotalClickable = false;
+        StateHasChanged();
+    }
+
+    private async void DeleteBookingLine(BookingLine bookingLine)
+    {
+        // bookingLinesBooked.Remove(bookingLine);
+        blSummaries.Remove(blSummaries.Where(x => x.SourceList.Contains(bookingLine)).FirstOrDefault());
+        SumBookingLinesList();
+        StateHasChanged();
+    }
+
+    private async void DeleteBookingLineSummary(BookingLineSummaryLocal bookingLine)
+    {
+        blSummaries.Remove(bookingLine);
+        SumBookingLinesList();
+        StateHasChanged();
+    }
+
+
+    // Erstelle ein Switch für int werte das 20 verschiedene Farben anzeigt zurückgibt im Format: background-color: ? ;color: ?
+    private string GetColor(int value)
+    {
+        string color = "";
+        switch (value)
+        {
+            case 1:
+                color = "background-color: #FF0000; color: #FFFFFF";
+                break;
+            case 2:
+                color = "background-color: #FFA500; color: #FFFFFF";
+                break;
+            case 3:
+                color = "background-color: #FFFF00; color: #000000";
+                break;
+            case 4:
+                color = "background-color: #008000; color: #FFFFFF";
+                break;
+            case 5:
+                color = "background-color: #0000FF; color: #FFFFFF";
+                break;
+            case 6:
+                color = "background-color: #4B0082; color: #FFFFFF";
+                break;
+            case 7:
+                color = "background-color: #EE82EE; color: #FFFFFF";
+                break;
+            case 8:
+                color = "background-color: #FFC0CB; color: #000000";
+                break;
+            case 9:
+                color = "background-color: #FFA07A; color: #000000";
+                break;
+            case 10:
+                color = "background-color: #FFD700; color: #000000";
+                break;
+            case 11:
+                color = "background-color: #00FF00; color: #000000";
+                break;
+            case 12:
+                color = "background-color: #00FFFF; color: #000000";
+                break;
+            case 13:
+                color = "background-color: #000080; color: #FFFFFF";
+                break;
+            case 14:
+                color = "background-color: #800080; color: #FFFFFF";
+                break;
+            case 15:
+                color = "background-color: #FF00FF; color: #000000";
+                break;
+            case 16:
+                color = "background-color: #808000; color: #FFFFFF";
+                break;
+            case 17:
+                color = "background-color: #008080; color: #FFFFFF";
+                break;
+            case 18:
+                color = "background-color: #800000; color: #FFFFFF";
+                break;
+            case 19:
+                color = "background-color: #C0C0C0; color: #000000";
+                break;
+        }
+        return color;
+    }
+}

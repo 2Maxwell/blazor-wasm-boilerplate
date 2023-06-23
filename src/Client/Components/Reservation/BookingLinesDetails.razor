@@ -1,0 +1,89 @@
+﻿@inject IStringLocalizer<BookingLinesDetails> L
+
+@if (_loaded)
+{
+    <MudCard style="min-height:620px">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["BookingLine Details"]</MudButton>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+                <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+                    <thead>
+                        <tr>
+                            <th>@L["Date"]</th>
+                            <th>@L["Description"]</th>
+                            <th style="text-align:right">@L["Amount"]</th>
+                            <th style="text-align:right">@L["Price"]</th>
+                            <th style="text-align:right">@L["Total"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            decimal total = 0;
+                        }
+
+                        @foreach (BookingLineSummary bl in reservationDto.BookingLineSummaries.OrderBy(x => x.Date))
+                        {
+                            <tr>
+                                <td>
+                                    @bl.Date.ToString("dd.MM.yyyy")
+                                </td>
+                                <td>
+                                    @bl.Description
+                                    @bl.TaxLine
+                                </td>
+                                <td style="text-align:right">
+                                    @Convert.ToDecimal(bl.Amount).ToString("N2")
+                                </td>
+                                <td style="text-align:right">
+                                    @bl.Price.ToString("N2")
+                                </td>
+                                <td style="text-align:right">
+                                    @bl.Total.ToString("N2")
+                                </td>
+                            </tr>
+                            total += @bl.Total;
+                        }
+
+                        <tr>
+                            <td>
+                            </td>
+                            <td>
+                                @L["Total"]
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td style="text-align:right">
+                                @total.ToString("N2")
+                            </td>
+                        </tr>
+                    </tbody>
+                </MudSimpleTable>
+
+            </MudGrid>
+        </MudCardContent>
+        <MudCardActions>
+        </MudCardActions>
+    </MudCard>
+}
+
+
+
+
+@code {
+    public bool _loaded { get; set; } = false;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loaded = true;
+    }
+}

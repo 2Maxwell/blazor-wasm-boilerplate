@@ -16,7 +16,7 @@
 
 
 <FshTitle Title="@L["Packages"]" Description="@L["Manage Packages."]" />
-<EntityTable TEntity="PackageDto" TId="int" TRequest="UpdatePackageRequest" Context="@Context" >
+<EntityTable TEntity="PackageDto" TId="int" TRequest="UpdatePackageRequest" Context="@Context">
 
     <EditFormContent>
 
@@ -35,7 +35,7 @@
             </MudItem>
         }
         else // Create
-        {            
+        {
             <MudItem xs="4" md="4">
                 <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
             </MudItem>
@@ -52,6 +52,19 @@
         <MudItem xs="12" md="12">
             <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.Display)" @bind-Value="context.Display" Label="@L["Display"]" />
         </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayShort)" @bind-Value="context.DisplayShort" Label="@L["DisplayShort"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayHighLight)" @bind-Value="context.DisplayHighLight" Label="@L["DisplayHighLight (; is separator)"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.ConfirmationText)" @bind-Value="context.ConfirmationText" Label="@L["ConfirmationText"]" />
+        </MudItem>
+
 
         <MudItem xs="12">
             <MudTable Items="@context.PackageItems" T="PackageItemDto" Breakpoint="Breakpoint.None" Dense="true" Hover="true" Bordered="true" @bind-SelectedItem="selectedPackageItem">
@@ -116,12 +129,53 @@
             </MudSelect>
         </MudItem>
 
-        <MudItem xs="4" md="3">
+        @if (context.PackageTargetEnum != null)
+        {
+            <MudItem xs="12">
+                <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" MultiSelection="true" @bind-Value="context.PackageTargetEnum"
+                       SelectedValues="context.PackageTargetEnum.Split(',', StringSplitOptions.TrimEntries).AsEnumerable().ToHashSet<string>()" Label="@L["Package Targets"]">
+                    @foreach (var item in PackageTargetStringEnumList)
+                    {
+                        <MudSelectItem T="string" Value="@item">@item</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+        }
+        else
+        {
+            <MudItem xs="12">
+                <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" MultiSelection="true" @bind-Value="context.PackageTargetEnum"
+                       Label="@L["Package Targets"]">
+                    @foreach (var item in PackageTargetStringEnumList)
+                    {
+                        <MudSelectItem T="string" Value="@item">@item</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+        }
+
+        <MudItem xs="4" md="6">
             <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.Optional)" @bind-Checked="context.Optional" Label="@L["Optional"]" />
         </MudItem>
 
-        <MudItem xs="4" md="3">
+        <MudItem xs="4" md="6">
             <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.ShopExtern)" @bind-Checked="context.ShopExtern" Label="@L["ShopExtern"]" />
+        </MudItem>
+
+        @if (context.ChipIcon != null || context.ChipIcon != string.Empty)
+        {
+            <MudItem xs="2" Class="mt-3">
+                <MudChip Icon="@context.ChipIcon" Color="Color.Info">@context.ChipText</MudChip>
+            </MudItem>
+        }
+
+        <MudItem xs="4">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.ChipIcon)" @bind-Value="context.ChipIcon" Label="@L["ChipIcon"]" />
+        </MudItem>
+
+        <MudItem xs="6">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.ChipText)" @bind-Value="context.ChipText" Label="@L["ChipText"]" />
         </MudItem>
 
     </EditFormContent>
@@ -136,6 +190,7 @@
     public List<PackageBookingBaseEnumDto> PackageBaseEnumList { get; set; } = new List<PackageBookingBaseEnumDto>();
     public List<PackageBookingRhythmEnumDto> PackageRhythmEnumList { get; set; } = new List<PackageBookingRhythmEnumDto>();
     public List<PackageItemCoreValueEnumDto> PackageItemCoreValueEnumList { get; set; } = new List<PackageItemCoreValueEnumDto>();
+    public List<string> PackageTargetStringEnumList { get; set; } = new List<string>();
     [CascadingParameter]
     public List<ItemSelectDto> ItemsList { get; set; } = new List<ItemSelectDto>();
     public DateTime? LastEndDate { get; set; }
@@ -153,12 +208,12 @@
         entityNamePlural: L["Packages"],
         entityResource: FSHResource.Packages,
         fields: new()
-            {
+                {
             // new(package => package.Id, L["Id"], "Id"),
             new(package => package.Kz, L["Kz"], "Kz"),
                 new(package => package.Name, L["Name"], "Name"),
                 new(package => package.Display, L["Display"], "Display")
-            },
+                },
         idFunc: package => package.Id,
         idMandantFunc: item => item.MandantId,
         editNotAsModal: false,
@@ -204,16 +259,20 @@
         PackageItemCoreValueEnumList = (await EnumsClient.GetPackageItemCoreValueEnumRequestAsync()).ToList();
 
         ItemsList = (await ItemsClient.GetItemSelectAsync(_mandantId)).ToList();
+
+        PackageTargetStringEnumList = (await EnumsClient.GetPackageTargetStringEnumRequestAsync()).ToList();
     }
 
 
     private async Task AddPackageItem()
     {
         selectedPackage = Context.AddEditModal.RequestModel;
-        var parameters = new DialogParameters {
-            ["_mandantId"] = _mandantId,
-            ["ItemsList"] = ItemsList,
-            ["PackageItemCoreValueEnumList"] = PackageItemCoreValueEnumList};
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] = _mandantId,
+                ["ItemsList"] = ItemsList,
+                ["PackageItemCoreValueEnumList"] = PackageItemCoreValueEnumList
+            };
         var dialog = DialogService.Show<AddPackageItemModal>("", parameters);
         var result = await dialog.Result;
         if (!result.Cancelled)
@@ -229,10 +288,12 @@
 
     private async Task EditPackageItem(PackageItemDto packageItem)
     {
-        var parameters = new DialogParameters {
-            ["packageItem"] = packageItem,
-            ["ItemsList"] = ItemsList,
-            ["PackageItemCoreValueEnumList"] = PackageItemCoreValueEnumList};
+        var parameters = new DialogParameters
+            {
+                ["packageItem"] = packageItem,
+                ["ItemsList"] = ItemsList,
+                ["PackageItemCoreValueEnumList"] = PackageItemCoreValueEnumList
+            };
         var dialog = DialogService.Show<EditPackageItemModal>("", parameters);
         var result = await dialog.Result;
 

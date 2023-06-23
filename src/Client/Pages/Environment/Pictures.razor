@@ -1,0 +1,293 @@
+﻿@page "/environment/pictures"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@using FSH.BlazorWebAssembly.Client.Components.Dialogs
+@using FSH.BlazorWebAssembly.Client.Components.Picture
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Rooms)]
+
+@inject IStringLocalizer<Pictures> L
+@inject ISessionStorageService sessionstorage
+@inject IPicturesClient PicturesClient
+@inject ISnackbar Snackbar
+
+<FshTitle Title="@L["Pictures"]" Description="@L["Manage Pictures for Categorys, Rooms, Property, Restaurant ..."]" />
+
+@if (pictureDtos != null)
+{
+    <MudPaper Class="d-flex flex-row flex-grow-1 gap-6" Height="70px" Width="100%">
+        <MudItem>
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" @bind-Checked="showAllPictures" Label="@L["ShowAllPictures"]" />
+        </MudItem>
+
+        <MudItem>
+            <MudSelect T="string" Label="MatchCode" @bind-Value="selectedMatchCode" TextChanged="@(e => OnSelectedMatchCodeChanged(e))" Variant="Variant.Outlined" Dense AnchorOrigin="Origin.BottomCenter">
+                @foreach (string item in matchCodes)
+                {
+                    <MudSelectItem T="string" Value="@item" />
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem Class="mt-3">
+            <MudButton OnClick="(() => AddPicture())" Color="Color.Primary" IconColor="Color.Surface" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add">Create Picture</MudButton>
+        </MudItem>
+
+    </MudPaper>
+
+
+    <MudGrid Class="pl-3 pt-4">
+        @if (!showAllPictures)
+        {
+            <MudItem xs="12">
+                <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">@selectedMatchCode</MudAlert>
+            </MudItem>
+
+            @foreach (PictureDto pictureDto in pictureDtos)
+            {
+                @if (pictureDto.MatchCode.Contains(selectedMatchCode))
+                {
+
+                    <MudCard Class="ma-3 pa-1" Tag="@pictureDto" @onclick="() => currentPictureDto = pictureDto">
+                        <MudCardHeader>
+                            <CardHeaderAvatar>
+                                <MudAvatar Color="Color.Secondary">@pictureDto.Title.Substring(0,2).ToUpper()</MudAvatar>
+                            </CardHeaderAvatar>
+                            <CardHeaderContent>
+                                <MudText Typo="Typo.body1">@pictureDto.Title</MudText>
+                                <MudText Typo="Typo.body2">@pictureDto.MatchCode</MudText>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardMedia Image="@(string.IsNullOrEmpty(@pictureDto.ImagePath) ? string.Empty : (Config[ConfigNames.ApiBaseUrl] + @pictureDto.ImagePath))" Height="200">
+                        </MudCardMedia>
+                        <MudCardContent>
+                            <MudText Typo="Typo.body2">@pictureDto.Description</MudText>
+                            <MudText Typo="Typo.body2">@L["OrderNumber: "] @pictureDto.OrderNumber</MudText>
+
+                            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" Disabled="true" Checked="pictureDto.ShowPicture" Label="@L["ShowPicture"]" />
+                            <MudCheckBox T="bool" Color="Color.Primary" Size="Size.Large" Disabled="true" Checked="pictureDto.Publish" Label="@L["Publish"]" />
+                            <MudCheckBox T="bool" Color="Color.Default" Size="Size.Large" Disabled="true" Checked="pictureDto.DiaShow" Label="@L["DiaShow"]" />
+
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="(() => DeletePicture(pictureDto))" Size="Size.Large" aria-label="Delete Picture"></MudIconButton>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="(() => EditPicture(pictureDto))" Size="Size.Large" aria-label="Edit Picture"></MudIconButton>
+                        </MudCardActions>
+                    </MudCard>
+                }
+            }
+        }
+        else
+        {
+            @foreach (string matchCode in matchCodes.OrderBy(x => x))
+            {
+                int counter = 0;
+                foreach (PictureDto item in pictureDtos)
+                {
+                    if (item.MatchCode.Contains(@matchCode))
+                    {
+                        counter++;
+                    }
+                }
+                if (counter > 0)
+                {
+                    <MudItem xs="12">
+                        <MudAlert Severity="Severity.Info" ContentAlignment="HorizontalAlignment.Center">@matchCode</MudAlert>
+                    </MudItem>
+                }
+                counter = 0;
+
+                @foreach (PictureDto pictureDto in pictureDtos)
+                {
+                    @if (pictureDto.MatchCode.Contains(@matchCode))
+                    {
+
+                        <MudCard Class="ma-3 pa-1" Tag="@pictureDto" @onclick="() => currentPictureDto = pictureDto">
+                            <MudCardHeader>
+                                <CardHeaderAvatar>
+                                    <MudAvatar Color="Color.Secondary">@pictureDto.Title.Substring(0,2).ToUpper()</MudAvatar>
+                                </CardHeaderAvatar>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.body1">@pictureDto.Title</MudText>
+                                    <MudText Typo="Typo.body2">@pictureDto.MatchCode</MudText>
+                                </CardHeaderContent>
+                                <CardHeaderActions>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
+                                </CardHeaderActions>
+                            </MudCardHeader>
+                            <MudCardMedia Image="@(string.IsNullOrEmpty(@pictureDto.ImagePath) ? string.Empty : (Config[ConfigNames.ApiBaseUrl] + @pictureDto.ImagePath))" Height="200">
+                            </MudCardMedia>
+                            <MudCardContent>
+                                <MudText Typo="Typo.body2">@pictureDto.Description</MudText>
+                                <MudText Typo="Typo.body2">@L["OrderNumber: "] @pictureDto.OrderNumber</MudText>
+
+                                <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" Disabled="true" Checked="pictureDto.ShowPicture" Label="@L["ShowPicture"]" />
+                                <MudCheckBox T="bool" Color="Color.Primary" Size="Size.Large" Disabled="true" Checked="pictureDto.Publish" Label="@L["Publish"]" />
+                                <MudCheckBox T="bool" Color="Color.Default" Size="Size.Large" Disabled="true" Checked="pictureDto.DiaShow" Label="@L["DiaShow"]" />
+
+                            </MudCardContent>
+                            <MudCardActions>
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="(() => DeletePicture(pictureDto))" Size="Size.Large" aria-label="Delete Picture"></MudIconButton>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="(() => EditPicture(pictureDto))" Size="Size.Large" aria-label="Edit Picture"></MudIconButton>
+                            </MudCardActions>
+                        </MudCard>
+
+                    }
+
+                }
+
+            }
+
+        }
+
+
+        @*        @foreach (PictureDto pictureDto in pictureDtos)
+    {
+
+    <MudCard Class="ma-3 pa-1" Tag="@pictureDto" @onclick="() => currentPictureDto = pictureDto">
+    <MudCardHeader>
+    <CardHeaderAvatar>
+    <MudAvatar Color="Color.Secondary">@pictureDto.Title.Substring(0,2).ToUpper()</MudAvatar>
+    </CardHeaderAvatar>
+    <CardHeaderContent>
+    <MudText Typo="Typo.body1">@pictureDto.Title</MudText>
+    <MudText Typo="Typo.body2">@pictureDto.MatchCode</MudText>
+    </CardHeaderContent>
+    <CardHeaderActions>
+    <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
+    </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardMedia Image="@(string.IsNullOrEmpty(@pictureDto.ImagePath) ? string.Empty : (Config[ConfigNames.ApiBaseUrl] + @pictureDto.ImagePath))" Height="200">
+    </MudCardMedia>
+    <MudCardContent>
+    <MudText Typo="Typo.body2">@pictureDto.Description</MudText>
+    <MudText Typo="Typo.body2">@L["OrderNumber: "] @pictureDto.OrderNumber</MudText>
+
+    <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" Disabled="true" Checked="pictureDto.ShowPicture" Label="@L["ShowPicture"]" />
+    <MudCheckBox T="bool" Color="Color.Primary" Size="Size.Large" Disabled="true" Checked="pictureDto.Publish" Label="@L["Publish"]" />
+    <MudCheckBox T="bool" Color="Color.Default" Size="Size.Large" Disabled="true" Checked="pictureDto.DiaShow" Label="@L["DiaShow"]" />
+
+    </MudCardContent>
+    <MudCardActions>
+    <MudIconButton Icon="@Icons.Material.Filled.Delete" OnClick="(() => DeletePicture(pictureDto))" Size="Size.Large" aria-label="Delete Picture"></MudIconButton>
+    <MudIconButton Icon="@Icons.Material.Filled.Edit" OnClick="(() => EditPicture(pictureDto))" Size="Size.Large" aria-label="Edit Picture"></MudIconButton>
+    </MudCardActions>
+    </MudCard>
+
+    }
+    *@
+    </MudGrid>
+}
+
+@code {
+    public int _mandantId { get; set; }
+    public List<PictureDto>? pictureDtos { get; set; }
+    public SearchPicturesRequest picturesRequest { get; set; } = new();
+    public List<string> matchCodes { get; set; } = new List<string>();
+    public string? selectedMatchCode { get; set; }
+    public UpdatePictureRequest updatePictureRequest = new();
+    public bool showAllPictures { get; set; } = true;
+    public PictureViewModel pic { get; set; } = new();
+    public PictureDto currentPictureDto { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (_mandantId == 0)
+        {
+            _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        }
+        matchCodes = (await PicturesClient.GetPictureMatchCodeMultiSelectAsync(_mandantId)).ToList();
+        picturesRequest.MandantId = _mandantId;
+        picturesRequest.AllMatchCodes = true;
+        pictureDtos = (await PicturesClient.SearchAsync(picturesRequest)).ToList();
+    }
+
+    private async Task AddPicture()
+    {
+        pic = new PictureViewModel();
+        var parameters = new DialogParameters
+            {
+                ["newPicture"] = true,
+                ["pic"] = pic
+            };
+        var dialog = DialogService.Show<AddPictureModal>("", parameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            if (!string.IsNullOrEmpty(pic.ImageInBytes))
+            {
+                pic.Image = new FileUploadRequest() { Data = pic.ImageInBytes, Extension = pic.ImageExtension ?? string.Empty, Name = $"{pic.Title}_{Guid.NewGuid():N}" };
+            }
+            pic.MandantId = _mandantId;
+            await PicturesClient.CreateAsync(pic.Adapt<CreatePictureRequest>());
+            pictureDtos.Add(pic.Adapt<PictureDto>());
+            pic.ImageInBytes = string.Empty;
+            StateHasChanged();
+        }
+    }
+
+    private async Task EditPicture(PictureDto dto)
+    {
+        var parameters = new DialogParameters
+            {
+                ["pic"] = dto.Adapt<PictureViewModel>(),
+                ["newPicture"] = false,
+            };
+        var dialog = DialogService.Show<AddPictureModal>("", parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            PictureViewModel pictureViewModel = result.Data.Adapt<PictureViewModel>();
+
+            if (!string.IsNullOrEmpty(pictureViewModel.ImageInBytes))
+            {
+                pictureViewModel.Image = new FileUploadRequest() { Data = pictureViewModel.ImageInBytes, Extension = pictureViewModel.ImageExtension ?? string.Empty, Name = $"{pictureViewModel.Title}_{Guid.NewGuid():N}" };
+            }
+
+            UpdatePictureRequest upr = pictureViewModel.Adapt<UpdatePictureRequest>();
+            await PicturesClient.UpdateAsync(dto.Id, upr);
+            dto = pictureViewModel.Adapt<PictureDto>();
+            pictureDtos = (await PicturesClient.SearchAsync(picturesRequest)).ToList();
+        }
+    }
+
+    private async Task DeletePicture(PictureDto dto)
+    {
+        string deleteContent = L["You're sure you want to delete {0} with id '{1}'?"];
+        string entityName = "Picture";
+        var parameters = new DialogParameters
+        {
+            { nameof(DeleteConfirmation.ContentText), string.Format(deleteContent, entityName, dto.Id) }
+        };
+        var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true, DisableBackdropClick = true };
+        var dialog = DialogService.Show<DeleteConfirmation>(L["Delete"], parameters, options);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            await PicturesClient.DeleteAsync(dto.Id);
+            pictureDtos.Remove(dto);
+
+        }
+    }
+
+    public class PictureViewModel : UpdatePictureRequest
+    {
+        public string? ImagePath { get; set; }
+        public string? ImageInBytes { get; set; }
+        public string? ImageExtension { get; set; }
+    }
+
+    private async void OnSelectedMatchCodeChanged(string args)
+    {
+        showAllPictures = false;
+        selectedMatchCode = args.ToString();
+        picturesRequest.MatchCode = selectedMatchCode;
+        picturesRequest.AllMatchCodes = false;
+        pictureDtos = (await PicturesClient.SearchAsync(picturesRequest)).ToList();
+        StateHasChanged();
+    }
+
+}

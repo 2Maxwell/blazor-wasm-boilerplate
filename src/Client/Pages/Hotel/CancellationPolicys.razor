@@ -16,17 +16,17 @@
 
             <MudHidden T="int" hidden="hidden" For="@(() => context.MandantId )" @bind-Value="context.MandantId" Label="@L["MandantId"]" />
 
-        @if (!Context.AddEditModal.IsCreate) // Edit
+@*        @if (!Context.AddEditModal.IsCreate) // Edit
         {
             <MudItem xs="2">
                 <MudTextField Value="context.Id" ReadOnly DisableUnderLine Label="@L[$"Id"]" />
             </MudItem>
         }
-
+*@
         @if (!Context.AddEditModal.IsCreate) // Edit
         {
 
-            <MudItem xs="6">
+            <MudItem xs="8">
                 <MudTextField Variant="Variant.Outlined" ReadOnly="true" HelperText="@L["Field Readonly"]" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
             </MudItem>
 
@@ -50,11 +50,15 @@
         </MudItem>
 
         <MudItem xs="12" md="12">
-            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayShort)" @bind-Value="context.DisplayShort" Label="@L["DisplayShort (; is separator)"]" />
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.Display)" @bind-Value="context.Display" Label="@L["Display"]" />
         </MudItem>
 
         <MudItem xs="12" md="12">
-            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.Display)" @bind-Value="context.Display" Label="@L["Display"]" />
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayShort)" @bind-Value="context.DisplayShort" Label="@L["DisplayShort"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" Lines="3" For="@(() => context.DisplayHighLight)" @bind-Value="context.DisplayHighLight" Label="@L["DisplayHighLight (; is separator)"]" />
         </MudItem>
 
         <MudItem xs="12" md="12">
@@ -76,6 +80,22 @@
         <MudItem xs="3" md="3">
             <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.IsDefault)" @bind-Checked="context.IsDefault" Label="@L["Default"]" />
         </MudItem>
+
+        @if (context.ChipIcon != null || context.ChipIcon != string.Empty)
+        {
+            <MudItem xs="2" Class="mt-3">
+                <MudChip Icon="@context.ChipIcon" Color="Color.Primary">@context.ChipText</MudChip>
+            </MudItem>
+        }
+
+        <MudItem xs="4">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.ChipIcon)" @bind-Value="context.ChipIcon" Label="@L["ChipIcon"]" />
+        </MudItem>
+
+        <MudItem xs="6">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.ChipText)" @bind-Value="context.ChipText" Label="@L["ChipText"]" />
+        </MudItem>
+
 
     </EditFormContent>
 

@@ -1,0 +1,117 @@
+﻿@inject ICompanysClient CompanysClient
+@inject IStringLocalizer<CompanyTravelAgentConfirmationMethodMandant> L
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="16">
+    <MudChip Style="min-width:250px;" Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Info">@L[@companyType!]</MudChip>
+    @if (loaded)
+    {
+        @if (company!.Email != null && company.Email != string.Empty)
+        {
+            <MudStack Justify="Justify.Center" Spacing="0">
+                <MudCheckBox Class="ml-n4" Checked="checkEmail" CheckedChanged="((bool e) => checkCommunicationChanged(e, 'e'))" Size="Size.Large" Color="Color.Tertiary">@L["Email"]: </MudCheckBox>
+                <MudText Typo="Typo.h6">@company.Email</MudText>
+            </MudStack>
+
+        }
+        @if (company!.Telefax != null && company.Telefax != string.Empty)
+        {
+            <MudStack Justify="Justify.Center" Spacing="0">
+                <MudCheckBox Class="ml-n4" Checked="checkFax" CheckedChanged="((bool e) => checkCommunicationChanged(e, 'f'))" Size="Size.Large" Color="Color.Tertiary">@L["Fax"]</MudCheckBox>
+                <MudText Typo="Typo.h6">@company.Telefax</MudText>
+            </MudStack>
+        }
+        @if (company!.Mobil != null && company.Mobil != string.Empty)
+        {
+            <MudStack Justify="Justify.Center" Spacing="0">
+                <MudCheckBox Class="ml-n4" Checked="checkMobil" CheckedChanged="((bool e) => checkCommunicationChanged(e, 'm'))" Size="Size.Large" Color="Color.Tertiary">@L["Mobil/SMS"]</MudCheckBox>
+                <MudText Typo="Typo.h6">@company.Mobil</MudText>
+            </MudStack>
+        }
+    }
+</MudStack>
+<br />
+<MudDivider></MudDivider>
+<br />
+
+@code {
+    [Parameter]
+    public int companyId { get; set; }
+    [Parameter]
+    public string? companyType { get; set; }
+    [Parameter]
+    public EventCallback<string> confirmationResultChanged { get; set; }
+    [Parameter]
+    public string confirmationResult
+    {
+        get => _confirmationResult;
+
+        set
+        {
+            if (_confirmationResult == value) return;
+            _confirmationResult = value;
+            confirmationResultChanged.InvokeAsync(value);
+        }
+    }
+
+    private string _confirmationResult = string.Empty;
+    public bool loaded { get; set; }
+    public CompanyCommunicationDto? company { get; set; }
+    public string eMailString { get; set; } = "Email";
+    public bool checkEmail { get; set; }
+    public bool checkFax { get; set; }
+    public bool checkMobil { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        company = await CompanysClient.GetCommunicationAsync(companyId);
+        checkEmail = confirmationResult.Contains("Email") ? true : false;
+        checkFax = confirmationResult.Contains("Fax") ? true : false;
+        checkMobil = confirmationResult.Contains("Mobil") ? true : false;
+        loaded = true;
+    }
+
+    private void checkCommunicationChanged(bool value, char comType)
+    {
+        if (value)
+        {
+            switch (comType)
+            {
+                case 'e':
+                    confirmationResult = confirmationResult.Insert(confirmationResult.Length, (companyType + "Email"));
+                    checkEmail = true;
+                    break;
+                case 'f':
+                    confirmationResult = confirmationResult.Insert(confirmationResult.Length, (companyType + "Fax"));
+                    checkFax = true;
+                    break;
+                case 'm':
+                    confirmationResult = confirmationResult.Insert(confirmationResult.Length, (companyType + "Mobil"));
+                    checkMobil = true;
+                    break;
+            }
+        }
+        else
+        {
+            switch (comType)
+            {
+                case 'e':
+                    string stre = companyType + "Email";
+                    confirmationResult = confirmationResult.Remove(confirmationResult.IndexOf(stre), stre.Length);
+                    checkEmail = false;
+                    break;
+                case 'f':
+                    string strf = companyType + "Fax";
+                    confirmationResult = confirmationResult.Remove(confirmationResult.IndexOf(strf), strf.Length);
+                    checkFax = false;
+                    break;
+                case 'm':
+                    string strm = companyType + "Mobil";
+                    confirmationResult = confirmationResult.Remove(confirmationResult.IndexOf(strm), strm.Length);
+                    checkMobil = false;
+                    break;
+            }
+        }
+    }
+
+
+}

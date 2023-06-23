@@ -1,0 +1,687 @@
+﻿@page "/hotel/reservations/reservationDetail"
+@page "/hotel/reservations/reservationDetail/{mandantId:int}/{resId:int}"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@using FSH.BlazorWebAssembly.Client.Components.Dialogs;
+@using FSH.BlazorWebAssembly.Client.Components.Reservation;
+@using System.Text.Json;
+
+
+@inject IStringLocalizer<ReservationDetail> L
+@inject ISessionStorageService sessionstorage
+@inject IReservationsClient ReservationsClient
+@inject ICategorysClient CategoryClient
+@inject IBookingPolicysClient BookingPolicysClient
+@inject ICancellationPolicysClient CancellationPolicysClient
+@inject ISnackbar Snackbar
+@inject IMandantsClient MandantsClient
+@inject IPersonsClient PersonsClient
+@inject IResQueryClient ResQueryClient
+@inject ISnackbar Snackbar
+@inject IPriceCatsClient PriceCatsClient
+
+<ErrorBoundary>
+
+    <ChildContent>
+        @if (_loaded && ResId >= 0)
+        {
+
+            <MudPaper Height="160px" Class="mud-theme-primary" Style="overflow:hidden; position:relative;">
+
+                <MudGrid>
+                    <MudItem xs="9">
+                        <MudStack Class="pl-5" AlignItems="AlignItems.Start">
+
+                            <MudStack AlignItems="AlignItems.Center" Row="true">
+                                <MudText Typo="Typo.h5"># @reservationDto!.Id</MudText>
+                                <MudText Typo="Typo.h5">=></MudText>
+                                <MudText Typo="Typo.h5">@getResKzString(reservationDto!.ResKz)</MudText>
+                                @if (reservationDto!.BookerId == reservationDto.GuestId)
+                                {
+                                    <MudChip OnClick="(() => show_OptionDetails = !show_OptionDetails)" Style="@($"background:{Colors.BlueGrey.Darken4};")" Icon="@Icons.Material.Filled.Person">@L["Booker / Guest"]</MudChip>
+                                    <MudText Typo="Typo.h5">@reservationHelper.getPersonFullName(reservationDto.Guest)</MudText>
+                                }
+                                else
+                                {
+                                    <MudChip OnClick="(() => show_OptionDetails = !show_OptionDetails)" Style="@($"background:{Colors.BlueGrey.Darken4};")" Icon="@Icons.Material.Filled.Person">@L["Booker"]</MudChip>
+                                    <MudText Typo="Typo.h5">@reservationHelper.getPersonFullName(reservationDto.Booker)</MudText>
+
+                                    @if (reservationDto.GuestId != null && reservationDto.GuestId > 0)
+                                    {
+                                        <MudChip Style="@($"background:{Colors.BlueGrey.Darken4};")" Icon="@Icons.Material.Filled.Person">@L["Guest"]</MudChip>
+                                        <MudText Typo="Typo.h5">@reservationHelper.getPersonFullName(reservationDto.Guest)</MudText>
+                                    }
+
+                                }
+                                @if (reservationDto!.CompanyId != null)
+                                {
+                                    <MudChip Icon="@Icons.Material.Filled.Business" Style="@($"background:{Colors.BlueGrey.Darken4};")">@L["Company"]</MudChip>
+                                    <MudText Typo="Typo.h5">@reservationDto.Company!.Name1, @reservationDto.Company.Name2 </MudText>
+                                }
+                            </MudStack>
+
+                            <MudStack AlignItems="AlignItems.Center" Row="true">
+                                <MudFab Style="min-width:60px;" Color="Color.Success" StartIcon="@Icons.Material.Filled.Login" Label="@L["CI"]" />
+                                <MudText Style="min-width:100px;" Typo="Typo.h5">@Convert.ToDateTime(@reservationDto!.Arrival).ToString("dd.MM.yyyy")</MudText>
+                                <MudText Typo="Typo.h5">@Convert.ToDateTime(@reservationDto!.Arrival).ToString("HH:mm")</MudText>
+
+                                <MudFab Style="min-width:60px;" Class="mud-error" StartIcon="@Icons.Material.Filled.Logout" Label="@L["CO"]" />
+                                <MudText Style="min-width:100px;" Typo="Typo.h5">@Convert.ToDateTime(@reservationDto!.Departure).ToString("dd.MM.yyyy")</MudText>
+                                <MudText Typo="Typo.h5">@Convert.ToDateTime(@reservationDto!.Departure).ToString("HH:mm")</MudText>
+                            </MudStack>
+                            <MudStack AlignItems="AlignItems.Center" Row="true">
+                                <MudSwitch @bind-Checked="@show_PriceDetails" Label="@L["Price Details"]" Color="Color.Warning" Size="Size.Large" />
+                                <MudSwitch @bind-Checked="@show_CompanyDetails" Label="@L["Company Details"]" Color="Color.Warning" Size="Size.Large" />
+                                <MudSwitch @bind-Checked="@show_OptionDetails" Label="@L["Option Details"]" Color="Color.Warning" Size="Size.Large" />
+
+                            </MudStack>
+                        </MudStack>
+
+                    </MudItem>
+
+                    <MudItem xs="1">
+                        <MudStack Class="pt-3" AlignItems="AlignItems.Center" Justify="Justify.Center">
+                            <MudAvatar Style="height:100px; width:100px; font-size:5rem;" Color="Color.Warning">@reservationDto!.ResKz</MudAvatar>
+                        </MudStack>
+                    </MudItem>
+
+                    <MudItem xs="1">
+                        <MudStack>
+                            <MudButton Class="mr-2" OnClick="CancelReservation" Variant="Variant.Filled" Color="Color.Success">@L["Cancel"]</MudButton>
+                            @if (reservationDto.Arrival.Value.Date == mandantDto.HotelDate.Value.Date && reservationDto.RoomAmount == 1 && reservationDto.RoomNumberId > 0 && (reservationDto.ResKz == "R" || reservationDto.ResKz == "P"))
+                            {
+                                <MudButton OnClick="CheckIn" Class="mr-2" Variant="Variant.Filled" Color="Color.Secondary">@L["CheckIn"]</MudButton>
+                            }
+                            <MudButton Class="mr-2" Variant="Variant.Filled" Color="Color.Info">@L["FooBar"]</MudButton>
+                        </MudStack>
+
+                    </MudItem>
+
+
+                    <MudItem xs="1">
+                        <MudStack>
+                            <MudButton OnClick="SaveChanges" Class="mr-2" Disabled="@saveButtonDisabled" Variant="Variant.Filled" Color="Color.Success">@L["Save"]</MudButton>
+                            <MudButton Class="mr-2" Variant="Variant.Filled" Color="Color.Secondary">@L["Copy"]</MudButton>
+                            <MudButton Class="mr-2" Variant="Variant.Filled" Color="Color.Info">@L["FooBar"]</MudButton>
+                        </MudStack>
+
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
+
+            @if (reservationDto.ResKz == "S")
+            {
+                @*                <MudAlert Severity="Severity.Error">@L["Reservation is canceled! Save changes not possible"]</MudAlert>
+        *@
+                <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@L["Reservation is canceled! Save changes not possible"]</MudAlert>
+            }
+
+            <MudStack Row="true">
+
+                <MudGrid>
+                    <MudItem md="3" xs="12">
+                        <FSH.BlazorWebAssembly.Client.Components.Reservation.StayDetails reservationDto="reservationDto" reservationDtoChanged="((e) => OnReservationDtoChanged(e))"></FSH.BlazorWebAssembly.Client.Components.Reservation.StayDetails>
+                    </MudItem>
+                    <MudItem md="3" xs="12">
+                        <FSH.BlazorWebAssembly.Client.Components.Reservation.RoomDetails reservationDto="reservationDto" mandantDto="mandantDto" reservationDtoChanged="((e) => OnReservationDtoChanged(e))"></FSH.BlazorWebAssembly.Client.Components.Reservation.RoomDetails>
+                    </MudItem>
+                    <MudItem md="3" xs="12">
+                        <FSH.BlazorWebAssembly.Client.Components.Reservation.RateDetails reservationDto="reservationDto" reservationDtoChanged="((e) => OnReservationDtoChanged(e))"></FSH.BlazorWebAssembly.Client.Components.Reservation.RateDetails>
+                    </MudItem>
+
+                    <MudItem md="3" xs="12">
+                        <FSH.BlazorWebAssembly.Client.Components.Reservation.PersonsDetails reservationDto="reservationDto" reservationDtoChanged="((e) => OnReservationDtoChanged(e))"></FSH.BlazorWebAssembly.Client.Components.Reservation.PersonsDetails>
+                    </MudItem>
+
+                    @if (show_OptionDetails)
+                    {
+                        <MudItem md="6" xs="12">
+                            <FSH.BlazorWebAssembly.Client.Components.Reservation.OptionDetails reservationDto="reservationDto" reservationDtoChanged="((e) => OnReservationDtoChanged(e))"></FSH.BlazorWebAssembly.Client.Components.Reservation.OptionDetails>
+                        </MudItem>
+
+                    }
+                    <MudItem md="3" xs="12">
+                        <FSH.BlazorWebAssembly.Client.Components.Persons.ReservationBookerGuestDetails reservationDto="reservationDto" reservationDtoChanged="((e) => OnReservationDtoChanged(e))" isGuest="false"></FSH.BlazorWebAssembly.Client.Components.Persons.ReservationBookerGuestDetails>
+                    </MudItem>
+                    @if (reservationDto.GuestId != null && reservationDto.BookerId != reservationDto.GuestId)
+                    {
+                        <MudItem md="3" xs="12">
+                            <FSH.BlazorWebAssembly.Client.Components.Persons.ReservationBookerGuestDetails reservationDto="reservationDto" reservationDtoChanged="((e) => OnReservationDtoChanged(e))" isGuest="true"></FSH.BlazorWebAssembly.Client.Components.Persons.ReservationBookerGuestDetails>
+                        </MudItem>
+                    }
+                    @if (show_CompanyDetails)
+                    {
+                        <MudItem md="3" xs="12">
+                            <FSH.BlazorWebAssembly.Client.Components.Company.ReservationCompanyDetails reservationDto="reservationDto" reservationDtoChanged="((e) => OnReservationDtoChanged(e))"></FSH.BlazorWebAssembly.Client.Components.Company.ReservationCompanyDetails>
+                        </MudItem>
+
+                    }
+                    @if (show_PriceDetails)
+                    {
+                        <MudItem md="4" xs="12">
+                            <FSH.BlazorWebAssembly.Client.Components.Reservation.PriceDetails reservationDto="reservationDto" reservationDtoChanged="((e) => OnReservationDtoChanged(e))" categorySelectDtoList="categorySelectDtoList"></FSH.BlazorWebAssembly.Client.Components.Reservation.PriceDetails>
+                        </MudItem>
+
+                    }
+                    @if (reservationDto.BookingLineSummaries != null && reservationDto.BookingLineSummaries.Count() > 0)
+                    {
+                        <MudItem md="3" xs="12">
+                            <BookingLinesDetails reservationDto="reservationDto" reservationDtoChanged="((e) => OnReservationDtoChanged(e))"></BookingLinesDetails>
+                        </MudItem>
+                    }
+
+                </MudGrid>
+
+            </MudStack>
+        }
+    </ChildContent>
+
+    <ErrorContent>
+        <FshCustomError />
+    </ErrorContent>
+</ErrorBoundary>
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = default!;
+
+
+    // Fenster: Folio mit CheckOut, Deposit, GroupMembers, Verschiedenes (MatchCode, Option, OptionFolowUp), GroupList
+    private MudTheme Theme = new MudTheme();
+    public ReservationDto? reservationDto { get; set; }
+    public ReservationHelper reservationHelper { get; set; } = new();
+    public List<CategorySelectDto>? categorySelectDtoList { get; set; }
+    public CategoryRatesDto catRatesDto { get; set; } = new();
+
+    public bool _loaded { get; set; } = false;
+    public bool isCreate { get; set; } = false;
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public int ResId { get; set; }
+    public MandantDto mandantDto { get; set; }
+    public bool newPriceCalculationNeeded { get; set; }
+    public ReservationDto reservationDtoBackup { get; set; }
+
+    public bool show_PriceDetails { get; set; }
+    public bool show_CompanyDetails { get; set; } = false;
+    public bool show_OptionDetails { get; set; } = false;
+
+    public bool saveSourceCancel { get; set; } = false;
+    public bool saveButtonDisabled { get; set; }
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        // ResId = -1 komplett neu ohne irgendwelche Eingaben vor abfrage ReservationQueryDialog
+        // ResId =  0 neue Reservierung nach ReservationQueryDialog und auswahl CatRatesSelect aber noch nicht gespeichert.
+        // ResId >  0 gespeicherte Reservierung
+
+        mandantDto = await MandantsClient.GetAsync(MandantId);
+
+        if (ResId == -1)
+        {
+            isCreate = true;
+            reservationDto = new();
+            //SetReservationDtoNewReservation();
+            SetReservationQueryDialog();
+        }
+        else
+        {
+            try
+            {
+                reservationDto = await ReservationsClient.GetAsync(ResId, MandantId);
+
+            }
+            catch (Exception)
+            {
+                // throw new KeyNotFoundException("Reservation.Id not found!");
+                // MudBlazor MessageBox Reservierung nicht gefunden
+                await DialogService.ShowMessageBox(@L["Note"], "Reservation Id not found!", yesText: "OK!");
+                Navigation.NavigateTo($"/home");
+            }
+        }
+
+        // Behandeln von Reservierungen mit ResKz = S (Storno)
+        if (reservationDto.ResKz == "S")
+        {
+            // MudBlazor MessageBox Reservierung ist storniert
+            var parameters = new DialogParameters
+                {
+                    ["HeaderText"] = $"Reservation is Canceled!",
+                    ["ContentText"] = $"Would you like to undo the Cancellation?",
+                    ["CancelText"] = "No just show me",
+                    ["ConfirmText"] = "Undo Cancellation",
+                };
+            var dialog = DialogService.ShowModal<LnxDialog>(parameters);
+            var result = await dialog.Result;
+
+            if (!result.Cancelled) // Bedeutet result = OK
+            {
+                reservationDto.ResKz = "P";
+                var ergebnis = await SaveChanges();
+                // Navigation.NavigateTo($"/home");
+            }
+            else
+            {
+                // Disable Save Button
+                saveButtonDisabled = true;
+                // MessageBox Diese Anzeige dient nur zur Information Änderungen können nicht gespeichert werden.
+                await DialogService.ShowMessageBox(@L["Note"], "This Reservation is Canceled and can not be changed!", yesText: "OK!");
+            }
+        }
+
+
+
+
+        //TODO Wenn sich die Personenanzahl ändert muss auch die Auswahl der Category neu geladen werden.
+        categorySelectDtoList = (await CategoryClient.GetCategorySelectAsync(-1, reservationDto.MandantId)).ToList();
+
+        _loaded = true;
+        if (reservationDto.Id > 0) reservationDtoBackup = reservationHelper.SetReservationBackup(reservationDto);
+
+        // Wenn CompanyId vorhanden ist dann CompanyDetails anzeigen
+        if (reservationDto.CompanyId != null) show_CompanyDetails = true;
+
+    }
+
+    private async void OnReservationDtoChanged(ReservationDto reservationDto)
+    {
+        string stringBooker = "BOOKER";
+        if (reservationDto.RemarksHelper != null && reservationDto.RemarksHelper.Contains(stringBooker))
+        {
+            reservationDto.Booker = (await PersonsClient.GetAsync(reservationDto.BookerId)).Adapt<PersonDto>();
+            int start = reservationDto.RemarksHelper.IndexOf(stringBooker);
+            int length = stringBooker.Length;
+            reservationDto.RemarksHelper = string.Empty;
+        }
+        this.reservationDto = reservationDto;
+
+        string changes = reservationHelper.CheckReservationDtoForPriceCalculation(reservationDto, reservationDtoBackup);
+        //if (changes != string.Empty)
+        //{
+        //    newPriceCalculationNeeded = true;
+        //    PriceCalculationCheck(changes);
+        //}
+        //else
+        //{
+        //    StateHasChanged();
+        //}
+
+        newPriceCalculationNeeded = true;
+        PriceCalculationCheck(changes);
+
+        Console.WriteLine("StateHasChanged done!");
+    }
+
+    private async void PriceCalculationCheck(string changes)
+    {
+        if (changes.Contains("Arrival,"))
+        {
+            if (reservationDto.Arrival.Value.Date < reservationDtoBackup.Arrival.Value.Date)
+            {
+                // fehlende PriceCats laden und in PriceTag einbauen
+                SearchPriceCatsShopRequest request = new();
+                request.MandantId = reservationDto.MandantId;
+                request.Start = reservationDto.Arrival.Value.Date;
+                request.End = reservationDtoBackup.Arrival.Value.Date;
+                request.CategoryId = reservationDto.CategoryId;
+                Pax pax = JsonSerializer.Deserialize<Pax>(reservationDto!.PaxString!);
+                request.Pax = pax.Adult + pax.Children.Where(x => x.ExtraBed = true).Count();
+
+                var priceCats = await PriceCatsClient.SearchAsync(request);
+
+                reservationDto.PriceTagDto = reservationHelper.SetPriceTagChanged(reservationDto.PriceTagDto, priceCats.ToList());
+                reservationHelper.CalculateAverageRate(reservationDto.PriceTagDto, reservationDto.Arrival!.Value.Date, reservationDto.Departure!.Value.Date);
+
+                Snackbar.Add("The Arrivaldate changed PriceDetail(s) added", Severity.Warning);
+            }
+
+            if (reservationDto.Arrival.Value.Date > reservationDtoBackup.Arrival.Value.Date)
+            {
+                // Nachricht das NoShow Daten bearbeitet werden müssen.
+                // eventl. mit einem CheckButton arbeiten der beim Speichern abgefragt wird.
+                await DialogService.ShowMessageBox(@L["Note"], "Arrivaldate changed please check PriceDetails for NoShow",
+                yesText: "OK!");
+                reservationHelper.CalculateAverageRate(reservationDto.PriceTagDto, reservationDto.Arrival!.Value.Date, reservationDto.Departure!.Value.Date);
+            }
+
+            changes = changes.Replace("Arrival,", "").Trim();
+            reservationDtoBackup.Arrival = reservationDto.Arrival;
+            StateHasChanged();
+            show_PriceDetails = true;
+
+        }
+
+        if (changes.Contains("Departure,"))
+        {
+            if (reservationDto!.Departure!.Value.Date < reservationDtoBackup!.Departure!.Value.Date)
+            {
+                // Nachricht das NoShow Daten bearbeitet werden müssen.
+                await DialogService.ShowMessageBox(@L["Note"],
+                "Departuredate changed please check PriceDetails for NoShow",
+                yesText: "OK!");
+                reservationHelper.CalculateAverageRate(reservationDto.PriceTagDto, reservationDto.Arrival!.Value.Date, reservationDto.Departure!.Value.Date);
+            }
+            if (reservationDto.Departure.Value.Date > reservationDtoBackup.Departure.Value.Date)
+            {
+                // fehlende PriceCats laden
+                SearchPriceCatsShopRequest request = new();
+                request.MandantId = reservationDto.MandantId;
+                request.End = reservationDto.Departure.Value.Date;
+                request.Start = reservationDtoBackup.Departure.Value.Date;
+                request.CategoryId = reservationDto.CategoryId;
+                Pax pax = JsonSerializer.Deserialize<Pax>(reservationDto!.PaxString!);
+                request.Pax = pax.Adult + pax.Children.Where(x => x.ExtraBed = true).Count();
+
+                var priceCats = await PriceCatsClient.SearchAsync(request);
+
+                reservationDto.PriceTagDto = reservationHelper.SetPriceTagChanged(reservationDto.PriceTagDto, priceCats.ToList());
+                reservationHelper.CalculateAverageRate(reservationDto.PriceTagDto, reservationDto.Arrival!.Value.Date, reservationDto.Departure!.Value.Date);
+
+                Snackbar.Add("The Departuredate changed PriceDetail(s) added", Severity.Warning);
+            }
+
+            changes = changes.Replace("Departure,", "").Trim();
+            reservationDtoBackup.Departure = reservationDto.Departure;
+            StateHasChanged();
+            show_PriceDetails = true;
+        }
+
+        if (changes.Contains("Beds"))
+        {
+            // checken ob Category Bettenanzahl kann wenn ja neue Preisermittlung
+            // wenn nein dann Categorywechsel anfragen
+            Pax paxReservation = JsonSerializer.Deserialize<Pax?>(reservationDto.PaxString!);
+            Pax paxBackup = JsonSerializer.Deserialize<Pax?>(reservationDtoBackup.PaxString!);
+
+            int oldBeds = paxBackup.Adult + paxBackup.Children.Where(x => x.ExtraBed == true).Count();
+            int newBeds = paxReservation.Adult + paxReservation.Children.Where(x => x.ExtraBed == true).Count();
+
+            // List<CategoryDto> cats = (await CategoryClient.GetCategoryByBedsAsync(reservationDto.MandantId, newBeds)).ToList();
+
+            CategorySelectDto actualCategory = (categorySelectDtoList.Where(x => x.Id == reservationDto.CategoryId).First()).Adapt<CategorySelectDto>();
+            if (actualCategory != null && actualCategory.NumberOfBeds + actualCategory.NumberOfExtraBeds >= newBeds)
+            {
+                // Änderung der Personenanzahl macht eine neuberechnung der gesamten Reservierung notwendig.
+                bool? result = await DialogService.ShowMessageBox(@L["Note"], "Personamount not matching PriceDetails please recalculate!", yesText: "Recalculate!", cancelText: "No recalculation");
+                if (result == null)
+                {
+                    // no recalculation
+                }
+                else
+                {
+                    // recalculate
+                    SearchPriceCatsShopRequest searchPriceCatsShopRequest = new();
+                    searchPriceCatsShopRequest.MandantId = reservationDto.MandantId;
+                    searchPriceCatsShopRequest.Start = reservationDto.Arrival;
+                    searchPriceCatsShopRequest.End = reservationDto.Departure;
+                    searchPriceCatsShopRequest.CategoryId = reservationDto.CategoryId;
+                    searchPriceCatsShopRequest.Pax = newBeds;
+                    var priceCats = (await PriceCatsClient.SearchAsync(searchPriceCatsShopRequest)).ToList();
+
+                    reservationDto.PriceTagDto = reservationHelper.SetNewPriceTag(reservationDto.PriceTagDto, priceCats);
+                    reservationHelper.CalculateAverageRate(reservationDto.PriceTagDto, reservationDto!.Arrival!.Value.Date, reservationDto!.Departure!.Value.Date);
+
+                    reservationDto.PriceTagDto.RateSelected = 1;
+                    reservationDto.PriceTagDto.UserRate = null;
+                }
+            }
+            else
+            {
+                // MudBlazor MessageBox Category nicht für Personenanzahl gültig, bitte andere Category wählen.
+                await DialogService.ShowMessageBox(@L["Note"], "Category not matching Personamount, please select other Category!", yesText: "OK!");
+            }
+            changes = changes.Replace("Beds,", "").Trim();
+            reservationDtoBackup.PaxString = reservationDto.PaxString;
+            StateHasChanged();
+        }
+        if (changes.Contains("Category,"))
+        {
+            // Mudblazor MessageBox Categorywechsel und neue Berechnung der Preise
+            bool? result = await DialogService.ShowMessageBox(@L["Note"], "Category changed please recalculate!", yesText: "Recalculate!", cancelText: "No recalculation");
+            if (result == null)
+            {
+                // no recalculation
+            }
+            else
+            {
+                // recalculate
+                SearchPriceCatsShopRequest searchPriceCatsShopRequest = new();
+                searchPriceCatsShopRequest.MandantId = reservationDto.MandantId;
+                searchPriceCatsShopRequest.Start = reservationDto.Arrival.Value.Date;
+                searchPriceCatsShopRequest.End = reservationDto.Departure.Value.Date;
+                searchPriceCatsShopRequest.CategoryId = reservationDto.CategoryId;
+                Pax? pax = JsonSerializer.Deserialize<Pax>(reservationDto!.PaxString!);
+                searchPriceCatsShopRequest.Pax = pax.Adult + pax.Children.Where(x => x.ExtraBed = true).Count();
+                var priceCats = (await PriceCatsClient.SearchAsync(searchPriceCatsShopRequest)).ToList();
+
+                reservationDto.PriceTagDto = reservationHelper.SetNewPriceTag(reservationDto.PriceTagDto, priceCats);
+                reservationHelper.CalculateAverageRate(reservationDto.PriceTagDto, reservationDto!.Arrival!.Value.Date, reservationDto!.Departure!.Value.Date);
+
+                reservationDto.PriceTagDto.RateSelected = 1;
+                reservationDto.PriceTagDto.UserRate = null;
+            }
+
+            changes = changes.Replace("Category,", "").Trim();
+            reservationDtoBackup.CategoryId = reservationDto.CategoryId;
+            StateHasChanged();
+
+
+        }
+    }
+
+    private string getResKzString(string resKz)
+    {
+        string result = string.Empty;
+        switch (resKz)
+        {
+            case "P":
+                result = "Pending";
+                break;
+        }
+
+        return result;
+    }
+
+    private async Task<int> SaveChanges()
+    {
+        int result = 0;
+
+        if (reservationDto.Id == 0)
+        {
+            CreateReservationRequest createReservationRequest = reservationDto.Adapt<CreateReservationRequest>();
+            createReservationRequest.CartId = null;
+            createReservationRequest.PriceTag = reservationDto.PriceTagDto;
+            result = await ReservationsClient.CreateAsync(createReservationRequest);
+            reservationDto.Id = result;
+        }
+        else
+        {
+            UpdateReservationRequest updateReservationRequest = reservationHelper.MapReservationDtoToReservationUpdateRequest(reservationDto);
+            result = await ReservationsClient.UpdateAsync(reservationDto!.Id, updateReservationRequest);
+        }
+
+        if (!saveSourceCancel)
+        {
+            bool? resultbool = await DialogService.ShowMessageBox(
+              "Confirmation",
+              $"Reservation New / Updated Success! ID: {result}",
+              yesText: "OK!");
+        }
+        return result;
+
+    }
+
+    public TimeSpan? arrivalTime { get; set; }
+    public TimeSpan? departureTime { get; set; }
+
+    private async void SetReservationQueryDialog()
+    {
+        MandantSettingDto mandantSettingDto = await MandantsClient.GetMandantSettingAsync(MandantId);
+
+        reservationDto!.MandantId = MandantId;
+
+        //reservationDto.Arrival = Convert.ToDateTime(mandantDto!.HotelDate).AddHours(mandantSettingDto.DefaultArrivalTime.Hour).AddMinutes(mandantSettingDto.DefaultArrivalTime.Minute);
+        //reservationDto.Departure = Convert.ToDateTime(mandantDto!.HotelDate).AddDays(1).AddHours(mandantSettingDto.DefaultDepartureTime.Hour).AddMinutes(mandantSettingDto.DefaultDepartureTime.Minute);
+        //Pax pax = new();
+        //pax.Adult = 1;
+
+        var parameters = new DialogParameters
+            {
+                ["resQuery"] = null,
+                ["_mandantId"] = reservationDto.MandantId,
+                ["hotelDate"] = Convert.ToDateTime(mandantDto.HotelDate)
+            };
+
+        var dialog = DialogService.ShowModal<ReservationQueryDialog>(parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            ResQuery res = result.Data.Adapt<ResQuery>();
+            CalculateResQuery(res);
+        }
+        else
+        {
+            Navigation.NavigateTo($"/home");
+        }
+
+
+    }
+
+    public async void SetReservationDtoNewReservation()
+    {
+        MandantSettingDto mandantSettingDto = await MandantsClient.GetMandantSettingAsync(MandantId);
+
+        reservationDto!.MandantId = MandantId;
+
+#if DEBUG
+    reservationDto.Arrival = new DateTime(2022, 09, 01).AddHours(mandantSettingDto.DefaultArrivalTime.Hour).AddMinutes(mandantSettingDto.DefaultArrivalTime.Minute);
+    reservationDto.Departure = new DateTime(2022, 09, 01).AddDays(1).AddHours(mandantSettingDto.DefaultDepartureTime.Hour).AddMinutes(mandantSettingDto.DefaultDepartureTime.Minute);
+#else
+        reservationDto.Arrival = DateTime.Today.AddHours(mandantSettingDto.DefaultArrivalTime.Hour).AddMinutes(mandantSettingDto.DefaultArrivalTime.Minute);
+        reservationDto.Departure = DateTime.Today.AddDays(1).AddHours(mandantSettingDto.DefaultDepartureTime.Hour).AddMinutes(mandantSettingDto.DefaultDepartureTime.Minute);
+#endif
+
+        reservationDto.RoomAmount = 1;
+        reservationDto.BookerId = 0;
+        reservationDto.IsGroupMaster = false;
+        Pax pax = new();
+        pax.Adult = 1;
+        reservationDto.PaxString = JsonSerializer.Serialize<Pax>(pax);
+        reservationDto.PackageExtendOptionDtos = new List<PackageExtendDto>();
+    }
+
+    public async void CalculateResQuery(ResQuery resQuery)
+    {
+        MandantSettingDto mandantSettingDto = await MandantsClient.GetMandantSettingAsync(MandantId);
+
+        SearchMandantResQueryRequest searchMandantResQueryRequest = resQuery.Adapt<SearchMandantResQueryRequest>();
+        searchMandantResQueryRequest.MandantId = MandantId;
+        searchMandantResQueryRequest.RoomAmount = 1;
+        Pax pax = searchMandantResQueryRequest.RoomOccupancy.ToList()[0];
+        pax.Beds = pax.Adult + (pax.Children != null ? pax.Children.Where(x => x.ExtraBed == true).Count() : 0);
+        searchMandantResQueryRequest.BedsTotal = pax.Adult;
+        if (pax.Children != null)
+        {
+            searchMandantResQueryRequest.BedsTotal += (pax.Children.Where(x => x.ExtraBed == true).Count());
+        }
+
+        catRatesDto = (await ResQueryClient.SearchMandantResQueryAsync(searchMandantResQueryRequest));
+        reservationDto.Arrival = resQuery.Arrival;
+        reservationDto.Departure = resQuery.Departure;
+        reservationDto.PaxString = JsonSerializer.Serialize<Pax>(resQuery.RoomOccupancy.ToList()[0]);
+        if (resQuery.SearchPersonId > 0) reservationDto.BookerId = resQuery.SearchPersonId;
+        if (resQuery.SearchPersonId > 0 && resQuery.BookerIsGuest) reservationDto.GuestId = resQuery.SearchPersonId;
+        if (resQuery.SearchCompanyId > 0) reservationDto.CompanyId = resQuery.SearchCompanyId;
+        var parameters = new DialogParameters
+            {
+                ["catRatesDto"] = catRatesDto,
+                ["reservationDto"] = reservationDto
+            };
+
+        var dialog = DialogService.ShowModal<CatRatesSelectDialog>(parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+            ResId = 0;
+            reservationDto.ResKz = "P";
+            reservationDto.Arrival = Convert.ToDateTime(reservationDto.Arrival).AddHours(mandantSettingDto.DefaultArrivalTime.Hour).AddMinutes(mandantSettingDto.DefaultArrivalTime.Minute);
+            reservationDto.Departure = Convert.ToDateTime(reservationDto.Departure).AddHours(mandantSettingDto.DefaultDepartureTime.Hour).AddMinutes(mandantSettingDto.DefaultDepartureTime.Minute);
+
+            reservationDtoBackup = reservationHelper.SetReservationBackup(reservationDto);
+
+            StateHasChanged();
+        }
+        else
+        {
+            Navigation.NavigateTo($"/home");
+        }
+    }
+
+    public async void ReservationShopInit()
+    {
+        var resQuery = reservationHelper.ResQueryFromReservationDto(reservationDto);
+        catRatesDto = (await ResQueryClient.SearchMandantResQueryAsync(resQuery));
+
+        var parameters = new DialogParameters
+            {
+                ["catRatesDto"] = catRatesDto,
+                ["reservationDto"] = reservationDto
+            };
+
+        var dialog = DialogService.ShowModal<CatRatesSelectDialog>(parameters);
+        var result = await dialog.Result;
+    }
+
+    public async void CancelReservation()
+    {
+
+        // lnxDialog zur Abfrage einbinden
+        var parameters = new DialogParameters
+            {
+                ["HeaderText"] = $"Cancel Reservation {reservationDto.Id} {reservationDto.Booker.Name}, {reservationDto.Booker.FirstName} ",
+                ["ContentText"] = $"Please make sure BookingPolicy does not conflict!",
+                ["CancelText"] = "No cancellation",
+                ["ConfirmText"] = "Cancel!",
+            };
+        var dialog = DialogService.ShowModal<LnxDialog>(parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled) // Bedeutet result = OK
+        {
+            reservationDto.ResKz = "S";
+            var ergebnis = await SaveChanges();
+            Navigation.NavigateTo($"/home");
+        }
+    }
+
+    //Method CheckIn
+    public async void CheckIn()
+    {
+        // lnxDialog zur Abfrage einbinden
+        var parameters = new DialogParameters
+            {
+                ["HeaderText"] = $"CheckIn Reservation {reservationDto.Id} {reservationDto.Booker.Name}, {reservationDto.Booker.FirstName} ",
+                ["ContentText"] = $"Would you like to CheckIn this Reservation to Room {reservationDto.RoomNumber}!",
+                ["CancelText"] = "No CheckIn",
+                ["ConfirmText"] = "CheckIn!",
+            };
+        var dialog = DialogService.ShowModal<LnxDialog>(parameters);
+        var result = await dialog.Result;
+        if (!result.Cancelled) // Bedeutet result = OK
+        {
+            reservationDto.ResKz = "C";
+            // reservationDto.Arrival mit der aktuellen Uhrzeit belegen
+            reservationDto.Arrival = DateTime.Now;
+            UpdateReservationRequest updateReservationRequest = reservationHelper.MapReservationDtoToReservationUpdateRequest(reservationDto);
+            _ = await ReservationsClient.UpdateAsync(reservationDto!.Id, updateReservationRequest);
+            Navigation.NavigateTo($"/home");
+        }
+    }
+
+
+
+}

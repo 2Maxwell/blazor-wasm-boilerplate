@@ -1,0 +1,95 @@
+﻿@page "/environment/vipStates"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Categorys)]
+
+@inject IStringLocalizer<VipStates> L
+@inject IVipStatesClient VipStatesClient
+@inject ISessionStorageService sessionstorage
+
+
+<FshTitle Title="@L["VipStates"]" Description="@L["Manage VipStates."]" />
+
+<EntityTable TEntity="VipStatusDto" TId="int" TRequest="UpdateVipStatusRequest" Context="@Context">
+
+    <EditFormContent>
+
+        <MudHidden T="int" hidden="hidden" For="@(() => context.Id)" @bind-Value="context.Id" Label="@L["VipStatusId"]" />
+
+        <MudItem xs="9" md="9">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+        </MudItem>
+
+        <MudItem xs="3" md="3">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Kz)" @bind-Value="context.Kz" Label="@L["ShortName"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Arrival)" @bind-Value="context.Arrival" Label="@L["Arrival"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Daily)" @bind-Value="context.Daily" Label="@L["Daily"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Departure)" @bind-Value="context.Departure" Label="@L["Departure"]" />
+        </MudItem>
+
+        @if (context.ChipIcon != null || context.ChipIcon != string.Empty)
+        {
+            <MudItem xs="2" Class="mt-3">
+                <MudChip Icon="@context.ChipIcon" Color="Color.Primary">@context.ChipText</MudChip>
+            </MudItem>
+        }
+
+        <MudItem xs="4">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.ChipIcon)" @bind-Value="context.ChipIcon" Label="@L["ChipIcon"]" />
+        </MudItem>
+
+        <MudItem xs="6">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.ChipText)" @bind-Value="context.ChipText" Label="@L["ChipText"]" />
+        </MudItem>
+
+    </EditFormContent>
+
+</EntityTable>
+
+
+@code {
+    public int _mandantId { get; set; }
+    protected EntityServerTableContext<VipStatusDto, int, UpdateVipStatusRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+    Context = new(
+    entityName: L["VipStatus"],
+    entityNamePlural: L["VipStates"],
+    entityResource: FSHResource.Categorys,
+    fields: new()
+            {
+            //new(vipStatus => vipStatus.Id, L["Id"], "Id"),
+            new(vipStatus => vipStatus.Kz, L["Kz"], "Kz"),
+            new(vipStatus => vipStatus.Name, L["Name"], "Name"),
+            },
+    idFunc: vipstatus => vipstatus.Id,
+    searchFunc: async filter =>
+    {
+        var vipStatusfilter = filter.Adapt<SearchVipStatesRequest>();
+        vipStatusfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        _mandantId = vipStatusfilter.MandantId;
+        var result = await VipStatesClient.SearchAsync(vipStatusfilter);
+        return result.Adapt<PaginationResponse<VipStatusDto>>();
+    },
+    createFunc: async vipStatus =>
+    {
+        vipStatus.MandantId = _mandantId;
+        await VipStatesClient.CreateAsync(vipStatus.Adapt<CreateVipStatusRequest>());
+    },
+
+    updateFunc: async (id, vipStatus) => await VipStatesClient.UpdateAsync(id, vipStatus.Adapt<UpdateVipStatusRequest>()),
+    // editFormInitializedFunc: async id => await RoomsCount = RoomsClient.CountRoomsByCategoryIdAsync(id),
+    // deleteFunc: async id => await CategorysClient.DeleteAsync(id),
+    exportAction: string.Empty);
+
+
+}

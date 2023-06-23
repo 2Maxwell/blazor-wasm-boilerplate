@@ -1,0 +1,119 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Dialogs;
+@using FSH.BlazorWebAssembly.Client.Components.Package;
+@inject IStringLocalizer<OptionDetails> L
+@inject IPackagesClient PackagesClient
+@inject IEnumsClient EnumsClient
+
+
+@if (_loaded)
+{
+    <MudCard style="min-height:620px">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Option details"]</MudButton>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+                @if (reservationDto.PackageExtendOptionDtos.Count > 0)
+                {
+                    string[] headings = { "", "Option", "Rhythm", "Amount", "Price", "Total" };
+                    <MudItem xs="12" Class="ma-2">
+
+                        <MudSimpleTable>
+                            <thead>
+                                <tr>
+                                    @foreach (var h in headings)
+                                    {
+                                        <th>@h</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (PackageExtendDto packageExtendDto in reservationDto.PackageExtendOptionDtos)
+                                {
+                                    <tr>
+                                        <td>
+                                            <MudIconButton OnClick="(() => DeleteOption(reservationDto, packageExtendDto))" Icon="@Icons.Material.Filled.Delete" Color="Color.Secondary" Title="@L["Delete"]" aria-label="@L["Delete"]"></MudIconButton>
+                                            <MudIconButton OnClick="(() => EditOption(reservationDto, packageExtendDto))" Icon="@Icons.Material.Filled.Edit" Color="Color.Success" Title="@L["Edit"]" aria-label="@L["Edit"]"></MudIconButton>
+                                        </td>
+                                        <td>
+                                            <MudStack AlignItems="AlignItems.Center" Row="true">
+                                                <MudAvatar Image="@(string.IsNullOrEmpty(packageExtendDto.ImagePath) ? string.Empty : (Config[ConfigNames.ApiBaseUrl] + @packageExtendDto.ImagePath))" Alt="Image of CartItem" />
+                                                <MudText Typo="Typo.body1">@packageExtendDto.PackageDto.Name</MudText>
+                                            </MudStack>
+                                        </td>
+                                        <td>
+                                            <MudText Typo="Typo.body1">@packageRhythmEnumList.First(x => x.Value == packageExtendDto.PackageDto.PackageBookingRhythmEnumId).Text</MudText>
+                                        </td>
+
+                                        <td>
+                                            <MudText Typo="Typo.body1">@packageExtendDto.Amount.ToString("N2")</MudText>
+                                        </td>
+                                        <td>
+                                            <MudText Typo="Typo.body1">@packageExtendDto.Price</MudText>
+                                        </td>
+                                        <td>
+                                            <MudText Typo="Typo.body1">@(Convert.ToDecimal((@packageExtendDto.Price * @packageExtendDto.Amount)).ToString("N2"))</MudText>
+                                        </td>
+                                    </tr>
+
+                                }
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+                }
+
+            </MudGrid>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton OnClick="OpenOption" Variant="Variant.Filled" Color="Color.Warning">@L["Book Option"]</MudButton>
+        </MudCardActions>
+    </MudCard>
+}
+
+@code {
+    public bool _loaded { get; set; } = false;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+
+    //public List<PackageExtendDto>? packageExtendOptionsDtos { get; set; }
+    public List<PackageBookingRhythmEnumDto> packageRhythmEnumList { get; set; } = new List<PackageBookingRhythmEnumDto>();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        // packageExtendOptionsDtos = (await PackagesClient.GetPackageExtendOptionsByReservationAsync(reservationDto.MandantId, reservationDto.Id)).ToList();
+        packageRhythmEnumList = (await EnumsClient.GetPackageBookingRhythmEnumRequestAsync()).ToList();
+        _loaded = true;
+    }
+
+    public async void DeleteOption(ReservationDto reservationDto, PackageExtendDto packageExtendDto)
+    {
+        reservationDto.PackageExtendOptionDtos!.Remove(packageExtendDto);
+        StateHasChanged();
+    }
+
+    public async void EditOption(ReservationDto reservationDto, PackageExtendDto packageExtendDto)
+    {
+
+    }
+
+    private async void OpenOption()
+    {
+        var parameters = new DialogParameters
+            {
+                ["reservationDto"] = reservationDto,
+                ["reservationDtoChanged"] = reservationDtoChanged,
+            };
+
+        var dialog = DialogService.ShowModal<ReservationOptionsDialog>(parameters);
+        var result = await dialog.Result;
+        StateHasChanged();
+    }
+}

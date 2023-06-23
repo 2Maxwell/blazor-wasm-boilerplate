@@ -1,7 +1,7 @@
 ﻿@inject IStringLocalizer<NavMenu> L
 
 <PersonCard
-    Style="background-color: var(--mud-palette-drawer-background);color: var(--mud-palette-drawer-text); margin-bottom:0px!important" />
+    Style="background-color: var(--mud-palette-drawer-background);color: var(--mud-palette-drawer-text); margin-bottom:0px!important" MandantId="@MandantId" />
 <MudNavMenu>
     <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="ml-4 my-3">@L["Start"]</MudText>
     <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">@L["Home"]</MudNavLink>
@@ -18,6 +18,8 @@
     }
     <MudNavLink Href="/account" Icon="@Icons.Filled.ManageAccounts">@L["Account"]</MudNavLink>
     <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.SecurityUpdateGood">@L["Logs"]</MudNavLink>
+    <MudNavLink Href="/hotel/reservations/reservationDetail/1/0" Icon="@Icons.Filled.ManageAccounts">@L["ResTest"]</MudNavLink>
+
     @if (_canViewProducts || _canViewBrands)
     {
         <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="ml-4 my-3">@L["Management"]</MudText>
@@ -56,7 +58,6 @@
                 <MudNavLink Href="/hotel/priceCats" Icon="@Icons.Filled.Euro" Class="fsh-nav-child">
                     @L["Prices Category Rate"]
                 </MudNavLink>
-
             }
             <MudNavGroup Class="ml-4" Title="@L["Policys"]" Expanded="false" Icon="@Icons.Filled.AddBox">
                 @if (_canViewProducts)
@@ -88,9 +89,24 @@
                     <MudNavLink Href="/accounts/taxes" Icon="@Icons.Filled.MonetizationOn" Class="fsh-nav-child">
                         @L["Taxes"]
                     </MudNavLink>
-
                 }
             </MudNavGroup>
+
+            <MudNavGroup Class="ml-4" Title="@L["Environment"]" Expanded="false" Icon="@Icons.Filled.PanTool">
+                @if (_canViewProducts)
+                {
+                    <MudNavLink Href="/environment/pictures" Icon="@Icons.Filled.Image" Class="fsh-nav-child">
+                        @L["Pictures"]
+                    </MudNavLink>
+                    <MudNavLink Href="/environment/salutations" Icon="@Icons.Filled.Handshake" Class="fsh-nav-child">
+                        @L["Salutations"]
+                    </MudNavLink>                
+                    <MudNavLink Href="/environment/vipStates" Icon="@Icons.Filled.SupervisedUserCircle" Class="fsh-nav-child">
+                        @L["VipStates"]
+                    </MudNavLink>                
+                }
+            </MudNavGroup>
+
 
         </MudNavGroup>
 

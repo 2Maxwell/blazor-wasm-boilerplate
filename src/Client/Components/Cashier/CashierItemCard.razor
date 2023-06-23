@@ -1,0 +1,300 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Cashier;
+@*@using CardComponent.Data;*@
+
+@*5. Versuch
+*@
+@*<MudItem>
+    <MudCard Style="background-color:#2E8A99;color:#0E2954;margin-top:3px;width:180px;height:180px;">
+        <MudCardHeader>
+            <MudItem xs="4" sm="4" md="4">
+                @if (itemGroup.Length < 14)
+                {
+                    <MudText Align="Align.Left" Typo="Typo.body2"><b>@itemNumber</b></MudText>
+                }
+                else if (itemGroup.Length >= 14)
+                {
+                    <MudText Align="Align.Left" Typo="Typo.caption"><b>@itemNumber</b></MudText>
+                }
+            </MudItem>
+            <MudItem xs="8" sm="8" md="8">
+                @if (itemGroup.Length < 14)
+                {
+                    <MudText Align="Align.Right" Typo="Typo.body2"><b>@itemGroup</b></MudText>
+                }
+                else if (itemGroup.Length >= 14)
+                {
+                    <MudText Align="Align.Right" Typo="Typo.caption"><b>@itemGroup.Substring(0,13)..</b></MudText>
+                }
+            </MudItem>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudItem xs="12" sm="12" md="12">
+                @if (productName.Length < 20)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.body1"><b>@productName</b></MudText>
+
+                    <br />
+                }
+                else if (productName.Length > 20 && productName.Length < 25)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.body1"><b>@productName</b></MudText>
+
+                }
+                else if (productName.Length >= 25 && productName.Length < 35)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.body2"><b>@productName</b></MudText>
+                }
+                else
+                {
+                    <MudText Align="Align.Center" Typo="Typo.caption"><b>@productName.Substring(0,34)..</b></MudText>
+                }
+            </MudItem>
+        </MudCardContent>
+        <div style="position: relative; top: -5px;">
+            <!-- MudCard içeriği -->
+
+            <MudCardActions>
+                <MudItem xs="4" sm="4" md="4">
+                    <MudText Align="Align.Left" Typo="Typo.body2"><b>@vatTitle</b></MudText>
+                    <MudText Align="Align.Left" Typo="Typo.body2"><b>@vat</b></MudText>
+                </MudItem>
+                <MudItem xs="8" sm="8" md="8">
+                    <MudText Align="Align.Right" Typo="Typo.body2"><b>@priceTitle</b></MudText>
+                    <MudText Align="Align.Right" Typo="Typo.body2"><b>@price</b></MudText>
+                </MudItem>
+            </MudCardActions>
+        </div>
+    </MudCard>
+</MudItem>
+*@
+@* 4. Versuch
+    <MudItem>
+    <MudCard Style="background-color:#2E8A99;color:#0E2954;margin-top:3px;width:180px;height:180px;">
+        <MudCardHeader>
+            <MudItem xs="4" sm="4" md="4">
+                @if (itemGroup.Length < 14)
+                {
+                    <MudText Align="Align.Left" Typo="Typo.body2"><b>@itemNumber</b></MudText>
+                }
+                else if (itemGroup.Length >= 14)
+                {
+                    <MudText Align="Align.Left" Typo="Typo.caption"><b>@itemNumber</b></MudText>
+                }
+            </MudItem>
+            <MudItem xs="8" sm="8" md="8">
+                @if (itemGroup.Length < 14)
+                {
+                    <MudText Align="Align.Right" Typo="Typo.body2"><b>@itemGroup</b></MudText>
+                }
+                else if (itemGroup.Length >= 14)
+                {
+                    <MudText Align="Align.Right" Typo="Typo.caption"><b>@itemGroup.Substring(0,13)..</b></MudText>
+                }
+            </MudItem>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudItem xs="12" sm="12" md="12">
+                @if (productName.Length < 20)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.body1"><b>@productName</b></MudText>
+
+                    <br />
+                }
+                else if (productName.Length >= 20 && productName.Length < 35)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.body2"><b>@productName</b></MudText>
+                }
+                else
+                {
+                    <MudText Align="Align.Center" Typo="Typo.caption"><b>@productName.Substring(0,34)..</b></MudText>
+                }
+            </MudItem>
+        </MudCardContent>
+        <div style="position: relative; top: -5px;">
+            <!-- MudCard içeriği -->
+
+            <MudCardActions>
+                <MudItem xs="4" sm="4" md="4">
+                    <MudText Align="Align.Left" Typo="Typo.body2"><b>@vatTitle</b></MudText>
+                    <MudText Align="Align.Left" Typo="Typo.body2"><b>@vat</b></MudText>
+                </MudItem>
+                <MudItem xs="8" sm="8" md="8">
+                    <MudText Align="Align.Right" Typo="Typo.body2"><b>@priceTitle</b></MudText>
+                    <MudText Align="Align.Right" Typo="Typo.body2"><b>@price</b></MudText>
+                </MudItem>
+            </MudCardActions>
+        </div>
+    </MudCard>
+</MudItem>
+*@
+@* 3. Versuch
+    <MudItem>
+    <MudCard Style="background-color:#2E8A99;color:#0E2954;margin-top:3px;width:180px;height:180px;">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.body2"><b>@itemNumber</b></MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                @if (itemGroup.Length < 14)
+                {
+                    <MudText Typo="Typo.body2"><b>@itemGroup</b></MudText>
+                }
+                else if (itemGroup.Length >= 14)
+                {
+                    <MudText Typo="Typo.caption"><b>@itemGroup</b></MudText>
+                }
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudItem xs="12" sm="12" md="12">
+                @if (productName.Length < 20)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.body1"><b>@productName</b></MudText>
+                }
+                else if (productName.Length >= 20 && productName.Length < 35)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.body2"><b>@productName</b></MudText>
+                }
+                else
+                {
+                    <MudText Align="Align.Center" Typo="Typo.caption"><b>@productName</b></MudText>
+                }
+            </MudItem>
+        </MudCardContent>
+        <MudCardActions>
+            <MudItem xs="4" sm="4" md="4">
+                <MudText Align="Align.Left" Typo="Typo.body2"><b>@vatTitle</b></MudText>
+                <MudText Align="Align.Left" Typo="Typo.body2"><b>@vat</b></MudText>
+            </MudItem>
+            <MudItem xs="8" sm="8" md="8">
+                <MudText Align="Align.Right" Typo="Typo.body2"><b>@priceTitle</b></MudText>
+                <MudText Align="Align.Right" Typo="Typo.body2"><b>@price</b></MudText>
+            </MudItem>
+        </MudCardActions>
+    </MudCard>
+</MudItem>
+*@
+
+@*Funktioniert mit meinen Änderungen für den mittleren Text
+*@
+    <MudItem>
+        <MudCard Style="background-color:#2E8A99;color:#0E2954;margin-top:3px;width:180px;height:180px;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudStack Row="true" Justify="Justify.SpaceBetween">
+                        <MudText Typo="Typo.body2"><b>@itemNumber</b></MudText>
+                        @if (itemGroup.Length < 14)
+                        {
+                            <MudText Typo="Typo.body2"><b>@itemGroup</b></MudText>
+                        }
+                        else if (itemGroup.Length >= 14)
+                        {
+                            <MudText Typo="Typo.caption"><b>@itemGroup</b></MudText>
+                        }
+
+                    </MudStack>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Style="height:80px; padding:8px; overflow-x:auto; overflow-y:hidden">
+                <MudItem xs="12" sm="12" md="12">
+                    @if (productName.Length < 20)
+                    {
+                        <MudText Align="Align.Center" Typo="Typo.body1"><b>@productName</b></MudText>
+                    }
+                    else if (productName.Length >= 20 && productName.Length < 35)
+                    {
+                        <MudText Align="Align.Center" Typo="Typo.body2"><b>@productName</b></MudText>
+                    }
+                    else
+                    {
+                        <MudText Align="Align.Center" Typo="Typo.caption"><b>@productName</b></MudText>
+                    }
+                </MudItem>
+            </MudCardContent>
+            <MudCardActions>
+                <MudItem xs="4" sm="4" md="4">
+                    <MudText Align="Align.Left" Typo="Typo.body2"><b>@vatTitle</b></MudText>
+                    <MudText Align="Align.Left" Typo="Typo.body2"><b>@vat</b></MudText>
+                </MudItem>
+                <MudItem xs="8" sm="8" md="8">
+                    <MudText Align="Align.Right" Typo="Typo.body2"><b>@priceTitle</b></MudText>
+                    <MudText Align="Align.Right" Typo="Typo.body2"><b>@price</b></MudText>
+                </MudItem>
+            </MudCardActions>
+        </MudCard>
+
+</MudItem>
+
+
+@* 2.
+    <MudItem Style="height:100%;" md="@MD">
+    <MudCard Style="background-color:#2E8A99;color:#0E2954;margin-top:3px;">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.body2"><b>@itemNumber</b></MudText>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudText Typo="Typo.body2"><b>@itemGroup</b></MudText>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudText Align="Align.Center" Typo="Typo.body1"><b>@productName</b></MudText>
+        </MudCardContent>
+        <MudCardActions>
+            <MudItem xs="4" sm="4" md="4">
+                <MudText Align="Align.Left" Typo="Typo.body2"><b>@vatTitle</b></MudText>
+                <MudText Align="Align.Left" Typo="Typo.body2"><b>@vat</b></MudText>
+            </MudItem>
+            <MudItem xs="8" sm="8" md="8">
+                <MudText Align="Align.Right" Typo="Typo.body2"><b>@priceTitle</b></MudText>
+                <MudText Align="Align.Right" Typo="Typo.body2"><b>@price</b></MudText>
+            </MudItem>
+        </MudCardActions>
+    </MudCard>
+</MudItem>
+*@
+@* 1.
+    <MudItem Style="width:180px!important;height:180px;" md="@MD">
+    <MudCard Style="background-color:#2E8A99;color:#0E2954;height:100%;width:100%;">
+        <MudGrid>
+            <MudItem sm="6" md="6">
+                <MudText Style="padding-left:10px;" Align="Align.Left" Typo="Typo.body2"><b>@itemNumber</b></MudText>
+            </MudItem>
+            <MudItem sm="6" md="6">
+                <MudText Style="padding-right:10px;" Align="Align.Right" Typo="Typo.body2"><b>@itemGroup</b></MudText>
+            </MudItem>
+            <MudItem sm="12" md="12">
+                <MudText Align="Align.Center" Typo="Typo.body1"><b>@productName</b></MudText>
+            </MudItem>
+            <MudItem sm="6" md="6">
+                <MudText Style="padding-left:10px;" Align="Align.Left" Typo="Typo.body2"><b>@vatTitle</b></MudText>
+                <MudText Style="padding-left:10px;" Align="Align.Left" Typo="Typo.body2"><b>@vat</b></MudText>
+            </MudItem>
+            <MudItem sm="6" md="6">
+                <MudText Style="padding-right:10px;" Align="Align.Right" Typo="Typo.body2"><b>@priceTitle</b></MudText>
+                <MudText Style="padding-right:10px;" Align="Align.Right" Typo="Typo.body2"><b>@price</b></MudText>
+            </MudItem>
+        </MudGrid>
+    </MudCard>
+</MudItem>
+*@
+@code {
+    [Parameter]
+    public int MD { get; set; } = 3;
+    [Parameter]
+    public int itemNumber { get; set; }
+    [Parameter]
+    public string itemGroup { get; set; }
+    [Parameter]
+    public string productName { get; set; } = "Super Cool Sneaker";
+    [Parameter]
+    public string vatTitle { get; set; } = "Vat";
+    [Parameter]
+    public string priceTitle { get; set; } = "Price";
+    [Parameter]
+    public string images { get; set; } = "images/Footwear.png";
+    [Parameter]
+    public decimal price { get; set; }
+    [Parameter]
+    public string vat { get; set; }
+}

@@ -1,0 +1,168 @@
+﻿@inject IStringLocalizer<PriceDetails> L
+
+
+@if (_loaded)
+{
+    <MudCard style="min-height:620px">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Price details"] @reservationDto.PriceTagDto.Id</MudButton>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+                <MudItem xs="7">
+                    <MudStack Row="true" Spacing="3">
+                        <MudText Style="min-width:100px;" Typo="Typo.h6">@Convert.ToDateTime(reservationDto.Arrival).ToString("dd.MM.yyyy")</MudText>
+                        <MudText Typo="Typo.h6"> -> </MudText>
+                        <MudText Style="min-width:100px;" Typo="Typo.h6">@Convert.ToDateTime(reservationDto.Departure).ToString("dd.MM.yyyy")</MudText>
+                    </MudStack>
+                </MudItem>
+                <MudItem xs="5">
+                    <MudStack Row="true" Spacing="3">
+                        <MudText Style="min-width:100px;" Typo="Typo.h6">@categorySelectDtoList.Where(x => x.Id == reservationDto.CategoryId).Select(x => $"{x.Name}").FirstOrDefault()</MudText>
+                    </MudStack>
+                </MudItem>
+
+                <MudItem xs="12">
+
+                    @*                    <MudText Style="min-width:100px;" Typo="Typo.h5">@GetRateSelectText(reservationDto.PriceTagDto!.RateSelected)</MudText>
+                *@
+                    <MudButton Style="background-color: #263238; color: white; height:50px" Variant="Variant.Filled" Color="Color.Warning" FullWidth="true">@GetRateSelectText(reservationDto.PriceTagDto!.RateSelected) </MudButton>
+                </MudItem>
+
+
+                <MudItem xs="12">
+                    <MudStack Row="true">
+                        <MudNumericField T="string" HideSpinButtons="true" Value="@Convert.ToDecimal(reservationDto.PriceTagDto.AverageRate).ToString("N2")" ReadOnly="true" Label="@L["AveragePrice / Night"]" Variant="Variant.Outlined" />
+                        <MudNumericField T="decimal?" HideSpinButtons="true" @bind-Value="@reservationDto.PriceTagDto.UserRate" ReadOnly="@(reservationDto.PriceTagDto.RateSelected == 3 ? true : false)" Min="1" Label="@L["UserPrice / Night"]" Variant="Variant.Outlined" />
+                    </MudStack>
+                </MudItem>
+
+                <MudItem xs="12">
+                    @{
+                        string[] headings = { "Date", "Average", "Rate", "NoShow", "NS %", "RateType" };
+                    }
+                    <MudItem xs="12" Class="ma-2">
+
+                        <MudSimpleTable Dense="true" Hover="true" Striped="true">
+                            <thead>
+                                <tr>
+                                    @foreach (var h in headings)
+                                    {
+                                        <th>@h</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                @foreach (PriceTagDetailDto ptDetail in reservationDto.PriceTagDto.PriceTagDetails.Where(x => x.PriceTagId >= 0).OrderBy(x => x.DatePrice))
+                                {
+                                    string styleTemp = "";
+                                    @if (ptDetail.DatePrice.Date < reservationDto.Arrival.Value.Date || ptDetail.DatePrice.Date >= reservationDto.Departure.Value.Date)
+                                    {
+                                        styleTemp = "-webkit-text-fill-color:darkred";
+                                    }
+                                    <tr style="@styleTemp">
+
+                                        <td>
+                                            <MudText Typo="Typo.body1">@ptDetail.DatePrice.ToString("dd.MM.yyyy")</MudText>
+                                        </td>
+                                        <td>
+                                            <MudText Typo="Typo.body1">@ptDetail.AverageRate.ToString("N2") </MudText>
+                                        </td>
+                                        <td>
+                                            <MudText Typo="Typo.body1">@ptDetail.RateCurrent</MudText>
+                                        </td>
+                                        <td>
+                                            @if (ptDetail.DatePrice < Convert.ToDateTime(reservationDto.Arrival).Date || ptDetail.DatePrice > Convert.ToDateTime(reservationDto.Departure).Date)
+                                            {
+                                                <MudCheckBox @bind-Checked="@ptDetail.NoShow" Size="Size.Small" Color="Color.Secondary"></MudCheckBox>
+                                            }
+                                            else
+                                            {
+                                                <MudCheckBox @bind-Checked="@ptDetail.NoShow" Size="Size.Small" Color="Color.Primary"></MudCheckBox>
+                                            }
+                                        </td>
+                                        <td>
+                                            <MudNumericField T="decimal?" Style="width:80px" HideSpinButtons="true" @bind-Value="ptDetail.NoShowPercentage" ReadOnly="false" Min="0" Variant="Variant.Outlined" />
+                                        </td>
+                                        <td>
+                                            <MudText Typo="Typo.body1">@ptDetail.RateTypeEnumId</MudText>
+                                            <MudText Typo="Typo.overline">@ptDetail.Id | @ptDetail.PriceTagId</MudText>
+                                        </td>
+                                    </tr>
+                                }
+
+                            </tbody>
+                        </MudSimpleTable>
+                    </MudItem>
+                </MudItem>
+
+            </MudGrid>
+        </MudCardContent>
+        <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+            <MudButton OnClick="@SetRateSelectedDaily" Style="min-width:150px;" Variant="Variant.Filled" Color="Color.Warning">@L["Daily"]</MudButton>
+            <MudButton OnClick="@SetRateSelectedAverage" Style="min-width:150px;" Variant="Variant.Filled" Color="Color.Warning">@L["Average"]</MudButton>
+            @if (reservationDto.PriceTagDto!.UserRate != null && reservationDto.PriceTagDto.UserRate > 0)
+            {
+                <MudButton OnClick="@SetRateSelectedUser" Style="min-width:150px;" Variant="Variant.Filled" Color="Color.Warning">@L["User"]</MudButton>
+            }
+        </MudStack>
+        <MudCardActions>
+        </MudCardActions>
+    </MudCard>
+}
+
+@code {
+    public bool _loaded { get; set; } = false;
+    //public bool _eventOK { get; set; } = true;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    [Parameter]
+    public List<CategorySelectDto>? categorySelectDtoList { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loaded = true;
+    }
+
+    private string GetRateSelectText(int id)
+    {
+        string result = string.Empty;
+        switch (id)
+        {
+            case 1:
+                result = "Daily";
+                break;
+            case 2:
+                result = "Average";
+                break;
+            case 3:
+                result = "User";
+                break;
+        }
+        return result;
+    }
+
+    private async void SetRateSelectedDaily()
+    {
+        reservationDto.PriceTagDto!.RateSelected = 1;
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+
+    private async void SetRateSelectedAverage()
+    {
+        reservationDto.PriceTagDto!.RateSelected = 2;
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+
+    private async void SetRateSelectedUser()
+    {
+        reservationDto.PriceTagDto!.RateSelected = 3;
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+}

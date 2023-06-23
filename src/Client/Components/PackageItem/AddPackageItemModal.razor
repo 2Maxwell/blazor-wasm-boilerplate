@@ -25,7 +25,7 @@
                 {
                     <MudItem xs="8">
                         <MudSelect T="int" Variant="Variant.Outlined" Margin="Margin.Dense" AnchorOrigin="Origin.BottomCenter" For="@(() => p.ItemId)" @bind-Value="p.ItemId" Label="@L["Item"]">
-                            <MudSelectItem T="int" Value="0">@L["Select Item"]</MudSelectItem>
+                            <MudSelectItem T="int" Value="0">@L["PriceWithPercentage"]</MudSelectItem>
                             @foreach (var item in ItemsList)
                             {
                                 <MudSelectItem T="int" Value="@item.Id">@item.ValueContent</MudSelectItem>
@@ -91,8 +91,6 @@
     private void AddPackageItem()
     {
         p.MandantId = _mandantId;
-
-
         MudDialog.Close(DialogResult.Ok(p));
     }
 

@@ -1,4 +1,6 @@
-﻿using FSH.BlazorWebAssembly.Client.Infrastructure.Preferences;
+﻿using FSH.BlazorWebAssembly.Client.Components.Dialogs;
+using FSH.BlazorWebAssembly.Client.Infrastructure.ApiClient;
+using FSH.BlazorWebAssembly.Client.Infrastructure.Preferences;
 using Microsoft.AspNetCore.Components;
 using MudBlazor;
 
@@ -12,6 +14,7 @@ public partial class MainLayout
     public EventCallback OnDarkModeToggle { get; set; }
     [Parameter]
     public EventCallback<bool> OnRightToLeftToggle { get; set; }
+    public MandantDto? _mandantDto { get; set; } = null;
 
     private bool _drawerOpen;
     private bool _rightToLeft;
@@ -60,4 +63,18 @@ public partial class MainLayout
     {
         Navigation.NavigateTo("/account");
     }
+
+    private async void OpenChasierDialog()
+    {
+        var parameters = new DialogParameters
+        {
+            ["mandantDto"] = _mandantDto,
+            //["reservationDtoChanged"] = reservationDtoChanged,
+        };
+
+        var dialog = DialogService.ShowModal<CashierDialog>(parameters);
+        var result = await dialog.Result;
+        StateHasChanged();
+    }
+
 }

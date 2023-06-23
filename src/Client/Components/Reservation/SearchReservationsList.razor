@@ -1,0 +1,336 @@
+﻿@using Blazored.SessionStorage;
+@using System.Text.Json;
+
+@inject IStringLocalizer<SearchReservationsList> L
+@inject IReservationsClient ReservationsClient
+@inject ICategorysClient CategoryClient
+@inject IBookingPolicysClient BookingPolicyClient
+@inject ISessionStorageService sessionstorage
+@inject IMandantsClient MandantClient
+
+
+
+@if (_mandantId > 0 && categorySelectDtoList.Count > 0)
+{
+    <MudCard Style="width:100%">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@header</MudButton>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Class="pt-1">
+            @{
+                string[] headings = { "", "ResId", "Kz", "Arrival", "Departure", "Policy", "GM", "A|C|B", "#", "Category", "Room", "Booker", "Guest", "Company", "TravelAg" };
+            }
+
+            <MudStack Spacing="4" AlignItems="AlignItems.Center" Row="true">
+                <MudFab Href="@($"/hotel/reservations/reservationDetail/{_mandantId}/-1")" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Size="Size.Small" />
+
+                <MudTextField T="string" @bind-Value="@resIdSearch" Margin="Margin.Dense" Label="@L["Reservation Number"]" Variant="Variant.Outlined"></MudTextField>
+                <MudFab Href="@($"/hotel/reservations/reservationDetail/{_mandantId}/{resIdSearch}")" StartIcon="@Icons.Filled.Edit" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">Search</MudFab>
+
+
+
+                <MudTextField @bind-Value="crsNumberSearch" Margin="Margin.Dense" Label="@L["CRS Number"]" Variant="Variant.Outlined"></MudTextField>
+                @*  TODO              <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="searchReservationByCrsNumber">Search</MudButton>
+            *@
+                <MudDatePicker Label="@L["Arrival"]" Margin="Margin.Dense" DisplayMonths="2" Editable="true" TitleDateFormat="dddd, dd MMMM" Variant="Variant.Outlined" @bind-Date="arrivalSearch" />
+                <MudTextField @bind-Value="resKzSearch" Margin="Margin.Dense" Label="ResKz (A,P,R,C,O,S)" HelperText="" Variant="Variant.Outlined"></MudTextField>
+                <MudTextField @bind-Value="bookerSearch" Margin="Margin.Dense" Label="Booker/Guest" Variant="Variant.Outlined"></MudTextField>
+
+                @*                <MudTextField @bind-Value="guestSearch" Label="Guest" Variant="Variant.Outlined"></MudTextField>
+            *@
+                <MudTextField @bind-Value="companySearch" Margin="Margin.Dense" Label="Company" Variant="Variant.Outlined"></MudTextField>
+                <MudDatePicker Label="@L["Departure"]" Margin="Margin.Dense" DisplayMonths="2" Editable="true" TitleDateFormat="dddd, dd MMMM" Variant="Variant.Outlined" @bind-Date="departureSearch" />
+
+                <MudFab OnClick="searchReservations" Color="Color.Primary" StartIcon="@Icons.Filled.Search" DisableElevation="true" Size="Size.Small" />
+
+                @*                Ist durch die FilterFunction für ResKz nicht notwendig ResKz = S wird dort gemacht
+            <MudCheckBox Label="Canceled" Checked="@showCanceledReservations" Color="Color.Secondary" />
+            *@
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="searchTodayReservations">Today</MudButton>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" OnClick="searchCheckInReservations">CheckIn</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Login" OnClick="searchInHouseReservations">InHouse</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Logout" OnClick="searchCheckOutReservations">CheckOut</MudButton>
+
+                @if (currentView == "CheckOut")
+                {
+                    <MudCheckBox Label="CheckedOut" Checked="@showCheckedOutReservations" Color="Color.Secondary" />
+                }
+
+            </MudStack>
+
+            <MudTable Items="reservationDtos!.Data" Filter="new Func<ReservationListDto, bool>(FilterResKz)" Hover="true" Dense="true" Striped="true" Bordered="true" Breakpoint="Breakpoint.Sm" Loading="false" LoadingProgressColor="Color.Info">
+                <HeaderContent>
+                    @foreach (var h in headings)
+                    {
+                        <MudTh>@h</MudTh>
+                    }
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudIconButton Href="@($"/hotel/reservations/reservationDetail/{_mandantId}/{context.Id}")" Icon="@Icons.Material.Filled.Edit" Title="@L["Edit"]" aria-label="@L["Edit"]"></MudIconButton>
+
+                    </MudTd>
+                    <MudTd>@context.Id</MudTd>
+                    <MudTd><MudAvatar Style="@($"background:{ColorByResKz(@context.ResKz)};color:black;")" Size="Size.Medium">@context.ResKz</MudAvatar></MudTd>
+
+                    <MudTd>@Convert.ToDateTime(context.Arrival).ToShortDateString()</MudTd>
+                    <MudTd>@Convert.ToDateTime(context.Departure).ToShortDateString()</MudTd>
+                    <MudTd>@getBookingPolicyKz(@context.BookingPolicyId)</MudTd>
+                    <MudTd><MudCheckBox Checked="@context.IsGroupMaster" ReadOnly="true" Color="Color.Secondary"> @(context.GroupMasterId > 0 ? context.GroupMasterId : "")</MudCheckBox></MudTd>
+                    <MudTd>@getPaxSummary(context.PaxString)</MudTd>
+                    @if (context.RoomAmount > 1)
+                    {
+                        <MudTd Style="@($"color:{Colors.Red.Accent4};")">@context.RoomAmount</MudTd>
+                    }
+                    else
+                    {
+                        <MudTd>@context.RoomAmount</MudTd>
+                    }
+                    <MudTd>@getCategoryKz(context.CategoryId)</MudTd>
+                    <MudTd>@context.RoomNumber</MudTd>
+
+                    @*<MudTd>@context.BookerDto.Name, @context.BookerDto.FirstName, @context.BookerDto.SalutationName</MudTd>*@
+
+                    <MudTd>@context.BookerName, @context.BookerFirstName, @context.BookerSalutationName @context.BookerTitle</MudTd>
+                    @if (context.GuestName != null)
+                    {
+                        <MudTd>@context.GuestName, @context.GuestFirstName, @context.GuestSalutationName @context.GuestTitle</MudTd>
+                    }
+                    else
+                    {
+                        <MudTd Style="@($"color:{Colors.DeepOrange.Accent2};")">
+                            <MudStack Row="true" Justify="Justify.FlexStart" AlignItems="AlignItems.Center">
+                                <MudIcon Icon="@Icons.Material.Filled.AddCircle" Title="Add" />
+                                @L["no GuestName"]
+                            </MudStack>
+                        </MudTd>
+                    }
+
+
+                    @*                    <MudTd>@(context.GuestDto != null ? context.GuestDto!.Name : "")</MudTd>
+                *@
+                    <MudTd>@(context.CompanyName1 != null ? context.CompanyName1 : "")</MudTd>
+                        <MudTd>@(context.TravelAgentName1 != null ? context.TravelAgentName1 : "")</MudTd>
+
+                    </RowTemplate>
+                </MudTable>
+
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Variant="Variant.Text" Color="Color.Primary">Read More</MudButton>
+            </MudCardActions>
+        </MudCard>
+}
+
+@code {
+
+    public int _mandantId { get; set; }
+    public PaginationResponse<ReservationListDto>? reservationDtos { get; set; }
+    public List<CategorySelectDto>? categorySelectDtoList { get; set; }
+    public List<BookingPolicySelectKzDto>? bookingPolicySelectKzDtoList { get; set; }
+    public SearchReservationsRequest? searchReservationsRequest { get; set; } = new();
+    public MandantDto? mandantDto { get; set; }
+    public DateTime? hotelDate { get; set; }
+    public string header { get; set; } = "Reservations";
+
+    public string resIdSearch { get; set; } = string.Empty;
+    public string crsNumberSearch { get; set; }
+    public DateTime? arrivalSearch { get; set; }
+    public DateTime? departureSearch { get; set; }
+
+    public string resKzSearch { get; set; }
+    public string bookerSearch { get; set; }
+    public string guestSearch { get; set; }
+    public string companySearch { get; set; }
+    public string currentView { get; set; } = string.Empty;
+
+    public string resKzFilter { get; set; } = string.Empty;
+
+    public bool showCheckedOutReservations { get; set; } = false;
+    public bool showCanceledReservations { get; set; } = false;
+    public bool showResIdSearchButton { get; set; } = false;
+
+    protected async override Task OnInitializedAsync()
+    {
+        _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        mandantDto = await MandantClient.GetAsync(_mandantId);
+        hotelDate = mandantDto.HotelDate;
+        arrivalSearch = hotelDate;
+
+        searchReservationsRequest.Arrival = new DateTime(2022, 09, 01);
+        searchReservationsRequest.PageSize = 25;
+
+        categorySelectDtoList = (await CategoryClient.GetCategorySelectAsync(-1, _mandantId)).ToList();
+        bookingPolicySelectKzDtoList = (await BookingPolicyClient.GetBookingPolicySelectKzAsync(_mandantId)).ToList();
+        var res = await ReservationsClient.SearchAsync(searchReservationsRequest!);
+        reservationDtos = res.Adapt<PaginationResponse<ReservationListDto>>();
+        resKzSearch = "P,R";
+    }
+
+    private List<ReservationListDto> getReservationDtos()
+    {
+        List<ReservationListDto> result = new();
+        if (reservationDtos != null)
+        {
+            result = reservationDtos!.Data.Where(x => x.ResKz == "P" || x.ResKz == "R" || x.ResKz == "O" || x.ResKz == "C").ToList();
+        }
+        return result;
+    }
+
+    private string getCategoryKz(int categoryId)
+    {
+        string? result = string.Empty;
+        var cat = categorySelectDtoList!.Where(x => x.Id == categoryId).SingleOrDefault().Kz;
+        result = cat != null ? cat.ToString() : string.Empty;
+        return result;
+    }
+
+    // BookingPolicie anhand der Id auswählen
+    private string getBookingPolicyKz(int bookingPolicyId)
+    {
+        string? result = string.Empty;
+        var bp = bookingPolicySelectKzDtoList!.Where(x => x.Id == bookingPolicyId).SingleOrDefault().Kz;
+        result = bp != null ? bp.ToString() : string.Empty;
+        return result;
+    }
+
+    private string getPaxSummary(string? paxString)
+    {
+        string result = string.Empty;
+        if (paxString != null)
+        {
+            Pax? pax = JsonSerializer.Deserialize<Pax>(paxString!);
+            if (pax != null)
+            {
+                result += pax.Adult + "|" + pax.Children.Count() + "|" + pax.Beds;
+            }
+        }
+
+        return result;
+    }
+
+    private async void searchReservations()
+    {
+        SearchReservationsRequest sr = new();
+        sr.Arrival = arrivalSearch;
+        sr.BookerName = bookerSearch;
+        sr.CompanyName = companySearch;
+        sr.GuestName = guestSearch;
+        sr.Departure = departureSearch;
+
+        var res = await ReservationsClient.SearchAsync(sr);
+        reservationDtos = res.Adapt<PaginationResponse<ReservationListDto>>();
+        StateHasChanged();
+    }
+
+    // Method searchTodayReservations
+    private async void searchTodayReservations()
+    {
+        SearchReservationsRequest sr = new();
+        sr.Arrival = hotelDate;
+        //sr.BookerName = bookerSearch;
+        //sr.CompanyName = companySearch;
+        //sr.GuestName = guestSearch;
+        var res = await ReservationsClient.SearchAsync(sr);
+        reservationDtos = res.Adapt<PaginationResponse<ReservationListDto>>();
+        currentView = "Today";
+        resKzSearch = "A,P,R,S,C";
+        header = "Reservations (incl. Cancel, InHouse)";
+
+        StateHasChanged();
+    }
+
+    private async void searchCheckOutReservations()
+    {
+        SearchReservationsRequest sr = new();
+        sr.Departure = hotelDate;
+        // sr.ResKz = "C";
+        var res = await ReservationsClient.SearchAsync(sr);
+        reservationDtos = res.Adapt<PaginationResponse<ReservationListDto>>();
+        currentView = "CheckOut";
+        resKzSearch = "C,";
+        header = "CheckOut";
+        StateHasChanged();
+    }
+
+    // Method searchCheckInReservations
+    private async void searchCheckInReservations()
+    {
+        SearchReservationsRequest sr = new();
+        sr.Arrival = hotelDate;
+        sr.ResKz = "P,R";
+        var res = await ReservationsClient.SearchAsync(sr);
+        reservationDtos = res.Adapt<PaginationResponse<ReservationListDto>>();
+        currentView = "CheckIn";
+        resKzSearch = "P,R";
+        header = "CheckIn";
+        StateHasChanged();
+    }
+
+    //Method searchInHouseReservations
+    private async void searchInHouseReservations()
+    {
+        SearchReservationsRequest sr = new();
+        //sr.Arrival = hotelDate;
+        sr.ResKz = "C";
+        var res = await ReservationsClient.SearchAsync(sr);
+        reservationDtos = res.Adapt<PaginationResponse<ReservationListDto>>();
+        currentView = "InHouse";
+        resKzSearch = "C";
+        header = "InHouse";
+
+        StateHasChanged();
+    }
+
+    private void EditReservationNav(int resId)
+    {
+        Navigation.NavigateTo($"/hotel/reservations/reservationDetail/{_mandantId}/{resId}");
+    }
+
+    public string ColorByResKz(string resKz)
+    {
+        string result = string.Empty;
+        switch (resKz)
+        {
+            case "P": // Pending
+                result = "#66BB6A"; // Green Lighten1
+                break;
+            case "R":
+                result = "#1B5E20"; // Green Darken4
+                break;
+            case "S":
+                result = "#C62828"; // Red Darken3
+                break;
+            case "T":
+                result = "pink";
+                break;
+            case "C":
+                result = "yellow";
+                break;
+            case "W":
+                result = "lime";
+                break;
+            default:
+                result = "white";
+                break;
+        }
+        return result;
+    }
+
+    private bool FilterResKz(ReservationListDto element) => FilterFunc(element, resKzSearch);
+
+    private bool FilterFunc(ReservationListDto element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        if (searchString.Contains(element.ResKz, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return false;
+    }
+
+
+}

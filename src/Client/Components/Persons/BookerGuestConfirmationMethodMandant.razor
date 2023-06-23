@@ -1,0 +1,120 @@
+﻿@inject IPersonsClient PersonsClient
+@inject IStringLocalizer<BookerGuestConfirmationMethodMandant> L
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="16">
+    <MudChip Style="min-width:250px;" Icon="@Icons.Material.Filled.VerifiedUser" Color="Color.Info">@L[@personType!]</MudChip>
+    @if (loaded)
+    {
+        @if (person!.Email != null && person.Email != string.Empty)
+        {
+            <MudStack Justify="Justify.Center" Spacing="0">
+                <MudCheckBox Class="ml-n4" Checked="checkEmail" CheckedChanged="((bool e) => checkCommunicationChanged(e, 'e'))" Size="Size.Large" Color="Color.Tertiary">@L["Email"]: </MudCheckBox>
+                <MudText Typo="Typo.h6">@person.Email</MudText>
+            </MudStack>
+
+        }
+        @if (person!.Telefax != null && person.Telefax != string.Empty)
+        {
+            <MudStack Justify="Justify.Center" Spacing="0">
+                <MudCheckBox Class="ml-n4" Checked="checkFax" CheckedChanged="((bool e) => checkCommunicationChanged(e, 'f'))" Size="Size.Large" Color="Color.Tertiary">@L["Fax"]</MudCheckBox>
+                <MudText Typo="Typo.h6">@person.Telefax</MudText>
+            </MudStack>
+        }
+        @if (person!.Mobil != null && person.Mobil != string.Empty)
+        {
+            <MudStack Justify="Justify.Center" Spacing="0">
+                <MudCheckBox Class="ml-n4" Checked="checkMobil" CheckedChanged="((bool e) => checkCommunicationChanged(e, 'm'))" Size="Size.Large" Color="Color.Tertiary">@L["Mobil/SMS"]</MudCheckBox>
+                <MudText Typo="Typo.h6">@person.Mobil</MudText>
+            </MudStack>
+        }
+    }
+</MudStack>
+<br />
+<MudDivider></MudDivider>
+<br />
+
+
+@code {
+    [Parameter]
+    public int personId { get; set; }
+    [Parameter]
+    public string? personType { get; set; } // Booker, CompanyContact, TravelAgendContact
+    [Parameter]
+    public EventCallback<string> confirmationResultChanged { get; set; }
+
+    private string _confirmationResult = string.Empty;
+    public bool loaded { get; set; } = false;
+
+    [Parameter]
+    public string confirmationResult
+    {
+        get => _confirmationResult;
+
+        set
+        {
+            if (_confirmationResult == value) return;
+            _confirmationResult = value;
+            confirmationResultChanged.InvokeAsync(value);
+        }
+    }
+
+    public PersonCommunicationDto? person { get; set; }
+    public string eMailString { get; set; } = "Email";
+    public bool checkEmail { get; set; }
+    public bool checkFax { get; set; }
+    public bool checkMobil { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        person = await PersonsClient.GetCommunicationAsync(personId);
+        checkEmail = confirmationResult.Contains("Email") ? true : false;
+        checkFax = confirmationResult.Contains("Fax") ? true : false;
+        checkMobil = confirmationResult.Contains("Mobil") ? true : false;
+        loaded = true;
+
+    }
+
+    private void checkCommunicationChanged(bool value, char comType)
+    {
+        if (value)
+        {
+            switch (comType)
+            {
+                case 'e':
+                    confirmationResult = confirmationResult.Insert(confirmationResult.Length, (personType + "Email"));
+                    checkEmail = true;
+                    break;
+                case 'f':
+                    confirmationResult = confirmationResult.Insert(confirmationResult.Length, (personType + "Fax"));
+                    checkFax = true;
+                    break;
+                case 'm':
+                    confirmationResult = confirmationResult.Insert(confirmationResult.Length, (personType + "Mobil"));
+                    checkMobil = true;
+                    break;
+            }
+        }
+        else
+        {
+            switch (comType)
+            {
+                case 'e':
+                    string stre = personType + "Email";
+                    confirmationResult = confirmationResult.Remove(confirmationResult.IndexOf(stre), stre.Length);
+                    checkEmail = false;
+                    break;
+                case 'f':
+                    string strf = personType + "Fax";
+                    confirmationResult = confirmationResult.Remove(confirmationResult.IndexOf(strf), strf.Length);
+                    checkFax = false;
+                    break;
+                case 'm':
+                    string strm = personType + "Mobil";
+                    confirmationResult = confirmationResult.Remove(confirmationResult.IndexOf(strm), strm.Length);
+                    checkMobil = false;
+                    break;
+            }
+        }
+    }
+
+}

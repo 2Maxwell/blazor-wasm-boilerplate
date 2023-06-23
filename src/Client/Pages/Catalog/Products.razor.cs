@@ -16,9 +16,9 @@ public partial class Products
     [Inject]
     protected IBrandsClient BrandsClient { get; set; } = default!;
 
-    protected EntityServerTableContext<ProductDto, Guid, ProductViewModel> Context { get; set; } = default!;
+    protected EntityServerTableContext<ProductDto, Guid, ProductViewModel>? Context { get; set; } = default!;
 
-    private EntityTable<ProductDto, Guid, ProductViewModel> _table = default!;
+    private EntityTable<ProductDto, Guid, ProductViewModel>? _table = default!;
 
     protected override void OnInitialized() =>
         Context = new(

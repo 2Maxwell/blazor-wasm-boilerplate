@@ -1,0 +1,112 @@
+﻿@page "/environment/salutations"
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@using System.Globalization
+@attribute [MustHavePermission(FSHAction.View, FSHResource.Packages)]
+
+@inject IStringLocalizer<Salutations> L
+@inject ISalutationsClient SalutationsClient
+@inject ILanguagesClient LanguagesClient
+@inject ISessionStorageService sessionstorage
+
+<FshTitle Title="@L["Salutations"]" Description="@L["Manage Salutations."]" />
+
+<EntityTable TEntity="SalutationDto" TId="int" TRequest="UpdateSalutationRequest" Context="@Context">
+
+    <EditFormContent>
+
+        <MudHidden T="int" hidden="hidden" For="@(() => context.MandantId )" @bind-Value="context.MandantId" Label="@L["MandantId"]" />
+
+        @if (!Context.AddEditModal.IsCreate) // Edit
+        {
+
+            <MudItem xs="6">
+                <MudTextField Variant="Variant.Outlined" ReadOnly="true" HelperText="@L["Field Readonly"]" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+        }
+        else // Create
+        {
+            <MudItem xs="6">
+                <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+            </MudItem>
+        }
+
+        <MudItem xs="6">
+            <MudSelect T="int" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => context.LanguageId)" @bind-Value="context.LanguageId" Label="@L["LanguageId"]">
+                <MudSelectItem T="int" Value="0">@L["Select Language"]</MudSelectItem>
+                @foreach (var item in LanguagesList)
+                {
+                    <MudSelectItem T="int" Value="@item.Id">@item.Name</MudSelectItem>
+                }
+            </MudSelect>
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.LetterGreeting)" @bind-Value="context.LetterGreeting" Label="@L["LetterGreeting"]" />
+        </MudItem>
+
+        <MudItem xs="12" md="12">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.LetterClosing)" @bind-Value="context.LetterClosing" Label="@L["LetterClosing"]" />
+        </MudItem>
+
+        <MudItem xs="6" md="6">
+            <MudNumericField Variant="Variant.Outlined" T="int" Min="1" For="@(() => context.OrderNumber)" @bind-Value="context.OrderNumber" Label="@L["OrderNumber"]" />
+        </MudItem>
+
+    </EditFormContent>
+
+</EntityTable>
+
+
+@code {
+    public int _mandantId { get; set; }
+    public List<LanguageSelectDto> LanguagesList { get; set; } = new();
+    protected EntityServerTableContext<SalutationDto, int, UpdateSalutationRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Context = new(
+        entityName: L["Salutation"],
+        entityNamePlural: L["Salutations"],
+        entityResource: FSHResource.Packages,
+        fields: new()
+                        {
+                new(salutation => salutation.Name, L["Name"], "Name"),
+                new(salutation => salutation.LanguageId, L["Language"], "LanguageId"),
+                new(salutation => salutation.LetterGreeting, L["LetterGreeting"], "LetterGreeting"),
+                new(salutation => salutation.LetterClosing, L["LetterClosing"], "LetterClosing"),
+                new(salutation => salutation.OrderNumber, L["OrderNumber"], "OrderNumber")
+                        },
+        idFunc: salutation => salutation.Id,
+        editNotAsModal: false,
+        searchFunc: async filter =>
+        {
+            var salutationfilter = filter.Adapt<SearchSalutationsRequest>();
+            salutationfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+            _mandantId = salutationfilter.MandantId;
+            var result = await SalutationsClient.SearchAsync(salutationfilter);
+
+            return result.Adapt<PaginationResponse<SalutationDto>>();
+        },
+        getDefaultsFunc: () => Task.FromResult(new UpdateSalutationRequest()
+        {
+            // MandantId = _mandantId,
+        }),
+        createFunc: async salutation =>
+        {
+            salutation.MandantId = _mandantId;
+            await SalutationsClient.CreateAsync(salutation.Adapt<CreateSalutationRequest>());
+        },
+        updateFunc: async (id, salutation) =>
+        {
+            await SalutationsClient.UpdateAsync(id, salutation.Adapt<UpdateSalutationRequest>());
+        },
+        exportAction: string.Empty);
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+          LanguagesList = (await LanguagesClient.GetLanguageSelectAsync()).ToList();      
+    }
+
+}

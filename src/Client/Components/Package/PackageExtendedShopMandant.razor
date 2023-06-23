@@ -1,0 +1,89 @@
+﻿@inject IStringLocalizer<PackageExtendedShopMandant > L
+@inject IEnumsClient EnumsClient
+
+<MudCard Class="ma-3 pa-1" Outlined="true">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">@packageExtendDto.PackageDto.Name</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardMedia ObjectFit="ObjectFit.Contain" Image="@(string.IsNullOrEmpty(@packageExtendDto.ImagePath) ? (Config[ConfigNames.ApiBaseUrl] + "Files/noImage.png") : (Config[ConfigNames.ApiBaseUrl] + @packageExtendDto.ImagePath))" Height="200">
+    </MudCardMedia>
+
+    <MudCardContent Style="min-height:150px">
+        <MudText Typo="Typo.body2">@packageExtendDto.PackageDto.Display </MudText>
+        @{
+            string[] highlightArray = @packageExtendDto.PackageDto.DisplayHighLight.Split(';');
+            foreach (var item in highlightArray)
+            {
+                if (item != string.Empty)
+                {
+                    <MudText Typo="Typo.body2">- @item.Trim()</MudText>
+                }
+            }
+        }
+
+
+
+    </MudCardContent>
+    <MudCardActions>
+
+        <MudGrid>
+            @if (packageExtendDto.Price > 0)
+            {
+                <MudItem Class="mt-4" xs="6">
+                    <MudText Typo="Typo.h6">@L["Price"]: @Convert.ToDecimal(packageExtendDto.Price).ToString("N2") <MudText Typo="Typo.caption"> / @getPackageRhytmusString(@packageExtendDto.PackageDto.PackageBookingRhythmEnumId) </MudText></MudText>
+                </MudItem>
+            }
+            else
+            {
+                <MudItem xs="4">
+                    <MudNumericField @bind-Value="@packageExtendDto.Price" Label="@L["Enter Value"]" Format="F1" Variant="Variant.Outlined" />
+                </MudItem>
+            }
+            <MudItem xs="4">
+                @if (target == "HotelOption")
+                {
+                    <MudNumericField @bind-Value="@packageExtendDto.Amount" Label="@L["per Room"]" Variant="Variant.Outlined" />
+                }
+                @if (target == "RestaurantOption")
+                {
+                    <MudNumericField @bind-Value="@packageExtendDto.Amount" Label="@L["Amount"]" Variant="Variant.Outlined" />
+                }
+
+            </MudItem>
+            @if (packageExtendDto.Amount > 0)
+            {
+                <MudItem xs="2" Class="pt-2">
+                    <MudFab Color="Color.Tertiary" StartIcon="@Icons.Material.Filled.Check" DisableElevation="true" />
+                </MudItem>
+            }
+        </MudGrid>
+
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter]
+    public PackageExtendDto packageExtendDto { get; set; }
+    [Parameter]
+    public string target { get; set; } // HotelOption, RestaurantOption, MeetingOption, ...
+    [Parameter]
+    public List<PackageBookingRhythmEnumDto> PackageRhythmEnumList { get; set; } = new List<PackageBookingRhythmEnumDto>();
+    public string SelectedString { get; set; } = " *** Selected ***";
+
+    //protected async override Task OnInitializedAsync()
+    //{
+    //    PackageRhythmEnumList = (await EnumsClient.GetPackageBookingRhythmEnumRequestAsync()).ToList();
+    //}
+
+
+    private string getPackageRhytmusString(int enumId)
+    {
+        string result = string.Empty;
+        result = PackageRhythmEnumList.First(x => x.Value == enumId).Text;
+        return result;
+    }
+
+
+}

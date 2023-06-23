@@ -1,0 +1,106 @@
+﻿@inject IStringLocalizer<ReservationOptionsDialog> L
+@inject IPackagesClient PackagesClient
+@inject IEnumsClient EnumsClient
+
+
+<MudDialog Style="min-height:80%; min-width:85%">
+        <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3 mb-n1" />
+            @L["Options"]
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudTabs Elevation="4" Rounded="true" Centered="true" Color="@Color.Primary">
+            <MudTabPanel Text="@L["HotelOptions"]">
+                <MudPaper hidden="@hotelOptionSwitch">
+                    <MudGrid Class="d-flex justify-center flex-grow-1 gap-4">
+                        @foreach (PackageExtendDto packageExtendDto in packageExtendHotelOptionDtos)
+                        {
+                            <MudItem xs="3">
+                                <FSH.BlazorWebAssembly.Client.Components.Package.PackageExtendedShopMandant packageExtendDto="packageExtendDto" target="HotelOption" PackageRhythmEnumList="PackageRhythmEnumList" />
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudPaper>
+            </MudTabPanel>
+            <MudTabPanel Text="RestaurantOptions">
+                <MudPaper hidden="@hotelOptionSwitch">
+                    <MudGrid Class="d-flex justify-center flex-grow-1 gap-4">
+                        @foreach (PackageExtendDto packageExtendDto in packageExtendRestaurantOptionDtos)
+                        {
+                            <MudItem xs="3">
+                                <FSH.BlazorWebAssembly.Client.Components.Package.PackageExtendedShopMandant packageExtendDto="packageExtendDto" target="RestaurantOption" PackageRhythmEnumList="PackageRhythmEnumList" />
+                            </MudItem>
+                        }
+                    </MudGrid>
+                </MudPaper>
+            </MudTabPanel>
+        </MudTabs>
+    </DialogContent>
+    <DialogActions>
+        <MudGrid>
+            <MudItem xs="12">
+                <MudButton Style="Height:90px" OnClick="AddToReservation" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                    <MudText Typo="Typo.h3">
+                        @L["Add to Reservation"]
+                    </MudText>
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = default!;
+
+    public bool _loaded { get; set; } = false;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    public List<PackageExtendDto> packageExtendHotelOptionDtos { get; set; } = new List<PackageExtendDto>();
+    public List<PackageExtendDto> packageExtendRestaurantOptionDtos { get; set; } = new List<PackageExtendDto>();
+    private bool hotelOptionSwitch { get; set; } = false;
+    public List<PackageBookingRhythmEnumDto> PackageRhythmEnumList { get; set; } = new List<PackageBookingRhythmEnumDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        packageExtendHotelOptionDtos = (await PackagesClient.GetPackageExtendsAsync(reservationDto.MandantId, PackageTargetEnum.HotelOption, reservationDto.Arrival, reservationDto.Departure)).ToList();
+        packageExtendRestaurantOptionDtos = (await PackagesClient.GetPackageExtendsAsync(reservationDto.MandantId, PackageTargetEnum.RestaurantOption, reservationDto.Arrival, reservationDto.Departure)).ToList();
+        PackageRhythmEnumList = (await EnumsClient.GetPackageBookingRhythmEnumRequestAsync()).ToList();
+    }
+
+    private async void AddToReservation()
+    {
+        if (reservationDto.PackageExtendOptionDtos == null) reservationDto.PackageExtendOptionDtos = new List<PackageExtendDto>();
+        // HotelOptionen
+        foreach (PackageExtendDto packageExtendDto in packageExtendHotelOptionDtos)
+        {
+            if (packageExtendDto.Amount > 0)
+            {
+                PackageExtendDto peDto = new();
+                peDto = packageExtendDto.Adapt<PackageExtendDto>();
+                reservationDto.PackageExtendOptionDtos.Add(peDto);
+                packageExtendDto.Amount = 0;
+            }
+        }
+
+        // RestaurantOptionen
+        foreach (PackageExtendDto packageExtendDto in packageExtendRestaurantOptionDtos)
+        {
+            if (packageExtendDto.Amount > 0)
+            {
+                PackageExtendDto peDto = new();
+                peDto = packageExtendDto.Adapt<PackageExtendDto>();
+                reservationDto.PackageExtendOptionDtos.Add(peDto);
+                packageExtendDto.Amount = 0;
+            }
+        }
+
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+}

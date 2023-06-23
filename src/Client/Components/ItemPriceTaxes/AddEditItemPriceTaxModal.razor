@@ -1,0 +1,97 @@
+﻿@using System.Diagnostics
+@using static FSH.BlazorWebAssembly.Client.Pages.Accounts.Items
+@inject IStringLocalizer<FSH.BlazorWebAssembly.Client.Pages.Accounts.Items> L
+
+<EditForm EditContext="editContext" OnValidSubmit="AddEditItemPriceTax">
+    <DataAnnotationsValidator />
+    <MudDialog Style="width:700px;max-height:95%; overflow-y: scroll;">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.Add" Class="mr-3" />
+                Edit / Create Item PriceTax
+            </MudText>
+            @*            <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Filled.Edit" Class="mr-3" />
+            "Edit ItemPriceTax";
+            </MudText>
+            *@
+            @*            @if (selectedPriceTax.Id == 0)
+            {
+            }
+            else
+            {
+            }
+            *@
+        </TitleContent>
+        <DialogContent>
+
+            <MudGrid>
+
+                <MudItem xs="6">
+                    <MudTextField @bind-Value="selectedPriceTax.Price" For="()=>selectedPriceTax.Price" Margin="Margin.Dense" Label="Price" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudSelect @bind-Value="selectedPriceTax.TaxId" For="()=>selectedPriceTax.TaxId" Label="Tax" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        <MudSelectItem T="int" Value="0">@L["Select TaxOption"]</MudSelectItem>
+
+                        @foreach (var tax in taxesList)
+                        {
+                            <MudSelectItem T="int" Value="@tax.Id">@tax.Name"</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="selectedPriceTax.Start" Editable="true" For="()=>selectedPriceTax.Start" MaxDate="selectedPriceTax.End" DisableToolbar Label="Start" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+                <MudItem xs="6">
+                    <MudDatePicker @bind-Date="selectedPriceTax.End" Editable="true" For="()=>selectedPriceTax.End" MinDate="selectedPriceTax.Start" DisableToolbar Label="End" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                </MudItem>
+
+
+            </MudGrid>
+
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="Cancel" Variant="Variant.Text" StartIcon="@Icons.Filled.Cancel" Color="Color.Default" Size="Size.Small">cancel</MudButton>
+            <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Save" Color="Color.Success" ButtonType="ButtonType.Submit" Size="Size.Small">Save</MudButton>
+        </DialogActions>
+
+    </MudDialog>
+</EditForm>
+
+@code {
+    [Parameter]
+    public ItemPriceTaxDto selectedPriceTax { get; set; } = new ItemPriceTaxDto();
+
+    [Parameter]
+    public List<TaxSelectDto>? taxesList { get; set; } = new();
+
+    //[Parameter]
+    //public EventCallback<ItemPriceTaxDto> OnValidSubmit { get; set; }
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; }
+
+
+    private EditContext? editContext;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(selectedPriceTax);
+    }
+
+    private void AddEditItemPriceTax()
+    {
+        // OnValidSubmit.InvokeAsync(selectedPriceTax);
+        MudDialog.Close(DialogResult.Ok(selectedPriceTax));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+        // OnValidSubmit.InvokeAsync(null);
+    }
+
+}
