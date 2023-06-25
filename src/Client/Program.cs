@@ -3,6 +3,7 @@ using FSH.BlazorWebAssembly.Client;
 using FSH.BlazorWebAssembly.Client.Infrastructure;
 using FSH.BlazorWebAssembly.Client.Infrastructure.Common;
 using FSH.BlazorWebAssembly.Client.Infrastructure.Preferences;
+using FSH.BlazorWebAssembly.Client.Shared;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
@@ -12,6 +13,8 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddClientServices(builder.Configuration);
+
+builder.Services.AddScoped(typeof(IReportService<>), typeof(ReportService<>));
 
 var host = builder.Build();
 

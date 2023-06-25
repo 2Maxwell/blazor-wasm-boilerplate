@@ -1,0 +1,31 @@
+﻿@page "/genRep"
+@using FSH.BlazorWebAssembly.Client.ViewModels;
+
+@inject IReportService<PersonAddressReportDto> reportService
+
+<button class="btn btn-primary" @onclick="GenerateReport">Generate</button>
+
+@code {
+    private async Task GenerateReport()
+    {
+        var endpoint = "personAddressReport";
+
+        var reportData = new List<PersonAddressReportDto>
+        {
+           new PersonAddressReportDto
+           {
+               FirstName = "John",
+               Address1 = "Address Test",
+               Address2 = "St1"
+           },
+           new PersonAddressReportDto
+           {
+               FirstName = "Mark",
+               Address1 = "addrsess",
+               Address2 = "st2"
+           }
+        };
+
+        await reportService.GenerateReport(endpoint, reportData);
+    }
+}
