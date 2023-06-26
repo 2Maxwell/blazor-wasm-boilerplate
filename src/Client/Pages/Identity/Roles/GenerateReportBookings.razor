@@ -1,0 +1,84 @@
+﻿@page "/generateReportBookings"
+
+@using FSH.BlazorWebAssembly.Client.ViewModels;
+
+@inject IReportService<BookingDto> reportService
+
+<h3>Booking Report</h3>
+
+<EditForm Model="@bookingReportDto" OnSubmit="GenerateReportForBookings">
+    <DataAnnotationsValidator />
+
+    <div class="form-group">
+        <label for="mandantId">Mandant ID</label>
+        <InputNumber id="mandantId" class="form-control" @bind-Value="@bookingReportDto.MandantId"></InputNumber>
+        <ValidationMessage For="@(() => bookingReportDto.MandantId)" />
+    </div>
+
+    <div class="form-group">
+        <label for="startDate">Start Date</label>
+        <InputDate id="startDate" class="form-control" @bind-Value="@bookingReportDto.StartDate"></InputDate>
+        <ValidationMessage For="@(() => bookingReportDto.StartDate)" />
+    </div>
+
+    <div class="form-group">
+        <label for="endDate">End Date</label>
+        <InputDate id="endDate" class="form-control" @bind-Value="@bookingReportDto.EndDate"></InputDate>
+        <ValidationMessage For="@(() => bookingReportDto.EndDate)" />
+    </div>
+
+    <div class="form-group">
+        <label for="startItemNumber">Start Item Number</label>
+        <InputNumber id="startItemNumber" class="form-control" @bind-Value="@bookingReportDto.StartItemNumber"></InputNumber>
+        <ValidationMessage For="@(() => bookingReportDto.StartItemNumber)" />
+    </div>
+
+    <div class="form-group">
+        <label for="endItemNumber">End Item Number</label>
+        <InputNumber id="endItemNumber" class="form-control" @bind-Value="@bookingReportDto.EndItemNumber"></InputNumber>
+        <ValidationMessage For="@(() => bookingReportDto.EndItemNumber)" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Generate Report</button>
+</EditForm>
+
+@code {
+    private BookingReportDto bookingReportDto = new BookingReportDto();
+
+    private async Task GenerateReportForBookings()
+    {
+        await reportService.GenerateReportForBookings(bookingReportDto);
+    }
+
+    private class BookingDto
+    {
+        public int Id { get; set; }
+        public int MandantId { get; set; }
+        public DateTime HotelDate { get; set; }
+        public int ReservationId { get; set; }
+        public string? Name { get; set; }
+        public decimal Amount { get; set; }
+        public decimal Price { get; set; }
+        public decimal Debit { get; set; }
+        public int ItemId { get; set; }
+        public int ItemNumber { get; set; }
+        public string? Source { get; set; }
+        public int BookingLineNumberId { get; set; }
+        public int TaxId { get; set; }
+        public decimal TaxRate { get; set; }
+        public int InvoicePos { get; set; }
+        public int State { get; set; }
+        public int InvoiceId { get; set; }
+        public int ReferenceId { get; set; }
+    }
+
+    public class BookingReportDto
+    {
+        public int MandantId { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int StartItemNumber { get; set; }
+        public int EndItemNumber { get; set; }
+
+    }
+}
