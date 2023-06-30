@@ -31,11 +31,11 @@ public partial class ReportService<T> : IReportService<T> where T : class
         if (response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync();
-            var responseObject = JsonSerializer.Deserialize<ReportResponse>(responseContent);
+            var responseObject = JsonSerializer.Deserialize<ReportResult>(responseContent);
 
-            var reportBytes = Convert.FromBase64String(responseObject.result.fileContents);
+            var reportBytes = Convert.FromBase64String(responseObject.fileContents);
 
-            var reportFileName = responseObject.result.fileDownloadName;
+            var reportFileName = responseObject.fileDownloadName;
             var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
             var fileName = $"{timestamp}_{reportFileName}";
 
@@ -66,11 +66,11 @@ public partial class ReportService<T> : IReportService<T> where T : class
         if (response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync();
-            var responseObject = JsonSerializer.Deserialize<ReportResponse>(responseContent);
+            var responseObject = JsonSerializer.Deserialize<ReportResult>(responseContent);
 
-            var reportBytes = Convert.FromBase64String(responseObject.result.fileContents);
+            var reportBytes = Convert.FromBase64String(responseObject.fileContents);
 
-            var reportFileName = responseObject.result.fileDownloadName;
+            var reportFileName = responseObject.fileDownloadName;
             var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
             var fileName = $"{timestamp}_{reportFileName}";
 
