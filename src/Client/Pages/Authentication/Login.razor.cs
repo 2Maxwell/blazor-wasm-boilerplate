@@ -15,6 +15,11 @@ public partial class Login
     public Task<AuthenticationState> AuthState { get; set; } = default!;
     [Inject]
     public IAuthenticationService AuthService { get; set; } = default!;
+    //[Inject]
+    //protected IUsersClient UsersClient { get; set; } = default!;
+    // [Inject]
+    // protected ISessionStorageService sessionStorage { get; set; } = default!;
+
 
     private CustomValidation? _customValidation;
 
@@ -73,6 +78,23 @@ public partial class Login
             Snackbar,
             _customValidation))
         {
+
+            //string? UserId = string.Empty;
+            //var user = (await AuthState).User;
+            //if (user.Identity?.IsAuthenticated == true)
+            //{
+            //    if (string.IsNullOrEmpty(UserId))
+            //    {
+            //        UserId = user.GetUserId();
+            //    }
+            //}
+
+            //if (await ApiHelper.ExecuteCallGuardedAsync(() => UsersClient.GetByIdAsync(UserId), Snackbar) is UserDetailsDto currentUser)
+            //{
+            //    int MandantId = Convert.ToInt32(currentUser.MandantId);
+            //    await sessionStorage.SetItemAsStringAsync("currentMandantId", MandantId.ToString());
+            //}
+
             Snackbar.Add($"Logged in as {_tokenRequest.Email}", Severity.Info);
         }
 

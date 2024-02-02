@@ -1,0 +1,287 @@
+﻿@page "/hotel/housekeeping/{mandantId:int}"
+@using System.Diagnostics
+@using FSH.BlazorWebAssembly.Client.Components.Housekeeping
+
+@inject IStringLocalizer<Housekeeping> L
+@inject IRoomsClient RoomsClient
+@inject ICategorysClient CategorysClient
+@inject IMandantsClient MandantsClient
+@inject IReservationsClient ReservationsClient
+
+@if (_loaded)
+{
+@*     <MudPaper Height="150px" Width="100%">
+        <MudStack Row="true" Class="ml-3">
+            <MudSwitch Checked="@showCleanRooms" CheckedChanged="((bool e) => showCleanRoomsChanged(e))" Color="Color.Success" Label="@L["Show Clean"]" />
+        </MudStack>
+    </MudPaper>
+ *@
+    <MudDropContainer T="RoomHousekeepingDto" Items="roomList" ItemsSelector="@((item,dropzone) => item.AssignedId.ToString() == dropzone)" ItemDropped="ItemUpdated" Class="d-flex flex-wrap flex-grow-1">
+        <ChildContent>
+
+            <MudPaper Style="overflow:auto;" Height="60vh" Width="100%" Class="ma-4 flex-grow-1">
+                <MudDropZone T="RoomHousekeepingDto" Identifier="0" Class="d-flex flex-wrap align-content-start gap-3 mb-2 pa-2 mud-theme-primary" AllowReorder="false">
+                    <MudAppBar Style="width:100%" Class="ma-1" Color="Color.Primary" Fixed="false" Dense="true">
+                        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+                        <MudText Typo="Typo.h6" Class="mr-2">List Unassingned </MudText>
+                        <MudSwitch Checked="@showCleanRooms" CheckedChanged="((bool e) => showCleanRoomsChanged(e))" Color="Color.Success" Label="@L["Show Clean"]" />
+
+                        @* <MudText Typo="Typo.h6" Class="mr-2">@L["Work:"] @workTimeCL3String</MudText> *@
+                        <MudText Typo="Typo.h6" Class="mr-2">@L["Rooms:"] @(roomList.Count(x => x.AssignedId == 0))</MudText>
+                        <MudNumericField Style="width:140px;" Value="@roomMaidsOnDuty" ValueChanged="((int e) => roomMaidsValueChanged(e))" Label="Roommaids oD" Margin="Margin.Dense" Variant="Variant.Outlined"/>
+                        <MudSpacer />
+                    </MudAppBar>
+                </MudDropZone>
+            </MudPaper>
+
+            @if(roomMaidsOnDuty > 0)
+            {                
+            <MudPaper Class="ma-4 flex-grow-1" Height="30vh" Width="20%">
+                <MudDropZone T="RoomHousekeepingDto" Identifier="1" Class="d-flex flex-wrap align-content-start gap-3 mb-2 pa-2 mud-theme-primary" AllowReorder="false">
+                    <MudAppBar Style="width:100%" Class="ma-1" Color="Color.Primary" Fixed="false" Dense="true">
+                        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+                        <MudText Typo="Typo.h6" Class="mr-2">List 1</MudText>
+                        <MudText Typo="Typo.h6" Class="mr-2">@L["Work:"] @workTimeCL1String</MudText>
+                            <MudText Typo="Typo.h6" Class="mr-2">@L["Rooms:"] @(roomList.Count(x => x.AssignedId == 1))</MudText>
+                        <MudSpacer />
+
+                        <MudSelect Margin="Margin.Dense" T="string" Label="RoomMaid" Variant="Variant.Outlined">
+                            <MudSelectItem Value="@("Room Maid Anna 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Betha 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Carla 6:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Dora 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Erna 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Frieda 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Getrud 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Helga 4:30 Std")" />
+
+                        </MudSelect>
+                    </MudAppBar>
+                </MudDropZone>
+            </MudPaper>
+            }
+
+            @if (roomMaidsOnDuty > 1)
+            {
+                <MudPaper Class="ma-4 flex-grow-1" Height="30vh" Width="20%">
+                <MudDropZone T="RoomHousekeepingDto" Identifier="2" Class="d-flex flex-wrap align-content-start gap-3 mb-2 pa-2 mud-theme-primary" AllowReorder="false">
+                    <MudAppBar Style="width:100%" Class="ma-1" Color="Color.Primary" Fixed="false" Dense="true">
+                        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+                        <MudText Typo="Typo.h6" Class="mr-2">List 2</MudText>
+                        <MudText Typo="Typo.h6" Class="mr-2">@L["Work:"] @workTimeCL2String</MudText>
+                            <MudText Typo="Typo.h6" Class="mr-2">@L["Rooms:"] @(roomList.Count(x => x.AssignedId == 2))</MudText>
+                        <MudSpacer />
+
+                        <MudSelect Margin="Margin.Dense" T="string" Label="RoomMaid" Variant="Variant.Outlined">
+                            <MudSelectItem Value="@("Room Maid Anna 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Betha 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Carla 6:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Dora 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Erna 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Frieda 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Getrud 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Helga 4:30 Std")" />
+
+                        </MudSelect>
+                    </MudAppBar>
+                </MudDropZone>
+            </MudPaper>
+            }
+
+            @if (roomMaidsOnDuty > 2)
+            {
+                <MudPaper Class="ma-4 flex-grow-1" Height="30vh" Width="20%">
+                <MudDropZone T="RoomHousekeepingDto" Identifier="3" Class="d-flex flex-wrap align-content-start gap-3 mb-2 pa-2 mud-theme-primary" AllowReorder="false">
+                    <MudAppBar Style="width:100%" Class="ma-1" Color="Color.Primary" Fixed="false" Dense="true">
+                        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+                        <MudText Typo="Typo.h6" Class="mr-2">List 3</MudText>
+                        <MudText Typo="Typo.h6" Class="mr-2">@L["Work:"] @workTimeCL3String</MudText>
+                        <MudText Typo="Typo.h6" Class="mr-2">@L["Rooms:"] @(roomList.Count(x => x.AssignedId == 3))</MudText>
+                        <MudSpacer />
+
+                        <MudSelect Margin="Margin.Dense" T="string" Label="RoomMaid" Variant="Variant.Outlined">
+                            <MudSelectItem Value="@("Room Maid Anna 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Betha 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Carla 6:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Dora 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Erna 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Frieda 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Getrud 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Helga 4:30 Std")" />
+
+                        </MudSelect>
+                    </MudAppBar>
+                </MudDropZone>
+            </MudPaper>
+            }
+
+            @if (roomMaidsOnDuty > 3)
+            {
+                <MudPaper Class="ma-4 flex-grow-1" Height="30vh" Width="20%">
+                <MudDropZone T="RoomHousekeepingDto" Identifier="4" Class="d-flex flex-wrap align-content-start gap-3 mb-2 pa-2 mud-theme-primary" AllowReorder="false">
+                    <MudAppBar Style="width:100%" Class="ma-1" Color="Color.Primary" Fixed="false" Dense="true">
+                        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+                        <MudText Typo="Typo.h6" Class="mr-2">List 4</MudText>
+                        <MudText Typo="Typo.h6" Class="mr-2">@L["Work:"] @workTimeCL4String</MudText>
+                            <MudText Typo="Typo.h6" Class="mr-2">@L["Rooms:"] @(roomList.Count(x => x.AssignedId == 4))</MudText>
+                        <MudSpacer />
+
+                        <MudSelect Margin="Margin.Dense" T="string" Label="RoomMaid" Variant="Variant.Outlined">
+                            <MudSelectItem Value="@("Room Maid Anna 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Betha 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Carla 6:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Dora 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Erna 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Frieda 8:00 Std")" />
+                            <MudSelectItem Value="@("Room Maid Getrud 4:30 Std")" />
+                            <MudSelectItem Value="@("Room Maid Helga 4:30 Std")" />
+
+                        </MudSelect>
+                    </MudAppBar>
+                </MudDropZone>
+            </MudPaper>
+            }
+
+        </ChildContent>
+        <ItemRenderer>
+            @* <MudListItem Text="@context.Name"> *@
+            @{
+                ReservationDto? resTemp;
+                resTemp = (reservations!.Count(x => x.RoomNumberId == context.Id)) > 0 ? reservations!.First(x => x.RoomNumberId == context.Id) : null;
+                categoryString = (categorySelectDtoList!.First(x => x.Id == context.CategoryId).Kz);
+            }
+            <HousekeepingRoom roomDto="context"
+                              hotelDate="Convert.ToDateTime(mandantDto!.HotelDate)"
+                              resDto="resTemp"
+                              category="@categoryString"
+                              manageRoom="true">
+            </HousekeepingRoom>
+
+            @* </MudListItem> *@
+        </ItemRenderer>
+    </MudDropContainer>
+}
+
+
+@code
+{
+    [Parameter]
+    public int MandantId { get; set; }
+
+    private List<RoomHousekeepingDto> roomList { get; set; } = new List<RoomHousekeepingDto>();
+    private List<RoomHousekeepingDto> roomListCurrent { get; set; } = new List<RoomHousekeepingDto>();
+    public MandantDto? mandantDto { get; set; }
+    public bool _loaded { get; set; } = false;
+
+    public List<CategorySelectDto>? categorySelectDtoList { get; set; }
+    public List<ReservationDto>? reservations { get; set; }
+    public string? categoryString { get; set; }
+
+    public bool showCleanRooms { get; set; } = false;
+    public int roomMaidsOnDuty { get; set; }
+
+    public int workTimeCL1 { get; set; }
+    public int workTimeCL2 { get; set; }
+    public int workTimeCL3 { get; set; }
+    public int workTimeCL4 { get; set; }
+    public int workTimeCL5 { get; set; }
+    public int workTimeCL6 { get; set; }
+    public int workTimeCL7 { get; set; }
+    public int workTimeCL8 { get; set; }
+
+    public string workTimeCL1String { get; set; } = "00:00";
+    public string workTimeCL2String { get; set; } = "00:00";
+    public string workTimeCL3String { get; set; } = "00:00";
+    public string workTimeCL4String { get; set; } = "00:00";
+    public string workTimeCL5String { get; set; } = "00:00";
+    public string workTimeCL6String { get; set; } = "00:00";
+    public string workTimeCL7String { get; set; } = "00:00";
+    public string workTimeCL8String { get; set; } = "00:00";
+
+    protected async override Task OnInitializedAsync()
+    {
+        mandantDto = await MandantsClient.GetAsync(MandantId);
+
+        SearchRoomsHousekeepingRequest searchRoomsHousekeepingRequest = new SearchRoomsHousekeepingRequest();
+        searchRoomsHousekeepingRequest.MandantId = MandantId;
+
+        roomList = (await RoomsClient.SearchRoomHousekeepingAsync(searchRoomsHousekeepingRequest)).ToList();
+        roomListCurrent = roomList.Where(x => x.Clean == false).ToList();
+        categorySelectDtoList = (await CategorysClient.GetCategorySelectAsync(-1, MandantId)).ToList();
+        GetReservationsByResKzRequest getReservationsByResKzRequest = new GetReservationsByResKzRequest();
+        getReservationsByResKzRequest.MandantId = MandantId;
+        getReservationsByResKzRequest.ResKz = "C";
+        reservations = (await ReservationsClient.GetReservationsByResKzAsync(getReservationsByResKzRequest)).ToList();
+
+        _loaded = true;
+    }
+
+    private void showCleanRoomsChanged(bool e)
+    {
+        if (e)
+        {
+            roomListCurrent = roomList.ToList();
+        }
+        else
+        {
+            roomListCurrent = roomList.Where(x => x.Clean == false).ToList();
+        }
+        showCleanRooms = e;
+
+        StateHasChanged();
+    }
+
+    private void roomMaidsValueChanged(int e)
+    {
+        roomMaidsOnDuty = e;
+    }
+
+    private void ItemUpdated(MudItemDropInfo<RoomHousekeepingDto> dropItem)
+    {
+        int zielId = Convert.ToInt16(dropItem.DropzoneIdentifier);
+        if (zielId == 0)
+        {
+            dropItem.Item!.AssignedId = 0;
+            dropItem.Item!.CleaningState = 0;
+        }
+        else
+        {
+            dropItem.Item!.AssignedId = zielId;
+            dropItem.Item!.CleaningState = 1;
+
+            if (zielId == 1) workTimeCL1 = roomList.Where(x => x.AssignedId == 1).Sum(x => x.MinutesDeparture);
+            TimeSpan worktime1 = TimeSpan.FromMinutes(workTimeCL1);
+            workTimeCL1String = worktime1.ToString("hh':'mm");
+
+            if (zielId == 2) workTimeCL2 = roomList.Where(x => x.AssignedId == 2).Sum(x => x.MinutesDeparture);
+            TimeSpan worktime2 = TimeSpan.FromMinutes(workTimeCL2);
+            workTimeCL2String = worktime2.ToString("hh':'mm");
+
+            if (zielId == 3) workTimeCL3 = roomList.Where(x => x.AssignedId == 3).Sum(x => x.MinutesDeparture);
+            TimeSpan worktime3 = TimeSpan.FromMinutes(workTimeCL3);
+            workTimeCL3String = worktime3.ToString("hh':'mm");
+
+            if (zielId == 4) workTimeCL4 = roomList.Where(x => x.AssignedId == 4).Sum(x => x.MinutesDeparture);
+            TimeSpan worktime4 = TimeSpan.FromMinutes(workTimeCL4);
+            workTimeCL4String = worktime4.ToString("hh':'mm");
+
+            if (zielId == 5) workTimeCL5 = roomList.Where(x => x.AssignedId == 5).Sum(x => x.MinutesDeparture);
+            TimeSpan worktime5 = TimeSpan.FromMinutes(workTimeCL5);
+            workTimeCL5String = worktime5.ToString("hh':'mm");
+
+            if (zielId == 6) workTimeCL6 = roomList.Where(x => x.AssignedId == 6).Sum(x => x.MinutesDeparture);
+            TimeSpan worktime6 = TimeSpan.FromMinutes(workTimeCL6);
+            workTimeCL6String = worktime6.ToString("hh':'mm");
+
+            if (zielId == 7) workTimeCL7 = roomList.Where(x => x.AssignedId == 7).Sum(x => x.MinutesDeparture);
+            TimeSpan worktime7 = TimeSpan.FromMinutes(workTimeCL7);
+            workTimeCL7String = worktime7.ToString("hh':'mm");
+
+            if (zielId == 8) workTimeCL8 = roomList.Where(x => x.AssignedId == 8).Sum(x => x.MinutesDeparture);
+            TimeSpan worktime8 = TimeSpan.FromMinutes(workTimeCL8);
+            workTimeCL8String = worktime8.ToString("hh':'mm");
+
+        }
+    }
+
+}

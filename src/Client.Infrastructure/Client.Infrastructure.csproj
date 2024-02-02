@@ -222,6 +222,107 @@
       <Compile Remove="ApiClient\FSHApi_20230617_4.cs" />
       <Compile Remove="ApiClient\FSHApi_20230619_1.cs" />
       <Compile Remove="ApiClient\FSHApi_20230621_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230628_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230628_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230628_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230628_4.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230628_5.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230701_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230715_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230715_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230717_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230717_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230718_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230718_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230723_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230723_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230723_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230724_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230724_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230724_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230724_4.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230725_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230803_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230803_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230803_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230803_4.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230803_5.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230803_6.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230805_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230812_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230812_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230821_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230822_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230822_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230827_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230827_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230828_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230828_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230831_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230831_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230831_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230901_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230901_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230901_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230901_4.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230901_5.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230906_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230910_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20230927_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231003_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231003_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231003_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231010_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231010_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231011_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231014_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231023_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231023_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231025_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231026_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231029_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231106_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231107_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231107_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231107_3.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231110_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231114_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231114_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231115_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231116_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231117_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231118_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231121_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231122_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231122_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231124_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231127_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231128_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231128_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231204_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231208_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231209_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231220_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231222_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231225_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231228_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20231231_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240102_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240103_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240103_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240104_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240104_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240105_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240105_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240118_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240118_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240119_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240124_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240124_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240126_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240126_2.cs" />
+      <Compile Remove="ApiClient\FSHApi_20240129_1.cs" />
+      <Compile Remove="ApiClient\FSHApi_220231020_1.cs" />
       <Compile Remove="ApiClient\FSHApi_Old.cs" />
       <Compile Remove="ApiClient\FSHApi_Output_20220302.cs" />
       <Compile Remove="ApiClient\FSHApi_Output_20220320.cs" />
@@ -239,8 +340,8 @@
         <PackageReference Include="Microsoft.Authentication.WebAssembly.Msal" Version="6.0.5" />
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
         <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
-        <PackageReference Include="Microsoft.Extensions.Localization" Version="6.0.5" />
-        <PackageReference Include="MudBlazor" Version="6.0.10" />
+        <PackageReference Include="Microsoft.Extensions.Localization" Version="6.0.16" />
+        <PackageReference Include="MudBlazor" Version="6.11.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
         <PackageReference Include="NSwag.MSBuild" Version="13.15.10">
             <PrivateAssets>all</PrivateAssets>

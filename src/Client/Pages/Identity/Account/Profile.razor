@@ -72,6 +72,15 @@
                                 For="@(() => _profileModel.Email)" Variant="Variant.Outlined"
                                 InputType="InputType.Email" Disabled=true />
                         </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudTextField @bind-Value="@_profileModel.Id" For="@(() => _profileModel.Id)"
+                                          Label="@L["UserId"]" Variant="Variant.Outlined" Disabled=true />
+                        </MudItem>
+                        <MudItem xs="12" md="6">
+                            <MudNumericField T="int?" @bind-Value="@_profileModel.MandantId" For="@(() => _profileModel.MandantId)"
+                                Label="@L["MandantId"]" Variant="Variant.Outlined" Disabled=true />
+                        </MudItem>
+
                     </MudGrid>
                 </MudCardContent>
                 <MudCardActions Class="pb-4 pl-4">

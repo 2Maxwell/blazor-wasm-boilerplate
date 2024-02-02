@@ -1,7 +1,32 @@
 ﻿@using FSH.BlazorWebAssembly.Client.Components.Cashier;
+@using FSH.BlazorWebAssembly.Client.Components.Persons;
+@using FSH.BlazorWebAssembly.Client.Components.Company;
+@using static FSH.BlazorWebAssembly.Client.Components.Invoice.CashierInvoiceAddress;
+@using System.Text.Json;
+@using System.Text;
+
 @inject IStringLocalizer<CashierDialog> L
 @inject IItemClient ItemsClient
 @inject IMandantsClient MandantsClient
+@inject IPersonsClient PersonsClient
+@inject ICompanysClient CompanysClient
+@inject IReservationsClient ReservationsClient
+@inject IBookingsClient BookingsClient
+@inject IPackagesClient PackagesClient
+@inject IInvoiceClient InvoiceClient
+@inject ICashierJournalClient CashierJournalClient
+@inject IJournalsClient JournalsClient
+@inject HttpClient _httpClient
+@inject IBoardsClient BoardsClient
+@inject IBoardItemsClient BoardItemsClient
+@inject ICategorysClient CategorysClient
+@inject IBookingPolicysClient BookingPolicysClient
+@inject ICancellationPolicysClient CancellationPolicysClient
+@inject IRatesClient RatesClient
+
+
+@inject IJSRuntime _jsRuntime
+
 
 
 <style>
@@ -17,209 +42,1330 @@
 
 @if (_loaded)
 {
-    <MudDialog Style="min-height:80%; min-width:85%">
+    @* <MudDialog Style="min-height:80%; min-width:90%"> *@
+    <MudDialog Style="min-height:1200px; min-width:90%">
         <TitleContent>
-            <MudText Typo="Typo.h6">
-                <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3 mb-n1" />
-                @L["Cashier"]
-            </MudText>
+            @if (CashierRegisterId > 0)
+            {
+                <MudGrid>
+
+                    <MudItem xs="3">
+                        <MudText Typo="Typo.button">
+                            <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3 mb-n1" />
+                            @L["Cashier"] [ @CashierRegisterName  |  @CashierRegisterId ]
+                        </MudText>
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudText Typo="Typo.button">
+                            <MudIcon Icon="@Icons.Material.Filled.DateRange" Class="mr-3 mb-n1" />
+                            @mandantDto.HotelDate!.Value.ToString("dd.MM.yyyy")
+                        </MudText>
+                        @* <MudButton OnClick="(() => cashierFunction = CashierFunctionEnum.SplitAmount)" Variant="Variant.Filled" Color="Color.Secondary"><MudText> SetFunction to SplitAmount </MudText></MudButton> *@
+                        @* <MudButton OnClick="(() => cashierFunction = CashierFunctionEnum.SplitPrice)" Variant="Variant.Filled" Color="Color.Secondary"><MudText> SetFunction to SplitPrice </MudText></MudButton> *@
+
+                    </MudItem>
+
+                </MudGrid>
+
+            }
+            else
+            {
+                <MudText Typo="Typo.h6">
+                    <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3 mb-n1" />
+                    @L["Cashier"] [ No CashierRegister selected ]
+                </MudText>
+            }
+
         </TitleContent>
         <DialogContent>
+
             <MudGrid>
+
                 <MudItem xs="12">
-                    <MudPaper Height="70px" Width="100%" Class="ma-2">
-                        <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                    <MudStack Row="true">
 
-                            <MudItem Style="width:200px;">
-                                <MudTextField T="int" @bind-Value="bookingLine.ItemNumber" Label="Item / Package Number" Variant="Variant.Text"></MudTextField>
+                        <MudItem xs="5">
+                            <MudPaper Height="70px" Width="100%" Class="ma-2">
+                            </MudPaper>
+                        </MudItem>
+
+                        <MudItem xs="7">
+                            <MudPaper Height="70px" Width="100%" Class="ma-2">
+                                <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+
+                                    <MudItem Style="width:200px;">
+                                        <MudTextField T="int" @bind-Value="bookingLine.ItemNumber" Label="Item / Package Nr" Variant="Variant.Text"></MudTextField>
+                                    </MudItem>
+
+                                    <MudItem Style="width:500px;">
+                                        <MudTextField @ref="refName" T="string" @bind-Value="bookingLine.Name" Label="Item / Package Name" Variant="Variant.Text"></MudTextField>
+                                    </MudItem>
+
+                                    <MudItem Style="width:150px">
+                                        <MudNumericField @ref="refAmount" T="decimal" Class="align-right" Value="@bookingLine.Amount" ValueChanged="((e) => AmountValueChanged(e)) " Format="F2" HideSpinButtons="true" Label="Amount" Variant="Variant.Text" />
+                                    </MudItem>
+
+                                    <MudItem Style="width:150px">
+                                        <MudNumericField @ref="refPrice" T="decimal" Class="align-right" @bind-ReadOnly="priceReadOnly" Value="@bookingLine.Price" ValueChanged="((e) => PriceValueChanged(e))" Format="F2" HideSpinButtons="true" Label="Price" Variant="Variant.Text" />
+                                    </MudItem>
+
+                                    <MudItem Style="width:150px">
+                                        <MudNumericField T="decimal" Class="align-right" @bind-Value="bookingLine.PriceTotal" Format="F2" ReadOnly="true" HideSpinButtons="true" Label="Total" Variant="Variant.Text" />
+                                    </MudItem>
+
+                                    <MudFab Color="Color.Tertiary" OnClick="AddBookingLine" Disabled="(bookingLine.PriceTotal == 0)" StartIcon="@Icons.Material.Filled.Check" DisableElevation="true" />
+                                    <MudButton OnClick="PaymentSetValues" Style="min-width:180px; min-height:45px;" Variant="Variant.Filled" Color="Color.Secondary"><MudText Typo="Typo.h5">@currentSplitSumme.ToString("N2")</MudText></MudButton>
+
+                                    </MudStack>
+                                </MudPaper>
                             </MudItem>
-
-                            <MudItem Style="width:500px;">
-                                <MudTextField @ref="refName" T="string" @bind-Value="bookingLine.Name" Label="Item / Package Name" Variant="Variant.Text"></MudTextField>
-                            </MudItem>
-
-                            <MudItem Style="width:150px">
-                                <MudNumericField @ref="refAmount" T="decimal" Class="align-right" Value="@bookingLine.Amount" ValueChanged="((e) => AmountValueChanged(e)) " Format="F2" HideSpinButtons="true" Label="Amount" Variant="Variant.Text" />
-                            </MudItem>
-
-                            <MudItem Style="width:150px">
-                                <MudNumericField @ref="refPrice" T="decimal" Class="align-right" Value="@bookingLine.Price" ValueChanged="((e) => PriceValueChanged(e))" Format="F2" HideSpinButtons="true" Label="Price" Variant="Variant.Text" />
-                            </MudItem>
-
-                            <MudItem Style="width:150px">
-                                <MudNumericField T="decimal" Class="align-right" @bind-Value="bookingLine.PriceTotal" Format="F2" ReadOnly="true" HideSpinButtons="true" Label="Total" Variant="Variant.Text" />
-                            </MudItem>
-
-                            <MudFab Color="Color.Tertiary" OnClick="AddBookingLine" StartIcon="@Icons.Material.Filled.Check" DisableElevation="true" />
-
-                            @if (bookingsTotalClickable)
-                            {
-                                <MudButton OnClick="PaymentSetValues" Style="min-width:300px; min-height:65px; margin-left:15px" Variant="Variant.Filled" Color="Color.Secondary">@bookingsTotal.ToString("N2")</MudButton>
-                            }
-                            else
-                            {
-                                <MudButton Style="min-width:300px; min-height:65px; margin-left:15px " Variant="Variant.Filled" Color="Color.Secondary"><MudText Typo="Typo.h5">@bookingsTotal.ToString("N2")</MudText></MudButton>
-                            }
 
                         </MudStack>
-                    </MudPaper>
-                </MudItem>
-                @*                <MudItem xs="3">
-            <MudPaper Height="400px" Width="100%" Class="mud-theme-primary">
-            </MudPaper>
 
-            </MudItem>
-            *@
-            <MudItem xs="8">
-                    <MudTabs Elevation="4" Rounded="true" AlwaysShowScrollButtons="true" Color="@Color.Secondary">
-                        <MudTabPanel Class="mb-3" Text="Items">
-                            <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-3 mb-2">
-                                <MudGrid Style="height:180px;">
-                                    @foreach (var item in itemsDto.Where(x => x.ItemNumber < 9000))
+                    </MudItem>
+
+                    <MudItem Style="min-height:1200px" xs="5">
+
+                        @if (reservationDto is not null)
+                    {
+                        <MudTabs Elevation="4" Rounded="true" AlwaysShowScrollButtons="false" Color="@Color.Info">
+
+                            <MudTabPanel Class="mb-3" Text="CheckOut">
+
+                                @if (reservationDto.Guest is not null)
+                                {
+                                    <MudPaper Class="pa-4 ma-2">
+                                        <MudStack Row="true">
+                                            <MudButton Variant="Variant.Filled" Color="Color.Primary">@L["Guest"]</MudButton>
+                                            <MudStack Justify="Justify.Center" Spacing="0">
+                                                <MudText Typo="Typo.body1">@($"{reservationDto.Guest.Name} {reservationDto.Guest.FirstName} {reservationDto.Guest.SalutationName}") </MudText>
+                                                <MudText Typo="Typo.body2">@($"{reservationDto.Guest.Address1} {reservationDto.Guest.Zip} {reservationDto.Guest.City}") </MudText>
+                                                <MudText Typo="Typo.body2">@($"{reservationDto.Guest.Telephone} {reservationDto.Guest.Email}") </MudText>
+                                            </MudStack>
+
+                                            <MudButton Variant="Variant.Filled" Color="Color.Primary">@L["Booker"]</MudButton>
+                                            <MudStack Justify="Justify.Center" Spacing="0">
+                                                <MudText Typo="Typo.body1">@($"{reservationDto.Booker.Name} {reservationDto.Booker.FirstName} {reservationDto.Booker.SalutationName}") </MudText>
+                                                <MudText Typo="Typo.body2">@($"{reservationDto.Booker.Address1} {reservationDto.Booker.Zip} {reservationDto.Booker.City}") </MudText>
+                                                <MudText Typo="Typo.body2">@($"{reservationDto.Booker.Telephone} {reservationDto.Booker.Email}") </MudText>
+                                            </MudStack>
+                                        </MudStack>
+                                    </MudPaper>
+
+                                }
+
+                                @if (reservationDto.Company is not null)
+                                {
+                                    <MudPaper Class="pa-4 ma-2">
+                                        <MudStack Row="true">
+                                            <MudButton Variant="Variant.Filled" Color="Color.Primary">@L["Company"]</MudButton>
+                                                @* <MudAvatar Size="Size.Large" Color="Color.Info">C</MudAvatar> *@
+                                                <MudStack Justify="Justify.Center" Spacing="0">
+                                                    @if (reservationDto.CompanyContact is not null)
+                                                {
+                                                    <MudText Typo="Typo.body1">@($"{reservationDto.Company.Name1} {reservationDto.CompanyContact.Name} {reservationDto.CompanyContact.FirstName} {reservationDto.CompanyContact.SalutationName}  ") </MudText>
+                                                }
+                                                else
+                                                {
+                                                    <MudText Typo="Typo.body1">@($"{reservationDto.Company.Name1}") </MudText>
+                                                }
+                                                @* <MudText Typo="Typo.body1"><MudText Typo="Typo.body1">@($"{reservationDto.Company.Name} {reservationDto.CompanyContact.Name} {reservationDto.CompanyContact.FirstName} {reservationDto.CompanyContact.SalutationName}  ") </MudText> *@
+                                                <MudText Typo="Typo.body1">@($"{reservationDto.Company.Address1} {reservationDto.Company.Zip} {reservationDto.Company.City}") </MudText>
+                                                <MudText Typo="Typo.body2">@($"{reservationDto.Company.Telephone} {reservationDto.Company.Email}") </MudText>
+                                            </MudStack>
+                                        </MudStack>
+                                    </MudPaper>
+                                }
+
+                                <MudPaper Class="pa-4 ma-2">
+                                    <MudStack Row="true">
+                                        <MudButton Variant="Variant.Filled" Color="Color.Primary">@L["Reservation"]</MudButton>
+                                        <MudStack Class="ml-2 mr-2" AlignItems="AlignItems.Center" Justify="Justify.Center">
+                                            <MudAvatar Size="Size.Large" Color="Color.Success">@reservationDto.ResKz</MudAvatar>
+                                            <MudText Typo="Typo.h5">@reservationDto.Id</MudText>
+                                        </MudStack>
+                                        <MudStack Justify="Justify.Center" Spacing="0">
+                                            @{
+                                                string options = "";
+                                                foreach (var option in reservationDto!.PackageExtendOptionDtos!)
+                                                {
+                                                    options += $"{option.PackageDto.Name}  {option.Amount}  {option.Price} {(option.Amount * option.Price)}\r\n";
+                                                }
+                                            }
+
+                                            <MudStack Row="true" Spacing="5" AlignItems="AlignItems.Center">
+                                                <MudText Typo="Typo.h5">@($"{reservationDto.Arrival!.Value.ToString("dd.MM.yyyy")}")</MudText>
+                                                <MudIcon Icon="@Icons.Material.Filled.KeyboardDoubleArrowRight" Size="Size.Large" />
+                                                <MudText Typo="Typo.h5">@($"{reservationDto.Departure!.Value.ToString("dd.MM.yyyy")}")</MudText>
+                                                <MudText Typo="Typo.h5">@($"{reservationDto.Departure!.Value.ToString("HH:mm")}")</MudText>
+                                            </MudStack>
+                                            <MudStack Row="true" Spacing="5" AlignItems="AlignItems.Center">
+                                                <MudButton Style="min-width:175px;" Variant="Variant.Outlined" Disabled="true"><MudText Typo="Typo.subtitle2">@L["Category"]:</MudText></MudButton>
+                                                <MudText Typo="Typo.h6">@($"{categorySelectDtoList!.First(x => x.Id == reservationDto.CategoryId).Kz}")</MudText>
+                                            </MudStack>
+                                            <MudStack Row="true" Spacing="5" AlignItems="AlignItems.Center">
+                                                <MudButton Style="min-width:175px;" Variant="Variant.Outlined" Size="Size.Small" Disabled="true"><MudText Typo="Typo.subtitle2">@L["A|C|B"]:</MudText></MudButton>
+                                                <MudText Typo="Typo.h6">@($"{getPaxSummary(reservationDto.PaxString)}")</MudText>
+                                            </MudStack>
+                                            <MudStack Row="true" Spacing="5" AlignItems="AlignItems.Center">
+                                                <MudButton Style="min-width:175px;" Variant="Variant.Outlined" Disabled="true"><MudText Typo="Typo.subtitle2">@L["Room"]:</MudText></MudButton>
+                                                <MudText Typo="Typo.h6">@($"{reservationDto.RoomNumber}") </MudText>
+                                            </MudStack>
+                                            <MudStack Row="true" Spacing="5" AlignItems="AlignItems.Center">
+                                                <MudButton Style="min-width:175px;" Variant="Variant.Outlined" Disabled="true"><MudText Typo="Typo.subtitle2">@L["Rate"]:</MudText></MudButton>
+                                                <MudText Typo="Typo.h6">@($"{rateDto.Name}") </MudText>
+                                            </MudStack>
+                                            <MudStack Row="true" Spacing="5" AlignItems="AlignItems.Center">
+                                                <MudButton Style="min-width:175px;" Variant="Variant.Outlined" Disabled="true"><MudText Typo="Typo.subtitle2">@L["BookingPolicy"]:</MudText></MudButton>
+                                                <MudText Typo="Typo.h6">@($"{bookingPolicySelectKzDtoList!.First(x => x.Id == reservationDto.BookingPolicyId).Kz}") </MudText>
+                                            </MudStack>
+                                            <MudStack Row="true" Spacing="5" AlignItems="AlignItems.Center">
+                                                    <MudButton Style="min-width:175px;" Variant="Variant.Outlined" Disabled="true"><MudText Typo="Typo.subtitle2">@L["CancellationPolicy"]:</MudText></MudButton>
+                                                <MudText Typo="Typo.h6">@($"{cancellationPolicySelectKzDtoList!.First(x => x.Id == reservationDto.CancellationPolicyId).Kz}") </MudText>
+                                            </MudStack>
+                                            <MudStack Row="true" Spacing="5" AlignItems="AlignItems.Center">
+                                                <MudButton Style="min-width:175px;" Variant="Variant.Outlined" Disabled="true"><MudText Typo="Typo.subtitle2">@L["Packages"]:</MudText></MudButton>
+                                                <MudText Typo="Typo.body1">@($"{reservationDto.RatePackages}") </MudText>
+                                            </MudStack>
+                                            <MudStack Row="true" Spacing="5" AlignItems="AlignItems.Center">
+                                                <MudButton Style="min-width:175px;" Variant="Variant.Outlined" Disabled="true"><MudText Typo="Typo.subtitle2">@L["Options"]:</MudText></MudButton>
+                                                <MudText Typo="Typo.body1">@($"{options}") </MudText>
+                                            </MudStack>
+                                        </MudStack>
+                                    </MudStack>
+
+                                    @if (boardDto is not null)
                                     {
-                                        string formattedTaxRate = item.TaxRate.ToString("N2");
-                                        <MudButton OnClick="(() => BonItemClick(item))">
-                                            <FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard MD="3" itemNumber="@item.ItemNumber" itemGroup="GroupId" productName="@item.Name" vatTitle="Vat" vat="@formattedTaxRate" priceTitle="Price" price="@item.Price"></FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard>
-                                        </MudButton>
+                                            <FSH.BlazorWebAssembly.Client.Components.Tellus.Board Display="Reservation" MandantId="reservationDto.MandantId" boardDto="boardDto" boardItems="boardItems"></FSH.BlazorWebAssembly.Client.Components.Tellus.Board>
                                     }
-                                </MudGrid>
 
-                            </MudPaper>
+                                </MudPaper>
+
+                            </MudTabPanel>
+
+                            <MudTabPanel Class="mb-3" Text="@($"Total | {bookingsTotal.ToString("N2")}")" OnClick="@(() => SetLeftView("Total", bookingsTotal))">
+                                    <ChildContent>
+                                        <MudPaper Style="overflow:auto" Height="62vh" Width="100%" Square="true" Class="mud-theme-primary">
+                                            <MudStack Class="gap-0">
+                                                @foreach (BookingLineSummaryLocal item in blSummaries.OrderBy(x => x.Date))
+                                            {
+
+                                                <CashierBonItem cashierFunction="@cashierFunction"
+                                                                item="@item"
+                                                                DeleteBookingLineSummary="@DeleteBookingLineSummary"
+                                                                SplitAmount="@SplitAmount"
+                                                                SplitPrice="@SplitPrice">
+                                                </CashierBonItem>
+                                            }
+                                        </MudStack>
+                                    </MudPaper>
+                                </ChildContent>
+                                <TabContent>
+                                    <MudAvatar Class="ml-n3 mr-2" Size="Size.Medium" Color="Color.Surface" Variant="Variant.Outlined">T</MudAvatar> <MudText Typo="Typo.h6">@SumInvoicePositions(0).ToString("N2")</MudText>
+                                </TabContent>
+                            </MudTabPanel>
+
+                            @if (CountInvoicePositions(1) > 0)
+                            {
+                                <MudTabPanel Class="mb-3" Text="@($"Split 1 | {SumInvoicePositions(1).ToString("N2")}")" OnClick="@(() => SetLeftView("Split1", SumInvoicePositions(1)))">
+                                    <ChildContent>
+                                        <MudPaper Style="overflow:auto" Height="62vh" Width="100%" Square="true" Class="mud-theme-primary">
+                                            <MudStack Class="gap-0">
+
+                                                @foreach (BookingLineSummaryLocal item in blSummaries.Where(x => x.InvoicePosition == 1).OrderBy(x => x.Date))
+                                                {
+
+                                                    <CashierBonItem cashierFunction="@cashierFunction"
+                                                                    item="@item"
+                                                                    DeleteBookingLineSummary="@DeleteBookingLineSummary"
+                                                                    SplitAmount="@SplitAmount"
+                                                                    SplitPrice="@SplitPrice">
+                                                    </CashierBonItem>
+                                                }
+
+                                            </MudStack>
+                                        </MudPaper>
+                                    </ChildContent>
+                                    <TabContent>
+                                        <MudAvatar Class="ml-n3 mr-2" Size="Size.Medium" Color="Color.Surface" Variant="Variant.Outlined">1</MudAvatar> <MudText Typo="Typo.h6">@SumInvoicePositions(1).ToString("N2")</MudText>
+                                    </TabContent>
+                                </MudTabPanel>
+                            }
+
+                            @if (CountInvoicePositions(2) > 0)
+                            {
+
+                                <MudTabPanel Class="mb-3" Text="@($"Split 2 | {SumInvoicePositions(2).ToString("N2")}")" OnClick="@(() => SetLeftView("Split2", SumInvoicePositions(2)))">
+                                    <ChildContent>
+                                        <MudPaper Style="overflow:auto" Height="62vh" Width="100%" Square="true" Class="mud-theme-primary">
+                                            <MudStack Class="gap-0">
+
+                                                @foreach (BookingLineSummaryLocal item in blSummaries.Where(x => x.InvoicePosition == 2).OrderBy(x => x.Date))
+                                                {
+
+                                                    <CashierBonItem cashierFunction="@cashierFunction"
+                                                                    item="@item"
+                                                                    DeleteBookingLineSummary="@DeleteBookingLineSummary"
+                                                                    SplitAmount="@SplitAmount"
+                                                                    SplitPrice="@SplitPrice">
+                                                    </CashierBonItem>
+                                                }
+
+                                            </MudStack>
+                                        </MudPaper>
+
+                                    </ChildContent>
+                                    <TabContent>
+                                        <MudAvatar Class="ml-n3 mr-2" Size="Size.Medium" Color="Color.Surface" Variant="Variant.Outlined">2</MudAvatar> <MudText Typo="Typo.body2">@SumInvoicePositions(2).ToString("N2")</MudText>
+                                    </TabContent>
+                                </MudTabPanel>
+                            }
+
+                            @if (CountInvoicePositions(3) != 0)
+                            {
+                                <MudTabPanel Class="mb-3" Text="@($"Split 3 | {SumInvoicePositions(3).ToString("N2")}")" OnClick="@(() => SetLeftView("Split3", SumInvoicePositions(3)))">
+                                    <ChildContent>
+                                        <MudPaper Style="overflow:auto" Height="62vh" Width="100%" Square="true" Class="mud-theme-primary">
+                                            <MudStack Class="gap-0">
+
+                                                @foreach (BookingLineSummaryLocal item in blSummaries.Where(x => x.InvoicePosition == 3).OrderBy(x => x.Date))
+                                                {
+
+                                                    <CashierBonItem cashierFunction="@cashierFunction"
+                                                                    item="@item"
+                                                                    DeleteBookingLineSummary="@DeleteBookingLineSummary"
+                                                                    SplitAmount="@SplitAmount"
+                                                                    SplitPrice="@SplitPrice">
+                                                    </CashierBonItem>
+                                                }
+
+                                            </MudStack>
+                                        </MudPaper>
+
+                                    </ChildContent>
+                                    <TabContent>
+                                        <MudAvatar Class="ml-n3 mr-2" Size="Size.Medium" Color="Color.Surface" Variant="Variant.Outlined">3</MudAvatar> <MudText Typo="Typo.body2">@SumInvoicePositions(3).ToString("N2")</MudText>
+                                    </TabContent>
+                                </MudTabPanel>
+                            }
+
+                            @if (CountInvoicePositions(4) != 0)
+                            {
+                                <MudTabPanel Class="mb-3" Text="@($"Split 4 | {SumInvoicePositions(4).ToString("N2")}")" OnClick="@(() => SetLeftView("Split4", SumInvoicePositions(4)))">
+                                    <ChildContent>
+                                        <MudPaper Style="overflow:auto" Height="62vh" Width="100%" Square="true" Class="mud-theme-primary">
+                                            <MudStack Class="gap-0">
+
+                                                @foreach (BookingLineSummaryLocal item in blSummaries.Where(x => x.InvoicePosition == 4).OrderBy(x => x.Date))
+                                                {
+
+                                                    <CashierBonItem cashierFunction="@cashierFunction"
+                                                                    item="@item"
+                                                                    DeleteBookingLineSummary="@DeleteBookingLineSummary"
+                                                                    SplitAmount="@SplitAmount"
+                                                                    SplitPrice="@SplitPrice">
+                                                    </CashierBonItem>
+                                                }
+
+                                            </MudStack>
+                                        </MudPaper>
+
+                                    </ChildContent>
+                                    <TabContent>
+                                        <MudAvatar Class="ml-n3 mr-2" Size="Size.Medium" Color="Color.Surface" Variant="Variant.Outlined">4</MudAvatar> <MudText Typo="Typo.body2">@SumInvoicePositions(4).ToString("N2")</MudText>
+                                    </TabContent>
+                                </MudTabPanel>
+                            }
+                        </MudTabs>
+                    }
+                    else
+                    {
+                        <MudPaper Style="overflow:auto" Height="62vh" Width="100%" Square="true" Class="mud-theme-primary">
+                            <MudStack Class="gap-0">
+
+                                @if (bonItemView)
+                                {
+                                    @foreach (BookingLineSummaryLocal item in blSummaries.OrderBy(x => x.Date))
+                                    {
+
+                                        <CashierBonItem cashierFunction="@cashierFunction"
+                                                        item="@item"
+                                                        DeleteBookingLineSummary="@DeleteBookingLineSummary"
+                                                        SplitAmount="@SplitAmount"
+                                                        SplitPrice="@SplitPrice">
+                                        </CashierBonItem>
+                                    }
+                                }
+                                else
+                                {
+                                    <MudCard Class="ma-2">
+                                        <MudCardHeader>
+                                            <CardHeaderContent>
+                                                <MudText Typo="Typo.h6">@L["Balances"]</MudText>
+                                                </CardHeaderContent>
+                                                <CardHeaderActions>
+                                                    @* <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" /> *@
+                                            </CardHeaderActions>
+                                        </MudCardHeader>
+                                        <MudCardContent>
+
+                                            <MudStack>
+
+                                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                                    <MudItem xs="6">
+                                                        <MudText Typo="Typo.h6">@L["Logis"]</MudText>
+                                                    </MudItem>
+                                                    <MudItem xs="6">
+                                                        <MudText Typo="Typo.h6">@L["0.00"]</MudText>
+                                                    </MudItem>
+                                                </MudStack>
+
+                                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                                    <MudItem xs="6">
+                                                        <MudText Typo="Typo.h6">@L["Extras"]</MudText>
+                                                    </MudItem>
+                                                    <MudItem xs="6">
+                                                        <MudText Typo="Typo.h6">@L["0.00"]</MudText>
+                                                    </MudItem>
+                                                </MudStack>
+
+                                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                                    <MudItem xs="6">
+                                                        <MudText Typo="Typo.h6">@L["Total"]</MudText>
+                                                    </MudItem>
+                                                    <MudItem xs="6">
+                                                        <MudText Typo="Typo.h6">@L["0.00"]</MudText>
+                                                    </MudItem>
+                                                </MudStack>
+
+                                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+
+                                                    <MudItem xs="6">
+                                                        <MudText Typo="Typo.h6">@L["Payment"]</MudText>
+                                                    </MudItem>
+                                                    <MudItem xs="6">
+                                                        <MudText Typo="Typo.h6">@L["0.00"]</MudText>
+                                                    </MudItem>
+                                                </MudStack>
+
+                                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                                    <MudGrid>
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.h6">@L["Invoice Total"]</MudText>
+                                                        </MudItem>
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.h6">@L["0.00"]</MudText>
+                                                        </MudItem>
+                                                    </MudGrid>
+                                                </MudStack>
+
+                                            </MudStack>
+
+                                        </MudCardContent>
+
+                                        <MudCardActions>
+                                            @* <MudButton Variant="Variant.Text" Color="Color.Primary">Read More</MudButton> *@
+                                        </MudCardActions>
+                                    </MudCard>
+
+                                    <MudCard Class="ma-2">
+                                        <MudCardHeader>
+                                            <CardHeaderContent>
+                                                <MudText Typo="Typo.h6">@L["Balances"]</MudText>
+                                            </CardHeaderContent>
+                                            <CardHeaderActions>
+                                                @* <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" /> *@
+                                            </CardHeaderActions>
+                                        </MudCardHeader>
+                                        <MudCardContent>
+
+                                        </MudCardContent>
+
+                                        <MudCardActions>
+                                            @* <MudButton Variant="Variant.Text" Color="Color.Primary">Read More</MudButton> *@
+                                        </MudCardActions>
+                                    </MudCard>
+
+                                }
+
+                            </MudStack>
+                        </MudPaper>
+                    }
 
 
+                </MudItem>
+
+                <MudItem Style="min-height:1200px" xs="7">
+                    <MudTabs Elevation="4" Rounded="true" AlwaysShowScrollButtons="true" Color="@Color.Secondary">
+
+                        <MudTabPanel Class="mb-3" Text="Items">
+                            @* <MudPaper Height="100%" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-3 mb-2 mud-theme-primary"> *@
+                            <MudGrid Style="height:180px;">
+                                @foreach (var item in itemsDto.Where(x => x.ItemNumber < 9000))
+                                {
+                                    string formattedTaxRate = item.TaxRate.ToString("N2");
+                                    <MudButton OnClick="(() => BonItemClick(item))">
+                                        <FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard MD="3" itemNumber="@item.ItemNumber" itemGroup="GroupId" productName="@item.Name" vatTitle="Vat" vat="@formattedTaxRate" priceTitle="Price" price="@item.Price" style="@GetStyle(item.ItemNumber)"></FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard>
+                                    </MudButton>
+                                }
+                            </MudGrid>
+                            @* </MudPaper> *@
                         </MudTabPanel>
+
                         <MudTabPanel Text="Packages">
-                            <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-center align-content-start">
-
-                            </MudPaper>
+                            @* <MudPaper Height="60vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-3 mb-2"> *@
+                            <MudGrid Style="height:180px;">
+                                @foreach (var item in packageExtendOptionDtos)
+                                {
+                                    <MudButton OnClick="(() => BonPackageClick(item))">
+                                        <FSH.BlazorWebAssembly.Client.Components.Cashier.CashierPackCard packageId="@item.PackageDto.Id" packageKz="@item.PackageDto.Kz" productName="@item.PackageDto.Name" vatTitle="Vat" vat="MIX" priceTitle="Price" price="@item.Price!.Value"></FSH.BlazorWebAssembly.Client.Components.Cashier.CashierPackCard>
+                                    </MudButton>
+                                }
+                            </MudGrid>
+                            @* </MudPaper> *@
                         </MudTabPanel>
-                        <MudTabPanel Text="Options">
-                            <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-3">
 
-                            </MudPaper>
-                        </MudTabPanel>
-
-                        <MudTabPanel Text="Payments">
-                            <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-3">
+                        @if (bookingsTotal != 0)
+                        {
+                            <MudTabPanel Text="Payments">
+                                @* <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-3"> *@
                                 @foreach (var item in itemsDto.Where(x => x.ItemNumber >= 9000))
                                 {
                                     string formattedTaxRate = item.TaxRate.ToString("N2");
                                     <MudButton OnClick="(() => BonItemClick(item))">
-                                        <FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard MD="3" itemNumber="@item.ItemNumber" itemGroup="GroupId" productName="@item.Name" vatTitle="Vat" vat="@formattedTaxRate" priceTitle="Price" price="@item.Price"></FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard>
+                                        <FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard MD="3" itemNumber="@item.ItemNumber" itemGroup="GroupId" productName="@item.Name" vatTitle="Vat" vat="@formattedTaxRate" priceTitle="Price" price="@item.Price" style="@GetStyle(item.ItemNumber)"></FSH.BlazorWebAssembly.Client.Components.Cashier.CashierItemCard>
                                     </MudButton>
                                 }
-                            </MudPaper>
+                                @* </MudPaper> *@
+                            </MudTabPanel>
+                        }
+
+                        @if (CashierRegisterId > 0 && reservationDto is null)
+                        {
+                            <MudTabPanel Text="Journal" OnClick="LoadCashierJournal">
+                                <br>
+                                <MudStack Row="true">
+                                    <MudButton OnClick="SetJournalAppearance" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.ListAlt" Color="Color.Error">@L["Show Journal / Summaries"]</MudButton>
+                                        <MudButton Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Print" Color="Color.Error">@L["Print CashierJournal"]</MudButton>
+                                        <MudDatePicker Label="@L["Date"]" Editable="true" Date="mandantDto.HotelDate" MaxDate="@mandantDto.HotelDate" Variant="Variant.Outlined" Placeholder="@L["Date"]" />
+
+
+                                    </MudStack>
+                                    <MudGrid>
+                                        <MudItem xs="12">
+                                            @if (journalChronological)
+                                        {
+                                            <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Style="height:100%">
+                                                <thead>
+                                                    <tr>
+                                                        <th>@L["Date"]</th>
+                                                        <th>@L["ItemNumber"]</th>
+                                                        <th>@L["Description"]</th>
+                                                        <th style="text-align:right">@L["Amount"]</th>
+                                                        <th style="text-align:right">@L["Price"]</th>
+                                                        <th style="text-align:right">@L["Total"]</th>
+                                                        <th>@L["ItemId"]</th>
+                                                        <th>@L["Source"]</th>
+                                                        <th>@L["InvoiceNumber"]</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (CashierJournalDto bl in cashierJournalDtos.OrderBy(x => x.JournalDate))
+                                                    {
+                                                        <tr>
+                                                            <td>
+                                                                @bl.JournalDate.ToString("dd.MM.yyyy hh:mm")
+                                                            </td>
+                                                            <td>
+                                                                @bl.ItemNumber
+                                                            </td>
+                                                            <td>
+                                                                @bl.Name
+                                                            </td>
+                                                            <td style="text-align:right">
+                                                                @Convert.ToDecimal(bl.Amount).ToString("N2")
+                                                            </td>
+                                                            <td style="text-align:right">
+                                                                @bl.Price.ToString("N2")
+                                                            </td>
+                                                            <td style="text-align:right">
+                                                                @bl.PriceTotal.ToString("N2")
+                                                            </td>
+                                                            <td>
+                                                                @bl.ItemId
+                                                            </td>
+                                                            <td>
+                                                                @bl.Source
+                                                            </td>
+                                                            <td>
+                                                                @{
+                                                                    string invoiceId = @bl.InvoiceId is not null ? $"{@bl.InvoiceId}-{@bl.InvoiceIdMandant}" : "";
+                                                                }
+                                                                @invoiceId
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </MudSimpleTable>
+                                        }
+                                        else
+                                        {
+                                            foreach (var itemnumber in itemNumbers)
+                                            {
+                                                <MudSimpleTable Hover="true" Dense="true" FixedHeader="true" Style="height:100%">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>@L["Date"]</th>
+                                                            <th>@L["ItemNumber"]</th>
+                                                            <th>@L["Description"]</th>
+                                                            <th style="text-align:right">@L["Amount"]</th>
+                                                            <th style="text-align:right">@L["Price"]</th>
+                                                            <th style="text-align:right">@L["Total"]</th>
+                                                            <th>@L["ItemId"]</th>
+                                                            <th>@L["Source"]</th>
+                                                            <th>@L["InvoiceNumber"]</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @{
+                                                            decimal total = 0;
+                                                        }
+
+                                                        @foreach (var item in cashierJournalDtos.Where(x => x.ItemNumber == itemnumber))
+                                                        {
+                                                            <tr>
+                                                                <td>
+                                                                    @item.JournalDate.ToString("dd.MM.yyyy hh:mm")
+                                                                </td>
+                                                                <td>
+                                                                    @item.ItemNumber
+                                                                </td>
+                                                                <td>
+                                                                    @item.Name
+                                                                </td>
+                                                                <td style="text-align:right">
+                                                                    @Convert.ToDecimal(item.Amount).ToString("N2")
+                                                                </td>
+                                                                <td style="text-align:right">
+                                                                    @item.Price.ToString("N2")
+                                                                </td>
+                                                                <td style="text-align:right">
+                                                                    @item.PriceTotal.ToString("N2")
+                                                                </td>
+                                                                <td>
+                                                                    @item.ItemId
+                                                                </td>
+                                                                <td>
+                                                                    @item.Source
+                                                                </td>
+                                                                <td>
+                                                                    @{
+                                                                        string invoiceId = @item.InvoiceId is not null ? $"{@item.InvoiceId}-{@item.InvoiceIdMandant}" : "";
+                                                                    }
+                                                                    @invoiceId
+                                                                </td>
+                                                                @{
+                                                                    total += item.PriceTotal;
+                                                                }
+                                                            </tr>
+                                                        }
+
+                                                        <tr>
+                                                            <td>
+                                                            </td>
+                                                            <td>
+                                                                @L["Total"]
+                                                            </td>
+                                                            <td>
+                                                            </td>
+                                                            <td>
+                                                            </td>
+                                                            <td style="text-align:right">
+                                                                @total.ToString("N2")
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </MudSimpleTable>
+                                            }
+                                        }
+
+                                    </MudItem>
+                                </MudGrid>
+
+                            </MudTabPanel>
+                        }
+
+                        <MudTabPanel Text=" Print Invoice">
+                            @* <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-3"> *@
+                            <MudGrid>
+
+                                <MudItem xs="6">
+                                    <FSH.BlazorWebAssembly.Client.Components.Person.PersonAutoComplete MaxItems="null" @bind-Value="@personId"></FSH.BlazorWebAssembly.Client.Components.Person.PersonAutoComplete>
+
+                                    <MudIconButton OnClick="((e) => AddPerson(maxWidth))" Class="mr-2" Icon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success" Title="@L["Add new Person"]" aria-label="Add new Person"></MudIconButton>
+                                    @if (personId != 0 && personId != mandantSettingDto.DefaultGuestId)
+                                    {
+                                        <MudIconButton OnClick="((e) => EditPerson(maxWidth))" Icon="@Icons.Material.Filled.Edit" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" Title="@L["Edit Person"]" aria-label="Edit Person"></MudIconButton>
+                                        <MudIconButton OnClick="((e) => SetPersonInvoiceAddress())" Class="mr-2" Icon="@Icons.Material.Filled.ContentPaste" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" Title="@L["Set InvoiceAddress"]" aria-label="Set InvoiceAddress"></MudIconButton>
+                                    }
+                                    @if (companyId > 0)
+                                    {
+                                        <MudIconButton OnClick="((e) => SetCompanyContactInvoiceAddress())" Icon="@Icons.Material.Filled.ContentPaste" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Surface" Title="@L["Set Contact in InvoiceAddress"]" aria-label="Set InvoiceAddress"></MudIconButton>
+                                    }
+
+                                </MudItem>
+
+                                <MudItem xs="6">
+                                    <CompanyAutoComplete MaxItems="null" @bind-Value="@companyId" Label="@L["Company Name, Zip, City"]" />
+
+                                    <MudIconButton OnClick="((e) => AddCompany(maxWidth))" Class="mr-2" Icon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
+                                    @if (companyId > 0)
+                                    {
+                                        <MudIconButton OnClick="((e) => EditCompany(maxWidth))" Icon="@Icons.Material.Filled.Edit" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" Title="@L["Edit Company"]" aria-label="Edit Company"></MudIconButton>
+                                        <MudIconButton OnClick="((e) => SetCompanyInvoiceAddress())" Icon="@Icons.Material.Filled.ContentPaste" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" Title="@L["Set InvoiceAddress"]" aria-label="Set InvoiceAddress"></MudIconButton>
+                                    }
+                                </MudItem>
+                                <MudItem xs="6">
+@*                                     <MudCard>
+                                        <MudCardHeader Class="pb-2">
+                                            <CardHeaderContent>
+                                                <MudStack Row="true" AlignItems="AlignItems.Center">
+                                                    <MudIcon Icon="@Icons.Material.Filled.Balance" Title="Favorite" />
+                                                    <MudText Typo="Typo.h6">@L["Invoice Balances"]</MudText>
+                                                    </MudStack>
+                                                </CardHeaderContent>
+                                            </MudCardHeader>
+
+                                            <MudCardContent Class="pa-2">
+
+                                                <MudStack>
+
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.h6">@L["Debit"]</MudText>
+                                                        </MudItem>
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.h6">@SumDebit(currentSplitView)</MudText>
+                                                        </MudItem>
+                                                    </MudStack>
+
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.h6">@L["Credit"]</MudText>
+                                                        </MudItem>
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.h6">@SumCredit(currentSplitView)</MudText>
+                                                        </MudItem>
+                                                    </MudStack>
+
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.h6">@L["Total"]</MudText>
+                                                        </MudItem>
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.h6">@(SumDebit(currentSplitView) - SumCredit(currentSplitView))</MudText>
+                                                        </MudItem>
+                                                    </MudStack>
+
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.h6">@L["Payment"]</MudText>
+                                                        </MudItem>
+                                                        <MudItem xs="6">
+                                                            <MudText Typo="Typo.h6">@SumPayment(currentSplitView)</MudText>
+                                                        </MudItem>
+                                                    </MudStack>
+
+                                                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                                                        <MudGrid>
+                                                            <MudItem xs="6">
+                                                                <MudText Typo="Typo.h6">@L["Saldo"]</MudText>
+                                                            </MudItem>
+                                                            <MudItem xs="6">
+                                                                <MudText Typo="Typo.h6">@(SumDebit(currentSplitView) - SumCredit(currentSplitView) - SumPayment(currentSplitView))</MudText>
+                                                            </MudItem>
+                                                        </MudGrid>
+                                                    </MudStack>
+
+                                                </MudStack>
+
+                                            </MudCardContent>
+
+
+                                        </MudCard>
+ *@
+                                        <MudSimpleTable Style="overflow-x: auto;" Striped="true">
+                                            <thead>
+                                                <tr>
+                                                    <th>
+                                                        <MudStack Row="true" AlignItems="AlignItems.Center">
+
+                                                            <MudIcon Icon="@Icons.Material.Filled.Balance" Title="Favorite" />
+                                                            <MudText Typo="Typo.h6">@L["Invoice Balances"]</MudText>
+                                                        </MudStack>
+                                                    </th>
+                                                    <th></th>
+                                                    <th></th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Debit</td>
+                                                    <td style="text-align:right">
+                                                        @CountDebit(currentSplitView)
+                                                    </td>
+                                                    <td style="text-align:right">
+                                                        @SumDebit(currentSplitView).ToString("N2")
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                            <tr>
+                                                <td>Credit</td>
+                                                    <td style="text-align:right">
+                                                        @CountCredit(currentSplitView)
+                                                    </td>
+                                                <td></td>
+                                                <td style="text-align:right">
+                                                    @SumCredit(currentSplitView).ToString("N2")
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Total</td>
+                                                <td></td>
+                                                <td></td>
+                                                <td style="text-align:right">
+                                                    @((SumDebit(currentSplitView) - SumCredit(currentSplitView)).ToString("N2"))
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Payment</td>
+                                                <td></td>
+                                                <td></td>
+                                                <td style="text-align:right">
+                                                    @SumPayment(currentSplitView).ToString("N2")
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>Saldo</td>
+                                                <td></td>
+                                                <td></td>
+                                                <td style="text-align:right">
+                                                    @((SumDebit(currentSplitView) - SumCredit(currentSplitView) - SumPayment(currentSplitView)).ToString("N2"))
+                                                </td>
+                                            </tr>
+
+                                        </tbody>
+                                    </MudSimpleTable>
+
+
+
+                                    </MudItem>
+                                    <MudItem xs="6">
+                                        <FSH.BlazorWebAssembly.Client.Components.Invoice.CashierInvoiceAddress invoiceAddress="@invoiceAddress"></FSH.BlazorWebAssembly.Client.Components.Invoice.CashierInvoiceAddress>
+                                    </MudItem>
+
+                                    <MudItem xs="12">
+                                        <MudButton OnClick="@((e) => CheckOutToPrinter())" Style="Height:90px" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                                            <MudButton Color="Color.Tertiary">@currentSplitSumme.ToString("N2")</MudButton>
+                                            <MudFab Color="Color.Secondary" Size="Size.Small" Label="@currentSplitView.ToString()"></MudFab>
+                                            <MudText Typo="Typo.h4">
+                                                @L["Check Out Target: Print Invoice"]
+                                        </MudText>
+                                    </MudButton>
+                                </MudItem>
+
+                            </MudGrid>
+                            @* </MudPaper> *@
                         </MudTabPanel>
+
+                        @if (bookingsTotal != 0 && reservationDto is null)
+                        {
+                            <MudTabPanel OnClick="GetGuestInHouse" Text="Book to Room">
+                                <MudGrid>
+                                    <MudItem xs="12">
+                                        @{
+                                            string[] headings = { "", "ResId", "Arrival", "Departure", "GM", "Room", "Booker", "Guest", "Company" };
+                                        }
+
+                                        <MudTable Items="reservationDtos" Hover="true" Dense="true" Striped="true" Bordered="true" Breakpoint="Breakpoint.Sm" Loading="false" LoadingProgressColor="Color.Info">
+                                            <HeaderContent>
+                                                @foreach (var h in headings)
+                                                {
+                                                    <MudTh>@h</MudTh>
+                                                }
+                                            </HeaderContent>
+                                            <RowTemplate>
+                                                <MudTd>
+                                                    <MudIconButton OnClick="@((e) => SelectInvoiceTargetGuestInHouse(context.Id))" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton>
+                                                </MudTd>
+                                                <MudTd>@context.Id</MudTd>
+                                                    <MudTd>@Convert.ToDateTime(context.Arrival).ToShortDateString()</MudTd>
+                                                    <MudTd>@Convert.ToDateTime(context.Departure).ToShortDateString()</MudTd>
+                                                    <MudTd><MudCheckBox Checked="@context.IsGroupMaster" ReadOnly="true" Color="Color.Secondary"> @(context.GroupMasterId > 0 ? context.GroupMasterId : "")</MudCheckBox></MudTd>
+                                                    <MudTd>@context.RoomNumber</MudTd>
+                                                    <MudTd>@context.BookerName, @context.BookerFirstName, @context.BookerSalutationName @context.BookerTitle</MudTd>
+
+                                                    @if (context.GuestName != null)
+                                                {
+                                                    <MudTd>@context.GuestName, @context.GuestFirstName, @context.GuestSalutationName @context.GuestTitle</MudTd>
+                                                }
+                                                else
+                                                {
+                                                    <MudTd Style="@($"color:{Colors.DeepOrange.Accent2};")">
+                                                        <MudStack Row="true" Justify="Justify.FlexStart" AlignItems="AlignItems.Center">
+                                                            <MudIcon Icon="@Icons.Material.Filled.AddCircle" Title="Add" />
+                                                            @L["no GuestName"]
+                                                        </MudStack>
+                                                    </MudTd>
+                                                }
+                                                <MudTd>@(context.CompanyName1 != null ? context.CompanyName1 : "")</MudTd>
+
+                                            </RowTemplate>
+                                        </MudTable>
+
+                                    </MudItem>
+
+                                    <MudItem xs="12">
+                                        <MudButton OnClick="@((e) => CheckOutToRoom())" Style="Height:90px" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                                            <MudText Typo="Typo.h4">
+                                                @L["Check Out Target"]: @invoiceTarget
+                                            </MudText>
+                                        </MudButton>
+                                    </MudItem>
+
+
+                                </MudGrid>
+
+                            </MudTabPanel>
+                        }
+
+                        @if (reservationDto is not null)
+                        {
+                            <MudTabPanel Text="Split">
+                                @* <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-1"> *@
+
+                                <MudDropContainer T="BookingLineSummaryLocal" Items="blSummaries" ItemsSelector="@((item,dropzone) => item.InvoicePosition == Convert.ToInt16(dropzone))" ItemDropped="DroppedSplitItemUpdated" Class="d-flex flex-wrap flex-grow-1">
+                                    <ChildContent>
+                                        @for (int i = 1; i < 5; i++)
+                                        {
+                                            var dropzone = i;
+                                            <MudPaper Style="overflow-x:auto" Class="ma-2 border-solid border-2 mud-border-primary pa-4" Height="28vh" Width="48%">
+                                                <MudList Clickable="true" Dense="true" Class="d-flex flex-column mud-height-full">
+                                                    <MudListSubheader Class="mb-n3">Split @dropzone   @L["Total Invoiceposition: "] @SumInvoicePositions(dropzone).ToString("N2")</MudListSubheader>
+                                                        <MudDropZone T="BookingLineSummaryLocal" Identifier="@dropzone.ToString()" Class="flex-grow-1" />
+                                                    </MudList>
+                                                </MudPaper>
+                                        }
+                                    </ChildContent>
+                                    <ItemRenderer>
+
+                                        <MudListItem>
+                                            <CashierBonItemSplit item="@context">
+                                            </CashierBonItemSplit>
+                                        </MudListItem>
+
+                                    </ItemRenderer>
+                                </MudDropContainer>
+
+                                @* </MudPaper> *@
+                            </MudTabPanel>
+                        }
+
+                        @if (reservationDto is not null)
+                        {
+                            <MudTabPanel Text="Transfer" OnClick="GetGuestInHouse">
+                                @* <MudPaper Height="100vh" Width="100%" Class="d-flex flex-wrap justify-space-between align-content-start gap-1"> *@
+
+                                <MudGrid>
+                                    <MudItem xs="12">
+                                        <MudItem xs="6">
+
+                                        </MudItem>
+                                        @if (reservationDtos is not null && reservationDtos.Count > 0)
+                                        {
+                                            <MudItem xs="6">
+                                                <MudSelect Value="reservationIdTransfer" ValueChanged="((e) => OnTransferReservationChanged(e))" MaxHeight="400" Dense="true" T="int" Label="Transfer Reservation" Variant="Variant.Outlined">
+                                                    <MudSelectItem T="int" Value="0">@L["Select Reservation"]</MudSelectItem>
+                                                        @foreach (var item in reservationDtos.Where(x => x.Id != reservationDto.Id).OrderBy(x => x.RoomNumber))
+                                                    {
+                                                        <MudSelectItem T="int" Value="@item.Id">
+                                                            <MudText Typo="Typo.h6">
+                                                                @item.RoomNumber | @item.Id
+
+                                                                @if (item.GuestId is not null)
+                                                                {
+                                                                    @item.GuestSalutationName  @item.GuestFirstName  @item.GuestName
+                                                                }
+                                                                else
+                                                                {
+                                                                    @item.BookerSalutationName  @item.BookerFirstName  @item.BookerName
+                                                                }
+                                                            </MudText>
+                                                        </MudSelectItem>
+                                                    }
+
+                                                </MudSelect>
+                                            </MudItem>
+
+                                        }
+
+                                    </MudItem>
+                                </MudGrid>
+
+                                @if (reservationDtoTransfer is not null)
+                                {
+
+                                    <MudDropContainer T="BookingLineSummaryLocal" Items="blSummariesTransfer" ItemsSelector="@((item,dropzone) => item.ReservationId == Convert.ToInt16(dropzone))" ItemDropped="DroppedTransferItemUpdated" Class="d-flex flex-wrap flex-grow-1">
+
+                                        <ChildContent>
+                                            @{
+                                                var counter = 1;
+                                            }
+
+                                            @foreach (int id in reservationTransferIds)
+                                            {
+                                                var dropzone = id;
+
+                                                <MudPaper Style="overflow-x:auto" Class="ma-2 border-solid border-2 mud-border-primary pa-4" Height="50vh" Width="48%">
+                                                    <MudList Clickable="true" Dense="true" Class="d-flex flex-column mud-height-full">
+                                                        <MudListSubheader Class="mb-n3">
+                                                            @if (dropzone == reservationTransferIds[0])
+                                                            {
+                                                                <MudStack Row="true">
+                                                                    <MudText Typo="Typo.h6">Split @dropzone.ToString()   @L["Total Invoiceposition: "] @SumReservationTransferById(dropzone).ToString("N2")</MudText>
+                                                                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardDoubleArrowRight" Variant="Variant.Outlined"
+                                                                                       Color="Color.Primary"
+                                                                                       Size="Size.Small"
+                                                                                       Title="@L["All Positions to right"]" />
+                                                                    </MudStack>
+                                                            }
+                                                            else
+                                                            {
+                                                                <MudStack Row="true">
+                                                                    <MudIconButton Icon="@Icons.Material.Filled.KeyboardDoubleArrowLeft" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Title="@L["All Positions to left"]" />
+                                                                    <MudText Typo="Typo.h6">Split @dropzone.ToString()   @L["Total Invoiceposition: "] @SumReservationTransferById(dropzone).ToString("N2")</MudText>
+                                                                    </MudStack>
+                                                            }
+
+                                                        </MudListSubheader>
+                                                        <MudDropZone T="BookingLineSummaryLocal" Identifier="@dropzone.ToString()" Class="flex-grow-1" />
+                                                    </MudList>
+                                                </MudPaper>
+                                                counter++;
+                                            }
+
+                                        </ChildContent>
+
+                                        <ItemRenderer>
+
+                                            <MudListItem>
+                                                <CashierBonItemSplit item="@context">
+                                                </CashierBonItemSplit>
+                                            </MudListItem>
+
+                                        </ItemRenderer>
+                                    </MudDropContainer>
+                                }
+                                @* </MudPaper> *@
+                            </MudTabPanel>
+                        }
+
+                        @if (reservationDto is not null)
+                        {
+                            <MudTabPanel Text="ReservationDetails">
+
+                                @if (boardDto is not null)
+                                {
+                                    <MudItem md="4" xs="12">
+                                        <FSH.BlazorWebAssembly.Client.Components.Tellus.Board Display="Reservation" MandantId="reservationDto.MandantId" boardDto="boardDto" boardItems="boardItems"></FSH.BlazorWebAssembly.Client.Components.Tellus.Board>
+                                    </MudItem>
+                                }
+
+
+
+                            </MudTabPanel>
+                        }
+
 
                     </MudTabs>
 
                 </MudItem>
 
-                <MudItem xs="4">
-                    <MudPaper Height="100vh" Width="100%" Square="true" Class="mud-theme-primary">
-                        <MudStack Class="gap-0">
-@*                            @foreach (var item in bookingLinesBooked)
-                            {
-                                <MudPaper Class="mt-2 ml-2 mr-2 mb-n2 pa-4">
+                @* <MudItem xs="12">
+            <MudPaper Class="pa-16 ma-2 mud-theme-primary" Elevation="3"></MudPaper>
 
-                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-
-                                        <MudIconButton OnClick="()=>DeleteBookingLine(item)" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton>
-
-                                        <MudText Style="width:17%; text-align:right" Typo="Typo.h4">@item.Amount.ToString("N2")</MudText>  <MudText Style="width:3%;" Typo="Typo.h5"> X </MudText>
-
-                                        <MudStack Style="width:50%; margin-left:10px;" Justify="Justify.Center" Spacing="0">
-                                            <MudText Typo="Typo.body1">@item.Name</MudText>
-                                            <MudText Typo="Typo.body2">@item.Price.ToString("N2")</MudText>
-                                        </MudStack>
-
-                                        <MudText Style="width:30%; text-align:right" Typo="Typo.h4">@item.PriceTotal.ToString("N2")</MudText>
-
-                                    </MudStack>
-
-                                </MudPaper>
-                            }
-*@
-                            @foreach (BookingLineSummaryLocal item in blSummaries)
-                            {
-                                <MudPaper Class="mt-2 ml-2 mr-2 mb-n2 pa-4">
-                                    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
-
-                                        <MudIconButton OnClick="() => DeleteBookingLineSummary(item)" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton>
-
-                                        <MudText Style="width:17%; text-align:right" Typo="Typo.h4">@Convert.ToDecimal(item.Amount).ToString("N2")</MudText>  <MudText Style="width:3%;" Typo="Typo.h5"> X </MudText>
-
-                                        <MudStack Style="width:50%; margin-left:10px;" Justify="Justify.Center" Spacing="0">
-                                            <MudText Typo="Typo.body1">@item.Description</MudText>
-                                            <MudText Typo="Typo.body2">@item.Price.ToString("N2")</MudText>
-                                             @item.Description @item.TaxLine @item.InvoicePosition
-                                        </MudStack>
-
-                                        <MudText Style="width:30%; text-align:right" Typo="Typo.h4">@item.Total.ToString("N2")</MudText>
-
-                                    </MudStack>
-
-                                </MudPaper>
+            </MudItem> *@
 
 
-
-
-
-                            }
-
-
-
-                        </MudStack>
-                    </MudPaper>
-                </MudItem>
             </MudGrid>
 
         </DialogContent>
         <DialogActions>
-            <MudGrid>
-                <MudItem xs="12">
-                    <MudButton Style="Height:90px" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
-                        <MudText Typo="Typo.h3">
-                            @L["Check Out Cashier"]
-                        </MudText>
-                    </MudButton>
-                </MudItem>
-            </MudGrid>
+            @* <MudItem xs="12">
+        <MudPaper Class="d-flex flex-grow-1 gap-4" Elevation="0">
+        <MudPaper Class="py-16 flex-1 mud-theme-primary" />
+        </MudPaper>
+        </MudItem> *@
         </DialogActions>
-
     </MudDialog>
 }
 
 @code {
+    [CascadingParameter]
+    public MudDialogInstance MudDialog { get; set; }
+
     [Parameter]
     public MandantDto mandantDto { get; set; }
+    [Parameter]
+    public int CashierRegisterId { get; set; }
+    [Parameter]
+    public string? CashierRegisterName { get; set; }
+
+    // Hinzugefügt für Reservierung CheckOut Funktion
+    [Parameter]
+    public int reservationId { get; set; }
+
+    public MandantSettingDto mandantSettingDto { get; set; }
     public bool _loaded { get; set; } = false;
     public BookingLine bookingLine { get; set; } = new();
     // public List<BookingLine> bookingLinesBooked { get; set; } = new();
     public List<ItemCashierDto> itemsDto { get; set; }
-    private MudTextField<string> refName;
-    private MudNumericField<decimal> refAmount;
-    private MudNumericField<decimal> refPrice;
+    public List<CashierJournalDto> cashierJournalDtos { get; set; } = new List<CashierJournalDto>();
+    public List<int> itemNumbers { get; set; } = new List<int>();
+    private MudTextField<string>? refName;
+    private MudNumericField<decimal>? refAmount;
+    private MudNumericField<decimal>? refPrice;
     public decimal bookingsTotal { get; set; } = 0;
     public bool bookingsTotalClickable { get; set; }
     public List<BookingLineSummaryLocal> blSummaries { get; set; } = new List<BookingLineSummaryLocal>();
+    public List<BookingLineSummaryLocal> blSummariesTransfer { get; set; } = new List<BookingLineSummaryLocal>();
 
+    public int personId { get; set; }
+    public int companyId { get; set; }
+    public int contactId { get; set; }
+    public bool journalChronological { get; set; } = true;
+
+    DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    private UpdatePersonRequest _updatePersonRequest { get; set; } = new();
+    private UpdateCompanyRequest _updateCompanyRequest { get; set; } = new();
+
+    public InvoiceAddress invoiceAddress { get; set; } = new();
+    public List<ReservationListDto>? reservationDtos { get; set; }
+    public string invoiceTarget { get; set; } = string.Empty;
+    public int checkOutResId { get; set; }
+
+    public List<PackageExtendDto> packageExtendOptionDtos { get; set; } = new List<PackageExtendDto>();
+    public CreateInvoiceRequest createInvoiceRequest { get; set; } = new();
+
+    public ReservationDto? reservationDto { get; set; }
+    public int reservationIdTransfer { get; set; }
+    public ReservationDto? reservationDtoTransfer { get; set; }
+    public List<int> reservationTransferIds { get; set; } = new List<int>();
+    // public List<CashierBalances> cashierBalances { get; set; } = new List<CashierBalances>();
+    public List<CategorySelectDto>? categorySelectDtoList { get; set; }
+    public List<BookingPolicySelectKzDto>? bookingPolicySelectKzDtoList { get; set; }
+    public List<CancellationPolicySelectKzDto> cancellationPolicySelectKzDtoList { get; set; }
+    public RateDto rateDto { get; set; }
+    public bool priceReadOnly { get; set; } = false;
+
+
+    // Funktionen: Transfer To Room, Change InvoicePosition, Split Amount, Split Price, Merge BLSummaries (Zusammenfassen)
+    public CashierFunctionEnum cashierFunction { get; set; } = CashierFunctionEnum.None;
+    public bool bonItemView { get; set; } = true;
+    public int currentSplitView { get; set; } = 0;
+    public decimal currentSplitSumme { get; set; } = 0;
+
+    public BoardDto boardDto { get; set; } = new();
+    public List<BoardItemDto>? boardItems { get; set; }
 
 
     protected async override Task OnInitializedAsync()
     {
+        mandantSettingDto = await MandantsClient.GetMandantSettingAsync(mandantDto.Id);
+
         GetItemsCashierRequest getItemsCashierRequest = new();
         getItemsCashierRequest.MandantId = mandantDto.Id;
         getItemsCashierRequest.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
 
         itemsDto = (await ItemsClient.GetItemsCashierAsync(getItemsCashierRequest)).ToList();
+        packageExtendOptionDtos = (await PackagesClient.GetPackageExtendsAsync(mandantDto.Id, PackageTargetEnum.Cashier, mandantDto.HotelDate, mandantDto.HotelDate)).ToList();
+
+        // CheckOut Reservierung
+        if (reservationId > 0)
+        {
+            reservationDto = await ReservationsClient.GetAsync(reservationId, mandantDto.Id);
+            blSummaries = (reservationDto!.BookingLineSummaries.Adapt<List<BookingLineSummaryLocal>>()).ToList(); //.BookingLines.Where(x => x.ItemNumber < 9000).GroupBy(x => x.BookingLineNumberId).Select(x => new BookingLineSummaryLocal { SourceList = x.ToList() }).ToList();
+            SumBookingLinesList();
+            if (reservationDto.CompanyId is not null && reservationDto.CompanyId > 0)
+            {
+                companyId = Convert.ToInt32(reservationDto.CompanyId);
+            }
+            if (reservationDto.GuestId is not null && reservationDto.GuestId > 0)
+            {
+                personId = Convert.ToInt32(reservationDto.GuestId);
+            }
+            categorySelectDtoList = (await CategorysClient.GetCategorySelectAsync(-1, mandantDto.Id)).ToList();
+            bookingPolicySelectKzDtoList = (await BookingPolicysClient.GetBookingPolicySelectKzAsync(mandantDto.Id)).ToList();
+            cancellationPolicySelectKzDtoList = (await CancellationPolicysClient.GetCancellationPolicySelectKzAsync(reservationDto.MandantId)).ToList();
+            rateDto = await RatesClient.GetAsync(reservationDto.RateId);
+            GetBoardDetails();
+
+        }
+        // GetGuestInHouse();
         _loaded = true;
     }
+
+    private void SetLeftView(string view, decimal viewSumme)
+    {
+        if (view.Equals("Total")) currentSplitView = 0;
+        if (view.Equals("Split1")) currentSplitView = 1;
+        if (view.Equals("Split2")) currentSplitView = 2;
+        if (view.Equals("Split3")) currentSplitView = 3;
+        if (view.Equals("Split4")) currentSplitView = 4;
+        currentSplitSumme = viewSumme;
+    }
+
+    private string getPaxSummary(string? paxString)
+    {
+        string result = string.Empty;
+        if (paxString != null)
+        {
+            Pax? pax = JsonSerializer.Deserialize<Pax>(paxString!);
+            if (pax != null)
+            {
+                result += pax.Adult + "|" + pax.Children.Count() + "|" + pax.Beds;
+            }
+        }
+
+        return result;
+    }
+
+
+    private async void GetBoardDetails()
+    {
+        GetBoardBySourceRequest request = new GetBoardBySourceRequest();
+        request.MandantId = mandantDto.Id;
+        request.SourceId = reservationDto!.Id;
+        request.Source = "reservation";
+        boardDto = await BoardsClient.GetBoardBySourceAsync(request);
+
+        if (boardDto is not null)
+        {
+            GetBoardItemByBoardIdRequest request2 = new GetBoardItemByBoardIdRequest();
+            request2.MandantId = mandantDto.Id;
+            request2.BoardId = boardDto.Id;
+                        
+            boardItems = (await BoardItemsClient.GetBoardItemByBoardIdAsync(request2)).ToList();
+        }
+
+        StateHasChanged();
+    }
+
+    private async void OnTransferReservationChanged(int resId)
+    {
+        reservationDtoTransfer = await ReservationsClient.GetAsync(resId, mandantDto.Id);
+
+        if (reservationDtoTransfer.BookingLineSummaries is not null && reservationDtoTransfer.BookingLineSummaries.Count > 0)
+        {
+            blSummariesTransfer = (reservationDtoTransfer.BookingLineSummaries!.Adapt<List<BookingLineSummaryLocal>>()).ToList();
+        }
+
+        foreach (var item in blSummaries)
+        {
+            blSummariesTransfer.Add(item);
+        }
+
+        reservationTransferIds.Clear();
+        reservationTransferIds.Add(reservationDto.Id);
+        reservationTransferIds.Add(reservationDtoTransfer.Id);
+        StateHasChanged();
+    }
+
+    private void DroppedTransferItemUpdated(MudItemDropInfo<BookingLineSummaryLocal> dropItem)
+    {
+        foreach (var item in dropItem.Item!.SourceList)
+        {
+            item.ReservationId = Convert.ToInt16(dropItem.DropzoneIdentifier);
+
+            if (Convert.ToInt32(dropItem.DropzoneIdentifier) != reservationDto.Id)
+            {
+                item.Name = item.Name + $" {reservationDto.RoomNumber}|{reservationDto.Id} {reservationDto!.Guest.Name}";
+            }
+            else
+            {
+                item.Name = item.Name + $" {reservationDtoTransfer.RoomNumber}|{reservationDtoTransfer.Id} {reservationDtoTransfer!.Guest.Name}";
+            }
+
+            // übertragen des Item in die blSummaries oder entfernen aus blSummaries und gleichzeitig kenntlich
+            // machen, dass ein Update in BookingsDatenbank erfolgen muss.
+        }
+
+        StateHasChanged();
+    }
+
+    private void changeBonItemView()
+    {
+        bonItemView = !bonItemView;
+        StateHasChanged();
+    }
+
+    private void DroppedSplitItemUpdated(MudItemDropInfo<BookingLineSummaryLocal> dropItem)
+    {
+        foreach (var item in dropItem.Item!.SourceList)
+        {
+            item.InvoicePos = Convert.ToInt16(dropItem.DropzoneIdentifier);
+        }
+        // dropItem.Item.InvoicePosition = dropItem.DropzoneIdentifier;
+        StateHasChanged();
+    }
+
+    #region "Journal"
+
+    private async void LoadCashierJournal()
+    {
+        if (_loaded)
+        {
+            GetCashierJournalOpenRequest getCashierJournalRequest = new();
+            getCashierJournalRequest.MandantId = mandantDto.Id;
+            getCashierJournalRequest.CashierRegisterId = CashierRegisterId;
+
+            cashierJournalDtos = (await CashierJournalClient.GetCashierJournalOpenAsync(getCashierJournalRequest)).ToList();
+            CashierJournalGrouped();
+            StateHasChanged();
+
+        }
+    }
+
+    private void SetJournalAppearance()
+    {
+        // Schalte journalChronological um
+        journalChronological = !journalChronological;
+        StateHasChanged();
+    }
+
+    private void CashierJournalGrouped()
+    {
+        // aus der Liste der Buchungen eine Liste mit jeder Itemnumber filtern, jede Itemnumber nur einmal
+
+        foreach (var item in cashierJournalDtos.OrderBy(x => x.ItemNumber))
+        {
+            if (!itemNumbers.Contains(item.ItemNumber))
+            {
+                itemNumbers.Add(item.ItemNumber);
+            }
+        }
+    }
+
+    #endregion
+
+    #region "Booking Item and Packages"
 
     private async void BonItemClick(ItemCashierDto item)
     {
         bookingLine = new();
-        bookingLine.DateBooking = DateTime.Now;
+        bookingLine.DateBooking = mandantDto.HotelDate;
         bookingLine.Amount = 1;
         bookingLine.ItemNumber = item.ItemNumber;
         bookingLine.ItemId = item.Id;
@@ -227,53 +1373,362 @@
         bookingLine.Price = item.Price;
         bookingLine.TaxId = item.TaxId;
         bookingLine.TaxRate = item.TaxRate;
-        bookingLine.InvoicePos = item.InvoicePosition;
+        bookingLine.InvoicePos = currentSplitView;
+        bookingLine.Source = "Item";
         bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
         bookingsTotalClickable = item.ItemNumber >= 9000 ? true : false;
-        refName.SelectAsync();
+        priceReadOnly = false;
+        await refName.FocusAsync();
     }
 
-    private async void AddBookingLine()
+    private async void BonPackageClick(PackageExtendDto item)
     {
-        // bookingLinesBooked.Add(bookingLine);
+        bookingLine = new();
+        bookingLine.DateBooking = mandantDto.HotelDate;
+        bookingLine.Amount = 1;
+        bookingLine.ItemNumber = item.PackageDto.Id;
+        bookingLine.ItemId = item.PackageDto.Id;
+        bookingLine.Name = item.PackageDto.Name;
+        bookingLine.Price = Convert.ToDecimal(item.Price);
+        bookingLine.TaxId = 0;
+        bookingLine.TaxRate = 0;
+        bookingLine.InvoicePos = currentSplitView;
+        bookingLine.Source = "Package";
+
+        bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
+        bookingsTotalClickable = false;
+        priceReadOnly = true;
+        await refName.FocusAsync();
+    }
+
+    private async void GuestInHousePayment(int resId)
+    {
+        var res = reservationDtos!.Where(x => x.Id == resId).FirstOrDefault();
+
+        bookingLine = new();
+        bookingLine.DateBooking = mandantDto.HotelDate;
+        bookingLine.Amount = 1;
+        bookingLine.ItemNumber = 10000; // 10000 = GuestInHouse Payment
+        bookingLine.ItemId = 10000;
+        bookingLine.Name = "#" + res!.RoomNumber + " " + res.GuestName + " " + res.BookerName;
+        bookingLine.Price = bookingsTotal;
+        bookingLine.TaxId = 1;
+        bookingLine.TaxRate = 0;
+        bookingLine.InvoicePos = currentSplitView;
+        bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
+        bookingsTotalClickable = false;
+        await refPrice.SelectAsync();
+    }
+
+    private void AddBookingLine()
+    {
         BookingLineSummaryLocal bls = new BookingLineSummaryLocal();
         bls.SourceList = new List<BookingLine>();
-        bls.SourceList.Add(bookingLine);
-        blSummaries.Add(bls);
+
+        switch (bookingLine.Source)
+        {
+            case "Item":
+                bls.SourceList.Add(bookingLine);
+                blSummaries.Add(bls);
+                break;
+
+            case "Package":
+                bool packageItemProzentual = false;
+                decimal packagePrice = 0;
+                PackageDto packageDto = packageExtendOptionDtos!.Where(x => x.PackageDto.Id == bookingLine.ItemId).Select(x => x.PackageDto).FirstOrDefault();
+                PackageExtendDto packageExtendDto = packageExtendOptionDtos!.Where(x => x.PackageDto.Id == bookingLine.ItemId).FirstOrDefault();
+                string blNrId = packageDto!.Kz + DateTime.Now.ToString("yyyyMMddHHmmssfff");
+                if (bookingLine.PriceTotal == packageExtendDto!.Price!.Value)
+                {
+                    foreach (var item in packageDto!.PackageItems!.OrderBy(x => x.ItemId)) // Order nach ItemId damit bei Prozentverteilung der ItemId == 0 als erster kommt
+                    {
+                        BookingLine bl = new();
+                        bl.DateBooking = mandantDto.HotelDate;
+
+                        bl.Amount = bookingLine.Amount;
+                        if (item.ItemId == 0)
+                        {
+                            packageItemProzentual = true;
+                            packagePrice = item.Price;
+                            continue;
+                            // PackageItem mit dem GesamtPreis aber ItemId = 0
+                            // der Gesamtpreis muss unter den PackageItems prozentual aufgeteilt werden
+
+                        }
+                        bl.BookingLineNumberId = blNrId;
+                        bl.ItemId = item.ItemId;
+                        var itemDto = itemsDto.FirstOrDefault(x => x.Id == item.ItemId);
+                        if (itemDto != null)
+                        {
+                            bl.ItemNumber = itemDto.ItemNumber;
+                        }
+
+                        bl.Name = packageDto.Name;
+                        bl.Price = packageItemProzentual ? (packagePrice * item.Percentage) / 100 : item.Price;
+                        bl.TaxId = itemDto!.TaxId;
+                        bl.TaxRate = itemDto.TaxRate;
+                        bl.State = 1;
+                        bl.Debit = bl.ItemNumber < 9000 ? true : false;
+
+                        bl.ReservationId = reservationDto is not null ? reservationDto.Id : 0;
+                        bl.InvoicePos = packageDto.InvoicePosition;
+                        bl.PriceTotal = bl.Amount * bl.Price;
+                        bls.SourceList.Add(bl);
+
+                    }
+                }
+                else
+                {
+                    // wenn der Preis oder Amount oder PreisGesamt nicht mit packageExtendDto übereinstimmt
+                    // Möglichkeiten der Abweichung:
+                    // 1. Amount ist negativ mark as CXL
+                    // 2. Preis ist negativ mark as CXL / Rabatt Price in Packages auf Readonly gesetzt. Kann nicht editiert werden.
+                    // 3. PriceTotal ist anders als Amount * Price
+
+
+
+
+                }
+                blSummaries.Add(bls);
+                break;
+
+        }
+
         bookingLine = new();
         SumBookingLinesList();
         StateHasChanged();
     }
 
-    private async void SumBookingLinesList()
+    #endregion
+
+    private async void GetGuestInHouse()
+    {
+        if (reservationDtos is null)
+        {
+            SearchReservationsRequest sr = new();
+            sr.ResKz = "C";
+            sr.MandantId = mandantDto.Id;
+            var res = await ReservationsClient.SearchAsync(sr);
+            reservationDtos = res.Data.Where(x => x.ResKz == "C").OrderBy(x => x.RoomNumber).Adapt<List<ReservationListDto>>();
+
+            StateHasChanged();
+        }
+    }
+
+    #region "Sum and Count"
+
+    private void SumBookingLinesList()
     {
         // bookingsTotal = bookingLinesBooked.Where(x => x.ItemNumber < 9000).Sum(x => x.PriceTotal) - bookingLinesBooked.Where(x => x.ItemNumber >= 9000).Sum(x => x.PriceTotal);
 
         // in blSummaries sind die Summen der einzelnen Buchungszeilen summieren
-        decimal summariesSumme = 0; 
+        decimal summariesSumme = 0;
         foreach (var item in blSummaries)
         {
-            // summariesSumme += item.SourceList.Sum(x => x.PriceTotal);
-            // summariesSumme += item.Total;
             summariesSumme += item.SourceList.Where(x => x.ItemNumber < 9000).Sum(x => x.PriceTotal);
             summariesSumme -= item.SourceList.Where(x => x.ItemNumber >= 9000).Sum(x => x.PriceTotal);
         }
         bookingsTotal = summariesSumme;
-
+        currentSplitSumme = summariesSumme;
         StateHasChanged();
     }
 
-    private async void AmountValueChanged(decimal value)
+    private decimal SumInvoicePositions(int pos)
+    {
+        decimal sum = 0;
+        if (pos == 0) return bookingsTotal;
+
+        foreach (var item in blSummaries.Where(x => x.InvoicePosition == pos))
+        {
+            sum += item.SourceList.Where(x => x.ItemNumber < 9000).Sum(x => x.PriceTotal);
+            sum -= item.SourceList.Where(x => x.ItemNumber >= 9000).Sum(x => x.PriceTotal);
+        }
+        return sum;
+    }
+
+    private int CountInvoicePositions(int pos)
+    {
+        int count = 0;
+        if (pos == 0) return blSummaries.Count;
+
+        foreach (var item in blSummaries.Where(x => x.InvoicePosition == pos))
+        {
+            count += item.SourceList.Count;
+        }
+        return count;
+    }
+
+    private decimal SumReservationTransferById(int id)
+    {
+        decimal sum = 0;
+        foreach (var item in blSummariesTransfer.Where(x => x.ReservationId == id))
+        {
+            sum += item.SourceList.Where(x => x.ReservationId == id && x.ItemNumber < 9000).Sum(x => x.PriceTotal);
+            sum -= item.SourceList.Where(x => x.ReservationId == id && x.ItemNumber >= 9000).Sum(x => x.PriceTotal);
+        }
+        return sum;
+    }
+
+    private decimal SumDebit(int invoicePos)
+    {
+        decimal sum = 0;
+        if (invoicePos > 0)
+        {
+            foreach (var item in blSummaries.Where(x => x.InvoicePosition == invoicePos))
+            {
+                sum += item.SourceList.Where(x => x.Debit).Sum(x => x.PriceTotal);
+            }
+        }
+        else
+        {
+            foreach (var item in blSummaries)
+            {   
+                sum += item.SourceList.Where(x => x.Debit).Sum(x => x.PriceTotal);
+            }
+        }
+        return sum;
+    }
+
+    private decimal CountDebit(int invoicePos)
+    {
+        decimal sum = 0;
+        if (invoicePos > 0)
+        {
+            sum = blSummaries.Count(x => x.InvoicePosition == invoicePos && x.Debit);
+        }
+        else
+        {
+            sum = blSummaries.Count(x => x.Debit);
+        }
+        return sum;
+    }
+
+    private decimal SumCredit(int invoicePos)
+    {
+        decimal sum = 0;
+        if (invoicePos > 0)
+        {
+            foreach (var item in blSummaries.Where(x => x.InvoicePosition == invoicePos))
+            {
+                if (item.SourceList.Count(x => x.Id > 0) > 0) 
+                {
+                    sum += item.SourceList.Where(x => !x.Debit).Sum(x => x.PriceTotal);
+                }
+            }
+        }
+        else
+        {
+            foreach (var item in blSummaries) // .Where(x => x.InvoicePosition == invoicePos))
+            {
+                if (item.SourceList.Count(x => x.Id > 0) > 0) 
+                {
+                    sum += item.SourceList.Where(x => !x.Debit).Sum(x => x.PriceTotal);
+                }
+            }
+        }
+        return sum;
+    }
+
+    private decimal CountCredit(int invoicePos)
+    {
+        decimal sum = 0;
+        if (invoicePos > 0)
+        {
+            sum = blSummaries.Count(x => x.InvoicePosition == invoicePos && !x.Debit);
+        }
+        else
+        {
+            sum = blSummaries.Count(x => !x.Debit);
+        }
+        return sum;
+    }
+
+    private decimal SumPayment(int invoicePos)
+    {
+        decimal sum = 0;
+        if (invoicePos > 0)
+        {
+            foreach (var item in blSummaries.Where(x => x.InvoicePosition == invoicePos))
+            {
+                if (item.SourceList.Count(x => x.Id == 0) > 0) 
+                {
+                    sum += item.SourceList.Where(x => x.ItemNumber >= 9000).Sum(x => x.PriceTotal);
+                }
+            }
+        }
+        else
+        {
+            foreach (var item in blSummaries) //.Where(x => x.InvoicePosition == invoicePos))
+            {
+                if (item.SourceList.Count(x => x.Id == 0) > 0) // wenn bereits in db eingetragen
+                {
+                    sum += item.SourceList.Where(x => x.ItemNumber >= 9000).Sum(x => x.PriceTotal);
+                }
+            }
+        }
+        return sum;
+    }
+
+    #endregion
+
+    private void PaymentSetValues()
+    {
+        bookingLine.Amount = 1;
+        bookingLine.Price = currentSplitSumme;
+        bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
+        bookingLine.DateBooking = DateTime.Now;
+        bookingsTotalClickable = false;
+        StateHasChanged();
+    }
+
+    private async void DeleteBookingLineSummary(BookingLineSummaryLocal bookingLine)
+    {
+        if (bookingLine.SourceList.Sum(x => x.Id) > 0)
+        {
+            // Buchung hat bereits eine Id, muss in der Datenbank auf Storno (Status = 9) gesetzt werden
+            bookingLine.SourceList.ForEach(x => x.State = 9);
+            bookingLine.SourceList.ForEach(x => x.Amount = (x.Amount * -1));
+            bookingLine.SourceList.ForEach(x => x.ReferenceId = "Storno " + x.Id.ToString());
+            // Direkt in der Datenbank löschen
+            List<BookingLine> blTransactList = new();
+            foreach (var bl in bookingLine.SourceList)
+            {
+                blTransactList.Add(bl);
+            }
+            CreateBookingBulkRequest cbrb = new CreateBookingBulkRequest();
+            cbrb.CreateBookingRequestList = blTransactList.Adapt<List<CreateBookingRequest>>().ToList();
+            cbrb.MandantId = mandantDto.Id;
+            var result = await BookingsClient.CreateBookingBulkAsync(cbrb);
+
+            UpdateBookingBulkRequest ubrb = new UpdateBookingBulkRequest();
+            ubrb.UpdateBookingRequestList = blTransactList.Adapt<List<UpdateBookingRequest>>().ToList();
+            ubrb.MandantId = mandantDto.Id;
+            var result2 = await BookingsClient.UpdateBookingBulkAsync(ubrb);
+
+            if (result) blSummaries.Remove(bookingLine);
+        }
+        else
+        {
+            // Buchung hat noch keine Id, kann gelöscht werden
+            blSummaries.Remove(bookingLine);
+        }
+
+        SumBookingLinesList();
+        StateHasChanged();
+    }
+
+    #region "Splits"
+
+    private void AmountValueChanged(decimal value)
     {
         bookingLine.Amount = value;
         bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
 
         StateHasChanged();
         refPrice.SelectAsync();
-
     }
 
-    private async void PriceValueChanged(decimal value)
+    private void PriceValueChanged(decimal value)
     {
         bookingLine.Price = value;
         bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
@@ -281,31 +1736,709 @@
         StateHasChanged();
     }
 
-    private async void PaymentSetValues()
+    private async void SplitAmount(BookingLineSummaryLocal bookingLine)
     {
-        bookingLine.Amount = 1;
-        bookingLine.Price = bookingsTotal;
-        bookingLine.PriceTotal = bookingLine.Amount * bookingLine.Price;
-        bookingLine.DateBooking = DateTime.Now;
-        bookingsTotalClickable = false;
+        var parameters = new DialogParameters
+            {
+                ["item"] = bookingLine,
+                ["CancelText"] = "Cancel",
+                ["ConfirmText"] = "OK",
+            };
+
+        var dialog = DialogService.ShowModal<CashierSplitAmountDialog>(parameters);
+        var result = await dialog.Result;
+        Console.WriteLine("SplitAmount: " + result.Data);
+        if (!result.Canceled)
+        {
+            if ((int)result.Data >= 1 & (int)result.Data <= bookingLine.Amount)
+            {
+                // SplitAmount
+                BookingLineSummaryLocal bls = new BookingLineSummaryLocal();
+                bls.SourceList = new List<BookingLine>();
+
+                foreach (BookingLine item in bookingLine.SourceList)
+                {
+                    int itemBookinLineNumberId = Convert.ToInt32(item.BookingLineNumberId!.Substring(item.BookingLineNumberId.Length - 5, 5));
+                    itemBookinLineNumberId += 1;
+
+
+                    BookingLine bl = new();
+                    bl = item.Adapt<BookingLine>();
+                    bl.Amount = Convert.ToInt32(result.Data);
+                    bl.BookingLineNumberId = bl.BookingLineNumberId!.Replace(item.BookingLineNumberId.Substring(item.BookingLineNumberId.Length - 5, 5), itemBookinLineNumberId.ToString("0000")); // "SA"; // SA = SplitAmount
+                    bl.Id = 0;
+                    bl.DateBooking = mandantDto.HotelDate; // DateTime.Now;
+                    bl.ReferenceId = $"SplitAmount #{item.Id}";
+                    bl.State = 1;
+                    bl.PriceTotal = bl.Price * bl.Amount;
+
+                    item.Amount = item.Amount - Convert.ToInt32(result.Data);
+                    // item.BookingLineNumberId += "SA"; // SA = SplitAmount
+                    item.PriceTotal = item.Amount * item.Price;
+                    bls.SourceList.Add(bl);
+                }
+
+                if (bookingLine.SourceList.Count(x => x.Id > 0) > 0) // wenn bereits in db eingetragen
+                {
+                    CreateBookingBulkRequest createBookingBulkRequest = new CreateBookingBulkRequest();
+                    createBookingBulkRequest.CreateBookingRequestList = bls.SourceList.Adapt<List<CreateBookingRequest>>().ToList();
+                    createBookingBulkRequest.MandantId = mandantDto.Id;
+                    foreach (var item in createBookingBulkRequest.CreateBookingRequestList)
+                    {
+                        // item.MandantId = mandantDto.Id;
+                        item.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
+                        // item.ReservationId = bookingLine.SourceList.FirstOrDefault().ReservationId;
+                        // item.KasseId = CashierRegisterId;
+                    }
+                    await BookingsClient.CreateBookingBulkAsync(createBookingBulkRequest);
+
+                    UpdateBookingBulkRequest updateBookingBulkRequest = new UpdateBookingBulkRequest();
+                    updateBookingBulkRequest.UpdateBookingRequestList = bookingLine.SourceList.Adapt<List<UpdateBookingRequest>>().ToList();
+                    updateBookingBulkRequest.MandantId = mandantDto.Id;
+                    foreach (var item in updateBookingBulkRequest.UpdateBookingRequestList)
+                    {
+                        // item.MandantId = mandantDto.Id;
+                        item.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
+                        // item.ReservationId = bookingLine.SourceList.FirstOrDefault().ReservationId;
+                        // item.KasseId = CashierRegisterId;
+                    }
+                    await BookingsClient.UpdateBookingBulkAsync(updateBookingBulkRequest);
+
+                }
+
+                blSummaries.Add(bls);
+            }
+        }
         StateHasChanged();
     }
 
-    private async void DeleteBookingLine(BookingLine bookingLine)
+    private async void SplitPrice(BookingLineSummaryLocal bookingLine)
     {
-        // bookingLinesBooked.Remove(bookingLine);
-        blSummaries.Remove(blSummaries.Where(x => x.SourceList.Contains(bookingLine)).FirstOrDefault());
-        SumBookingLinesList();
+        var parameters = new DialogParameters
+            {
+                ["item"] = bookingLine,
+                ["CancelText"] = "Cancel",
+                ["ConfirmText"] = "OK",
+            };
+
+        var dialog = DialogService.ShowModal<CashierSplitPriceDialog>(parameters);
+        var result = await dialog.Result;
+        Console.WriteLine("SplitPrice: " + result.Data);
+        if (!result.Canceled)
+        {
+            if ((double)result.Data >= 0.01 & (double)result.Data <= (double)bookingLine.Total)
+            {
+                double prozentSplit = (double)result.Data / (double)bookingLine.Total;
+
+                // SplitPrice
+                BookingLineSummaryLocal bls = new BookingLineSummaryLocal();
+                bls.SourceList = new List<BookingLine>();
+
+                foreach (BookingLine item in bookingLine.SourceList)
+                {
+                    int itemBookinLineNumberId = Convert.ToInt32(item.BookingLineNumberId!.Substring(item.BookingLineNumberId.Length - 5, 5));
+                    itemBookinLineNumberId += 1;
+
+                    BookingLine bl = new();
+                    bl = item.Adapt<BookingLine>();
+                    bl.Price = bl.Price * (decimal)prozentSplit; // Convert.ToDecimal(result.Data);
+                    bl.PriceTotal = bl.Amount * bl.Price;
+                    // bl.Price;
+                    bl.BookingLineNumberId = bl.BookingLineNumberId!.Replace(item.BookingLineNumberId.Substring(item.BookingLineNumberId.Length - 5, 5), itemBookinLineNumberId.ToString("0000")); // SP = SplitPrice
+                    bl.Id = 0;
+                    bl.DateBooking = mandantDto.HotelDate; // DateTime.Now;
+                    bl.ReferenceId = $"SplitPrice #{item.Id}";
+                    bl.State = 1;
+                    bl.PriceTotal = bl.Price * bl.Amount;
+                    bl.ReservationId = reservationDto is not null ? reservationDto.Id : 0;
+                    bl.Debit = bl.ItemNumber < 9000 ? true : false;
+
+                    CreateBookingSplitRequest cbr = new CreateBookingSplitRequest();
+                    cbr = bl.Adapt<CreateBookingSplitRequest>();
+                    cbr.MandantId = mandantDto.Id;
+                    cbr.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
+
+                    bl.Id = await BookingsClient.CreateBookingSplitAsync(cbr);
+
+
+                    item.Price = item.Price - bl.Price; // * (1 - (decimal)prozentSplit); //- Convert.ToDecimal(result.Data);
+                    item.PriceTotal = item.Amount * item.Price;
+                    item.ReferenceId = $"SplitPrice #{bl.Id}";
+
+                    bls.SourceList.Add(bl);
+
+                    if (item.Id > 0)
+                    {
+                        UpdateBookingRequest ubr = new UpdateBookingRequest();
+                        ubr = item.Adapt<UpdateBookingRequest>();
+                        ubr.MandantId = mandantDto.Id;
+                        ubr.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
+                        await BookingsClient.UpdateAsync(item.Id, ubr);
+                    }
+                    else
+                    {
+                        CreateBookingRequest cbr2 = new CreateBookingRequest();
+                        cbr2 = item.Adapt<CreateBookingRequest>();
+                        cbr2.MandantId = mandantDto.Id;
+                        cbr2.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
+                        cbr2.ReservationId = reservationDto is not null ? reservationDto.Id : 0;
+                        await BookingsClient.CreateAsync(cbr2);
+                    }
+                }
+
+                blSummaries.Add(bls);
+            }
+        }
+
         StateHasChanged();
     }
 
-    private async void DeleteBookingLineSummary(BookingLineSummaryLocal bookingLine)
+    #endregion
+
+    private void SelectInvoiceTargetGuestInHouse(int resId)
     {
-        blSummaries.Remove(bookingLine);
-        SumBookingLinesList();
+        checkOutResId = resId;
+        var res = reservationDtos!.Where(x => x.Id == resId).FirstOrDefault();
+        invoiceTarget = "#" + res!.RoomNumber + " " + res.GuestName + " " + res.BookerName;
         StateHasChanged();
     }
 
+    private async void CheckOutToRoom()
+    {
+        if (reservationDto is not null)
+        {
+            // neue Methode für Transfer to Room
+            // unterscheiden ob die Buchungen schone eine BookingId haben oder nicht
+            foreach (var item in reservationDto!.BookingLineSummaries!)
+            {
+                foreach (var bl in item.SourceList)
+                {
+
+                }
+
+            }
+        }
+        else
+        {
+            List<CreateBookingRequest> cbrList = new();
+            foreach (var item in blSummaries)
+            {
+                foreach (var bl in item.SourceList.Where(x => x.Id == 0)) // nur neue Buchungen mit Create eintragen
+                {
+                    CreateBookingRequest cbr = new CreateBookingRequest();
+                    cbr.MandantId = mandantDto.Id;
+                    cbr.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
+                    cbr.ReservationId = checkOutResId;
+                    cbr.Name = bl.Name!;
+                    cbr.Amount = bl.Amount;
+                    cbr.Price = bl.Price;
+                    cbr.Debit = bl.ItemNumber < 9000 ? true : false;
+                    cbr.ItemId = bl.ItemId;
+                    cbr.ItemNumber = bl.ItemNumber;
+                    cbr.Source = "Cashier ResId: #" + checkOutResId;
+                    cbr.BookingLineNumberId = bl.BookingLineNumberId;
+                    cbr.TaxId = bl.TaxId;
+                    cbr.TaxRate = bl.TaxRate;
+                    cbr.InvoicePos = bl.InvoicePos;
+                    cbr.KasseId = CashierRegisterId;
+                    cbrList.Add(cbr);
+                }
+            }
+            CreateBookingBulkRequest cbrb = new CreateBookingBulkRequest();
+            cbrb.CreateBookingRequestList = cbrList;
+            cbrb.MandantId = mandantDto.Id;
+            var res = await BookingsClient.CreateBookingBulkAsync(cbrb);
+            if (res)
+            {
+                blSummaries = new();
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                MudDialog.Close(DialogResult.Cancel());
+            }
+        }
+
+    }
+
+    private async void CheckOutToPrinter()
+    {
+        List<CreateBookingRequest> cbrList = new();
+        List<BookingDto> bookingListTemp = new();
+
+        if (currentSplitView == 0)
+        {
+            foreach (var item in blSummaries)
+            {
+                foreach (var bl in item.SourceList)
+                {
+                    if (bl.Id == 0)
+                    {
+                        CreateBookingRequest cbr = new CreateBookingRequest();
+                        cbr.MandantId = mandantDto.Id;
+                        cbr.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
+                        cbr.ReservationId = reservationDto is not null ? reservationDto.Id : 0;
+                        cbr.Name = bl.Name!;
+                        cbr.Amount = bl.Amount;
+                        cbr.Price = bl.Price;
+                        cbr.Debit = bl.ItemNumber < 9000 ? true : false;
+                        cbr.ItemId = bl.ItemId;
+                        cbr.ItemNumber = bl.ItemNumber;
+                        cbr.Source = reservationDto is not null ? "Cashier ResId: #" + reservationDto.Id : "Cashier";
+                        cbr.BookingLineNumberId = bl.BookingLineNumberId;
+                        cbr.TaxId = bl.TaxId;
+                        cbr.TaxRate = bl.TaxRate;
+                        cbr.InvoicePos = bl.InvoicePos;
+                        cbr.State = bl.State;
+                        cbr.KasseId = CashierRegisterId;
+                        cbrList.Add(cbr);
+                    }
+                    else
+                    {
+                        bookingListTemp.Add(bl.Adapt<BookingDto>());
+                    }
+                }
+            }
+        }
+        else
+        {
+            foreach (var item in blSummaries.Where(x => x.InvoicePosition == currentSplitView))
+            {
+                foreach (var bl in item.SourceList)
+                {
+                    if (bl.Id == 0)
+                    {
+                        CreateBookingRequest cbr = new CreateBookingRequest();
+                        cbr.MandantId = mandantDto.Id;
+                        cbr.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
+                        cbr.ReservationId = reservationDto is not null ? reservationDto.Id : 0;
+                        cbr.Name = bl.Name!;
+                        cbr.Amount = bl.Amount;
+                        cbr.Price = bl.Price;
+                        cbr.Debit = bl.ItemNumber < 9000 ? true : false;
+                        cbr.ItemId = bl.ItemId;
+                        cbr.ItemNumber = bl.ItemNumber;
+                        cbr.Source = reservationDto is not null ? "Cashier ResId: #" + reservationDto.Id : "Cashier";
+                        cbr.BookingLineNumberId = bl.BookingLineNumberId;
+                        cbr.TaxId = bl.TaxId;
+                        cbr.TaxRate = bl.TaxRate;
+                        cbr.InvoicePos = bl.InvoicePos;
+                        cbr.State = bl.State;
+                        cbr.KasseId = CashierRegisterId;
+                        cbrList.Add(cbr);
+                    }
+                    else
+                    {
+                        bookingListTemp.Add(bl.Adapt<BookingDto>());
+                    }
+                }
+            }
+        }
+
+        CreateBookingsBulkInvoiceRequest cbrb = new CreateBookingsBulkInvoiceRequest();
+        cbrb.CreateBookingRequestList = cbrList;
+        List<BookingDto> bookingList = (await BookingsClient.CreateBookingBulkInvoiceAsync(cbrb)).ToList();
+        if (bookingListTemp.Count > 0)
+        {
+            bookingList.AddRange(bookingListTemp);
+        }
+
+        createInvoiceRequest.MandantId = mandantDto.Id;
+        // createInvoiceRequest.InvoiceIdMandant = invoiceIdMandant;
+        createInvoiceRequest.HotelDate = Convert.ToDateTime(mandantDto.HotelDate);
+        createInvoiceRequest.GuestId = reservationDto is not null ? reservationDto.GuestId : null;
+        createInvoiceRequest.BookerId = reservationDto is not null ? reservationDto.BookerId : null;
+        createInvoiceRequest.ReservationId = reservationDto is not null ? reservationDto.Id : null;
+        createInvoiceRequest.CompanyId = reservationDto is not null ? reservationDto.CompanyId : null;
+        createInvoiceRequest.TravelAgentId = reservationDto is not null ? reservationDto.TravelAgentId : null;
+        createInvoiceRequest.TravelAgentContactId = reservationDto is not null ? reservationDto.TravelAgentContactId : null;
+        createInvoiceRequest.InvoiceAddressJson = JsonSerializer.Serialize<InvoiceAddress>(invoiceAddress);
+
+        createInvoiceRequest.Notes = null;
+        // Summe Amount * Price von cbr wenn ItemNumber < 9000
+        createInvoiceRequest.InvoiceTotal = bookingList.Where(x => x.ItemNumber < 9000).Sum(x => x.Amount * x.Price);
+
+        // Summe Amount * Price wenn Debit = true - Summe Amount * Price wenn Debit = false
+        decimal balance = bookingList.Where(x => x.ItemNumber < 9000).Sum(x => x.Amount * x.Price) - bookingList.Where(x => x.ItemNumber >= 9000).Sum(x => x.Amount * x.Price);
+        createInvoiceRequest.InvoiceKz = balance >= 0 ? "R" : "G";
+
+        // var cbrGroupedByTaxRate = cbrList.Where(x => x.ItemNumber < 9000).GroupBy(x => x.TaxRate).ToList();
+        // List<InvoiceTax> invoiceTaxes = new();
+
+
+        var bookingListGroupedByTaxRate = bookingList.Where(x => x.ItemNumber < 9000).GroupBy(x => x.TaxRate).ToList();
+        List<InvoiceTax> invoiceTaxes = new();
+
+        foreach (var item in bookingListGroupedByTaxRate)
+        {
+            InvoiceTax invoiceTax = new InvoiceTax();
+            invoiceTax.TaxRate = item.Key;
+            invoiceTax.TaxAmount = item.Sum(x => x.Amount * x.Price) / (100 + item.Key) * item.Key;
+            invoiceTax.TotalAmount = item.Sum(x => x.Amount * x.Price);
+            invoiceTax.NetAmount = (item.Sum(x => x.Amount * x.Price) / (100 + item.Key)) * 100;
+            invoiceTaxes.Add(invoiceTax);
+        }
+
+        createInvoiceRequest.InvoiceTaxesJson = JsonSerializer.Serialize<List<InvoiceTax>>(invoiceTaxes);
+        // List<InvoicePayment> paymentList = (bookingList.Where(x => x.ItemNumber >= 9000).ToList()).Adapt<List<InvoicePayment>>();
+        var payments = bookingList.Where(x => x.ItemNumber >= 9000);
+
+        List<InvoicePayment> paymentList = new();
+        foreach (var item in payments)
+        {
+            InvoicePayment invoicePayment = new InvoicePayment();
+            invoicePayment.HotelDate = item.HotelDate;
+            invoicePayment.Name = item.Name;
+            invoicePayment.Amount = item.Amount;
+            invoicePayment.Price = item.Price;
+            invoicePayment.Debit = item.Debit;
+            invoicePayment.ItemId = item.ItemId;
+            invoicePayment.ItemNumber = item.ItemNumber;
+            invoicePayment.TaxId = item.TaxId;
+            invoicePayment.TaxRate = item.TaxRate;
+            invoicePayment.KasseId = CashierRegisterId;
+
+            paymentList.Add(invoicePayment);
+        }
+
+        createInvoiceRequest.InvoicePaymentsJson = JsonSerializer.Serialize<List<InvoicePayment>>(paymentList);
+        createInvoiceRequest.InvoiceDetails = bookingList;
+
+        // TODO: Create Invoice
+
+        //await InvoiceClient.CreateInvoiceSoloAsync(createInvoiceRequest);
+        string invoiceIdMandantResult = await InvoiceClient.CreateAsync(createInvoiceRequest);
+
+        // Rechnung ausdrucken
+        string[] invoiceIdMandantResultArray = invoiceIdMandantResult.Split("-");
+        int invoiceId = Convert.ToInt32(invoiceIdMandantResultArray[0]);
+        int invoiceIdMandant = Convert.ToInt32(invoiceIdMandantResultArray[1]);
+
+        UpdateBookingBulkRequest updateBookingBulkRequest = new UpdateBookingBulkRequest();
+        updateBookingBulkRequest.UpdateBookingRequestList = bookingList.Adapt<List<UpdateBookingRequest>>().ToList();
+        updateBookingBulkRequest.MandantId = mandantDto.Id;
+        foreach (var item in updateBookingBulkRequest.UpdateBookingRequestList)
+        {
+            item.State = 5; // 5 = Rechnung gedruckt
+                            // item.ReservationId = bookingLine.SourceList.FirstOrDefault().ReservationId;
+            item.KasseId = CashierRegisterId;
+            item.InvoiceId = invoiceId;
+
+            // in blSummaries die BookingLines löschen die in der Rechnung gedruckt wurden
+
+        }
+        await BookingsClient.UpdateBookingBulkAsync(updateBookingBulkRequest);
+
+
+        // Zahlungen in CashierJournal eintragen
+        foreach (var item in bookingList.Where(x => x.ItemNumber >= 8990))
+        {
+            GetJournalByBookingIdRequest getJournalByBookingIdRequest = new GetJournalByBookingIdRequest();
+            getJournalByBookingIdRequest.BookingId = item.Id;
+            getJournalByBookingIdRequest.MandantId = item.MandantId;
+            var journalDto = await JournalsClient.GetAsync(getJournalByBookingIdRequest);
+
+            CreateCashierJournalRequest createCashierJournalRequest = new CreateCashierJournalRequest();
+            createCashierJournalRequest.MandantId = item.MandantId;
+            createCashierJournalRequest.JournalId = journalDto.Id;
+            createCashierJournalRequest.JournalIdMandant = journalDto.JournalIdMandant;
+            createCashierJournalRequest.BookingId = item.Id;
+            createCashierJournalRequest.InvoiceId = invoiceId;
+            createCashierJournalRequest.InvoiceIdMandant = invoiceIdMandant;
+            createCashierJournalRequest.JournalDate = journalDto.JournalDate;
+            createCashierJournalRequest.HotelDate = item.HotelDate;
+            createCashierJournalRequest.Name = item.Name;
+            createCashierJournalRequest.Amount = item.Amount;
+            createCashierJournalRequest.Price = item.Price;
+            createCashierJournalRequest.Debit = item.Debit;
+            createCashierJournalRequest.ItemId = item.ItemId;
+            createCashierJournalRequest.ItemNumber = item.ItemNumber;
+            createCashierJournalRequest.Source = "Cashier";
+            createCashierJournalRequest.State = 1;
+            createCashierJournalRequest.StateDate = DateTime.Now;
+            createCashierJournalRequest.KasseId = CashierRegisterId;
+
+            var result = await CashierJournalClient.CreateAsync(createCashierJournalRequest);
+        }
+
+        GetInvoiceReportRequest request = new GetInvoiceReportRequest();
+        request.MandantId = mandantDto.Id;
+        request.InvoiceIdMandant = invoiceIdMandant;
+        request.InvoiceId = invoiceId;
+        request.ResponseType = "PDF";
+
+        string reportEndpoint = "rptInvoiceCashier";
+        var jsonData = JsonSerializer.Serialize(request);
+
+        string endPoint = "https://localhost:5001/api/v1/Report/";
+        // string reportEndpoint = "rptreservations";
+        string endPointToSend = endPoint + reportEndpoint;
+        // var jsonData = JsonSerializer.Serialize(request);
+        var httpContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(endPointToSend, httpContent);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseObject = JsonSerializer.Deserialize<ReportResult>(responseContent);
+
+            var reportBytes = Convert.FromBase64String(responseObject!.fileContents);
+            var reportFileName = responseObject.fileDownloadName;
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            string[] reportFileNameParts = reportFileName.Split('.');
+            var fileName = $"{reportFileNameParts[0]}_{timestamp}.{reportFileNameParts[1]}";
+
+            var memoryStream = new MemoryStream(reportBytes);
+            var downloadStream = new MemoryStream();
+            await memoryStream.CopyToAsync(downloadStream);
+            downloadStream.Position = 0;
+
+            // var mimeType = "application/pdf";
+            await _jsRuntime.InvokeVoidAsync("saveAsFile", fileName, downloadStream.ToArray());
+        }
+        else
+        {
+            Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+        }
+
+        bool CheckOutOK = false;
+
+        if (reservationDto is not null)
+        {
+            if (reservationDto.ResKz == "C") CheckOutOK = true;
+            if (CheckOutOK) CheckOutOK = SumInvoicePositions(0) == 0;
+            if (CheckOutOK) CheckOutOK = reservationDto.Departure!.Value.Date == mandantDto!.HotelDate!.Value.Date;
+
+            if (CheckOutOK)
+            {
+                UpdateReservationCheckOutRequest updateReservationCheckOutRequest = new UpdateReservationCheckOutRequest();
+                updateReservationCheckOutRequest.MandantId = mandantDto.Id;
+                updateReservationCheckOutRequest.ReservationId = reservationDto.Id;
+                bool result = await ReservationsClient.ReservationCheckOutRequestAsync(updateReservationCheckOutRequest);
+                // Close Dialog
+                MudDialog.Close(DialogResult.Ok(true));
+            }
+            else
+            {
+                reservationDto = await ReservationsClient.GetAsync(reservationDto.Id, mandantDto.Id);
+                blSummaries = new();
+                blSummaries = (reservationDto.BookingLineSummaries!.Adapt<List<BookingLineSummaryLocal>>()).ToList();
+
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+    }
+
+
+    #region "Person AddPerson, EditPerson"
+
+    private async Task AddPerson(DialogOptions options)
+    {
+        // if (_mandantId == 0) _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        _updatePersonRequest = new UpdatePersonRequest();
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] = mandantDto.Id,
+                ["_isCreate"] = true,
+                ["updatePersonRequest"] = _updatePersonRequest,
+            };
+        var dialog = DialogService.Show<AddEditPersonModal>("", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            UpdatePersonRequest updatePersonRequest = (UpdatePersonRequest)result.Data;
+
+            if (updatePersonRequest.Id > 0) // Edit
+            {
+
+            }
+            else // Create
+            {
+                updatePersonRequest.MandantId = mandantDto.Id;
+                updatePersonRequest.Source = (updatePersonRequest.Source != null || updatePersonRequest.Source != string.Empty ? "HotelGuest" : string.Empty);
+                int id = await PersonsClient.CreateAsync(updatePersonRequest.Adapt<CreatePersonRequest>());
+                personId = id;
+                //StateHasChanged();
+            }
+        }
+    }
+
+    private async Task EditPerson(DialogOptions options)
+    {
+        if (personId == mandantSettingDto.DefaultGuestId) return;
+
+        // if (mandantDto.Id == 0) _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        PersonDto personDto = await PersonsClient.GetAsync(personId);
+        _updatePersonRequest = (personDto.Adapt<UpdatePersonRequest>());
+
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] = mandantDto.Id,
+                ["_isCreate"] = false,
+                ["updatePersonRequest"] = _updatePersonRequest,
+            };
+        var dialog = DialogService.Show<AddEditPersonModal>("", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            UpdatePersonRequest updatePersonRequest = (UpdatePersonRequest)result.Data;
+
+            if (updatePersonRequest.Id > 0) // Edit
+            {
+                int id = await PersonsClient.UpdateAsync(updatePersonRequest.Id, updatePersonRequest);
+                personId = id;
+            }
+            else // Create
+            {
+                updatePersonRequest.MandantId = mandantDto.Id;
+                updatePersonRequest.Source = (updatePersonRequest.Source != null || updatePersonRequest.Source != string.Empty ? "HotelGuest" : string.Empty);
+                int id = await PersonsClient.CreateAsync(updatePersonRequest.Adapt<CreatePersonRequest>());
+                personId = id;
+            }
+        }
+    }
+
+    private async void SetPersonInvoiceAddress()
+    {
+        if (personId == mandantSettingDto.DefaultGuestId) return;
+        PersonHelper personHelper = new();
+        personHelper.PersonDtoToInvoiceAddress(await PersonsClient.GetAsync(personId), invoiceAddress);
+        StateHasChanged();
+        createInvoiceRequest.InvoiceAddressSource = 1;
+        createInvoiceRequest.BookerId = personId;
+    }
+
+    private async void SetCompanyContactInvoiceAddress()
+    {
+        if (personId == mandantSettingDto.DefaultGuestId) return;
+        contactId = personId;
+        PersonHelper personHelper = new();
+        personHelper.PersonDtoToContactInvoiceAddress(await PersonsClient.GetAsync(personId), invoiceAddress);
+        createInvoiceRequest.CompanyContactId = contactId;
+        StateHasChanged();
+    }
+
+
+    #endregion
+
+    #region "Company AddCompany, EditCompany"
+
+    private async Task AddCompany(DialogOptions options)
+    {
+        _updateCompanyRequest = new();
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] = mandantDto.Id,
+                ["_isCreate"] = true,
+                ["updateCompanyRequest"] = _updateCompanyRequest,
+            };
+        var dialog = DialogService.Show<AddEditCompanyModal>("", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            UpdateCompanyRequest updateCompanyRequest = (UpdateCompanyRequest)result.Data;
+
+            if (updateCompanyRequest.Id > 0) // Edit
+            {
+
+            }
+            else // Create
+            {
+                updateCompanyRequest.MandantId = mandantDto.Id;
+                int id = await CompanysClient.CreateAsync(updateCompanyRequest.Adapt<CreateCompanyRequest>());
+                companyId = id;
+            }
+        }
+    }
+
+    private async Task EditCompany(DialogOptions options)
+    {
+        CompanyDto personDto = await CompanysClient.GetAsync(companyId);
+        _updateCompanyRequest = (personDto.Adapt<UpdateCompanyRequest>());
+
+        var parameters = new DialogParameters
+            {
+                ["_mandantId"] = mandantDto.Id,
+                ["_isCreate"] = false,
+                ["updateCompanyRequest"] = _updateCompanyRequest,
+            };
+        var dialog = DialogService.Show<AddEditCompanyModal>("", parameters, options);
+        var result = await dialog.Result;
+        if (!result.Canceled)
+        {
+            UpdateCompanyRequest updateCompanyRequest = (UpdateCompanyRequest)result.Data;
+
+            if (updateCompanyRequest.Id > 0) // Edit
+            {
+                int id = await CompanysClient.UpdateAsync(updateCompanyRequest.Id, updateCompanyRequest);
+                companyId = id;
+            }
+            else // Create
+            {
+                updateCompanyRequest.MandantId = mandantDto.Id;
+                int id = await CompanysClient.CreateAsync(updateCompanyRequest.Adapt<CreateCompanyRequest>());
+                companyId = id;
+            }
+        }
+    }
+
+    private async void SetCompanyInvoiceAddress()
+    {
+        CompanyHelper companyHelper = new();
+        companyHelper.CompanyDtoToInvoiceAddress(await CompanysClient.GetAsync(companyId), invoiceAddress);
+        createInvoiceRequest.CompanyId = companyId;
+        StateHasChanged();
+    }
+
+    #endregion
+
+    private string GetStyle(int itemnumber)
+    {
+        string style = "";
+        if (itemnumber < 2000)
+        {
+            style = "background-color: #FF0000; color: #FFFFFF;margin-top:3px;width:180px;height:180px;";
+        }
+        if (itemnumber >= 2000 & itemnumber < 3000)
+        {
+            style = "background-color: #FFA500; color: #FFFFFF;margin-top:3px;width:180px;height:180px;";
+        }
+        if (itemnumber >= 3000 & itemnumber < 4000)
+        {
+            style = "background-color: #FFFF00; color: #000000;margin-top:3px;width:180px;height:180px;";
+        }
+        if (itemnumber >= 4000 & itemnumber < 5000)
+        {
+            style = "background-color: #008000; color: #FFFFFF;margin-top:3px;width:180px;height:180px;";
+        }
+        if (itemnumber >= 5000 & itemnumber < 6000)
+        {
+            style = "background-color: #0000FF; color: #FFFFFF;margin-top:3px;width:180px;height:180px;";
+        }
+        if (itemnumber >= 6000 & itemnumber < 7000)
+        {
+            style = "background-color: #4B0082; color: #FFFFFF;margin-top:3px;width:180px;height:180px;";
+        }
+        if (itemnumber >= 7000 & itemnumber < 8000)
+        {
+            style = "background-color: #EE82EE; color: #FFFFFF;margin-top:3px;width:180px;height:180px;";
+        }
+        if (itemnumber >= 8000 & itemnumber < 9000)
+        {
+            style = "background-color: #FFC0CB; color: #000000;margin-top:3px;width:180px;height:180px;";
+        }
+        if (itemnumber >= 9000 & itemnumber < 10000)
+        {
+            style = "background-color: #e9571d; color: #000000;margin-top:3px;width:180px;height:180px;";
+        }
+
+
+        return style;
+    }
 
     // Erstelle ein Switch für int werte das 20 verschiedene Farben anzeigt zurückgibt im Format: background-color: ? ;color: ?
     private string GetColor(int value)
@@ -347,7 +2480,7 @@
                 color = "background-color: #00FF00; color: #000000";
                 break;
             case 12:
-                color = "background-color: #00FFFF; color: #000000";
+                color = "background-color: #00FF00; color: #000000";
                 break;
             case 13:
                 color = "background-color: #000080; color: #FFFFFF";
@@ -374,3 +2507,4 @@
         return color;
     }
 }
+

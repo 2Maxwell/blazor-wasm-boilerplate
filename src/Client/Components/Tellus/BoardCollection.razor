@@ -1,0 +1,156 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Tellus.Dialogs;
+@inject IStringLocalizer<BoardCollection> L
+@inject IBoardCollectionsClient BoardCollectionClient
+@inject IBoardsClient BoardsClient
+
+@if (_loaded)
+{
+    <MudPaper Style="overflow: scroll;" Class="mud-theme-primary" Width="100%" MinHeight="1200px" Height="100vh" Elevation="25">
+
+        <MudToolBar Style="@($"color:{Colors.LightGreen.Accent3}; background:{Colors.BlueGrey.Darken4}; width:100%; height:60px;")" Class="" Dense="true" WrapContent="true">
+
+            <MudStack Justify="Justify.FlexStart" Spacing="3" AlignItems="AlignItems.Center" Row="true">
+
+                <MudTooltip Text="@boardCollectionDto!.Description">
+                    <h3>@boardCollectionDto!.Title</h3>
+                </MudTooltip>
+
+                <MudFab Class="ma-1" OnClick="(() => AddBoard())" Title="@L["Add Board"]" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" />
+
+                <MudText Typo="Typo.caption">BcId: @boardCollectionDto.Id</MudText>
+
+                <MudSpacer />
+
+            </MudStack>
+
+        </MudToolBar>
+
+        @*                 <MudStack Justify="Justify.FlexStart" Spacing="3" AlignItems="AlignItems.Center" Row="true">
+    <div style="width: 400px;">
+    <MudPaper>
+
+    </MudPaper>
+    </div>
+    </MudStack>
+    *@
+
+        @if (boardCollectionDto.Boards is not null)
+        {
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Stretch" Justify="Justify.FlexStart">
+                @foreach (BoardDto item in boardCollectionDto!.Boards!)
+                {
+                    <Board MandantId="MandantId"
+                           boardDto="item"
+                           boardItemLabelGroups="boardItemLabelGroups"
+                           boardItemLabels="boardItemLabels"
+                           boardItemTagGroups="boardItemTagGroups"
+                           boardItemTags="boardItemTags">
+                    </Board>
+
+                }
+            </MudStack>
+        }
+
+    </MudPaper>
+}
+
+@code
+{
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public string? _userId { get; set; }
+    [Parameter]
+    public BoardCollectionDto? boardCollectionDto { get; set; }
+    [Parameter]
+    public List<BoardItemLabelGroupDto> boardItemLabelGroups { get; set; } = new List<BoardItemLabelGroupDto>();
+    [Parameter]
+    public List<BoardItemLabelDto>? boardItemLabels { get; set; }
+    [Parameter]
+    public List<BoardItemTagGroupDto>? boardItemTagGroups { get; set; }
+    [Parameter]
+    public List<BoardItemTagDto>? boardItemTags { get; set; }
+
+    public bool _loaded { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (boardCollectionDto!.Boards is null) boardCollectionDto.Boards = new List<BoardDto>();
+        if (boardCollectionDto!.BoardItemLabels is null) boardCollectionDto.BoardItemLabels = new List<BoardItemLabelDto>();
+
+        _loaded = true;
+    }
+
+    // public override async Task SetParametersAsync(ParameterView parameters)
+    // {
+
+    //     parameters.SetParameterProperties(this);
+
+    //     if (boardCollectionDto!.Boards is null) boardCollectionDto.Boards = new List<BoardDto>();
+    //     if (boardCollectionDto!.BoardItemLabels is null) boardCollectionDto.BoardItemLabels = new List<BoardItemLabelDto>();
+
+    //     // _loaded = true;
+    //     StateHasChanged();
+    // }
+
+    private async void LoadBoards()
+    {
+        boardCollectionDto!.Boards = (await BoardCollectionClient.GetAsync(boardCollectionDto!.Id)).Boards;
+        StateHasChanged();
+    }
+
+    private async void LoadBoard(int Id)
+    {
+        boardCollectionDto!.Boards!.Add(await BoardsClient.GetAsync(Id));
+        SaveBoardCollectionChanges();
+        StateHasChanged();
+    }
+
+    private async void SaveBoardCollectionChanges()
+    {
+        if (boardCollectionDto!.Boards is not null)
+        {
+            boardCollectionDto.BoardIds = "";
+            foreach (BoardDto item in boardCollectionDto.Boards)
+            {
+                boardCollectionDto.BoardIds += item.Id + "|";
+            }
+
+            // boardCollectionDto.BoardIds = boardCollectionDto.Boards.Select(x => x.Id).ToList();
+        }
+
+        if (boardCollectionDto.BoardItemLabels is not null)
+        {
+            boardCollectionDto.BoardItemLabelIds = "";
+            foreach (BoardItemLabelDto item in boardCollectionDto.BoardItemLabels)
+            {
+                boardCollectionDto.BoardItemLabelIds += item.Id + "|";
+            }
+
+            // boardCollectionDto.BoardItemLabelIds = boardCollectionDto.BoardItemLabels.Select(x => x.Id).ToList();
+        }
+
+        await BoardCollectionClient.UpdateAsync(boardCollectionDto!.Id, boardCollectionDto!.Adapt<UpdateBoardCollectionRequest>());
+    }
+
+    private async void AddBoard()
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["_userId"] = _userId,
+                ["Board"] = null,
+                ["BoardItemLabels"] = boardCollectionDto!.BoardItemLabels,
+                ["BoardItemLabelGroups"] = boardItemLabelGroups,
+            };
+        var dialog = DialogService.Show<AddEditBoard>("Add Board", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            BoardDto boardDto = result.Data.Adapt<BoardDto>();
+            LoadBoard(boardDto.Id);
+        }
+
+    }
+
+}

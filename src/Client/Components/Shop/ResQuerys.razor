@@ -13,6 +13,7 @@
 @inject ISessionStorageService sessionstorage
 @inject IPersonsClient PersonsClient
 @inject ICompanysClient CompanysClient
+@inject IMandantsClient MandantsClient
 
 
 @if (!_loaded)
@@ -107,6 +108,7 @@ else
     private UpdatePersonRequest _updatePersonRequest { get; set; } = new();
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
     public int _mandantId { get; set; }
+    public MandantDto? mandantDto { get; set; }
     int gastnamefolgt = 46861;
     public bool openChildDialog { get; set; } = true;
 
@@ -118,6 +120,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+        mandantDto = await MandantsClient.GetAsync(_mandantId);
         if (resQuery == null)
         {
             resQuery = new();
@@ -125,11 +128,12 @@ else
             pax.Children = new List<Child>();
             resQuery.RoomOccupancy = new List<Pax>();
             resQuery.RoomOccupancy.Add(pax);
-#if DEBUG
-    _dateRange = new DateRange(new DateTime(2022, 09, 01).Date, new DateTime(2022,09,02).Date);
-#else
-            _dateRange = new DateRange(DateTime.Now.Date, DateTime.Now.AddDays(1).Date);
-#endif
+            _dateRange = new DateRange(mandantDto.HotelDate.Value, mandantDto.HotelDate.Value.AddDays(1));
+// #if DEBUG
+//     _dateRange = new DateRange(new DateTime(2022, 09, 01).Date, new DateTime(2022,09,02).Date);
+// #else
+//             _dateRange = new DateRange(DateTime.Now.Date, DateTime.Now.AddDays(1).Date);
+// #endif
         }
         else
         {

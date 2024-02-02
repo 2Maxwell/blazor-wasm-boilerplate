@@ -1,6 +1,6 @@
 ﻿namespace FSH.BlazorWebAssembly.Client.ViewModels;
 
-public class PersonAddressReportDto
+public class PersonAddressReportDtoLoc
 {
     public string? Name { get; set; }
     public string? FirstName { get; set; }

@@ -1,0 +1,125 @@
+﻿@using Blazored.SessionStorage;
+@inject IStringLocalizer<CashierRegisterDialog> L
+
+
+@if (_loaded)
+{
+    <MudDialog Style="height:500px; width:600px">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3 mb-n1" />
+                @L["Select Cashierregister"]
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudStack Class="pa-3">
+                @foreach (var cashierRegister in CashierRegisters)
+                {
+                    <MudButton Style="width:90%" OnClick="(() => SetCashierRegister(cashierRegister))">
+                        <MudStack Style="width:100%">
+
+                            <MudPaper Class="pa-4" Style="background:#37474F;">
+                                <MudStack Row="true" AlignItems="AlignItems.Center">
+
+                                    <MudAvatar Color="Color.Warning" Variant="Variant.Outlined">@cashierRegister.Location!.Substring(0,1)</MudAvatar>
+
+                                    <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center" Spacing="0">
+                                        <MudText Typo="Typo.body1">@cashierRegister.Name</MudText>
+                                        <MudText Typo="Typo.body2">@cashierRegister.Location</MudText>
+                                    </MudStack>
+
+                                    <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center" Spacing="0">
+                                        <MudText Typo="Typo.body2">@cashierRegister.Stock</MudText>
+                                        @{
+                                            string open = cashierRegister.Open ? "Open" : "Closed";
+                                        }
+                                        <MudText Typo="Typo.body2">Status: @open</MudText>
+
+                                    </MudStack>
+
+                                </MudStack>
+                            </MudPaper>
+                        </MudStack>
+                    </MudButton>
+                }
+
+            </MudStack>
+
+        </DialogContent>
+
+    </MudDialog>
+
+
+}
+
+@code {
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter]
+    public int MandantId { get; set; }
+
+    public int CashierId { get; set; }
+
+    public List<CashierRegisterDto> CashierRegisters { get; set; }
+
+    [Inject]
+    public ICashierRegisterClient CashiersClient { get; set; } = default!;
+
+    [Inject]
+    public ISessionStorageService sessionstorage { get; set; } = default!;
+
+    public CashierRegisterDto? _cashierDto { get; set; } = null;
+    public bool _loaded { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (CashierId == 0)
+        {
+            CashierRegisters = (await CashiersClient.GetCashierRegisterDtosRequestAsync(MandantId)).ToList();
+        }
+        _loaded = true;
+    }
+
+    private async void SetCashierRegister(CashierRegisterDto cashierRegister)
+    {
+        var data = new Dictionary<string, string>
+        {
+            {"currentCashierRegisterId", cashierRegister.Id.ToString()},
+            {"currentCashierRegisterName", cashierRegister.Name!},
+        };
+
+        await sessionstorage.SetItemAsync("currentCashierRegister", data);
+        await sessionstorage.SetItemAsStringAsync("currentCashierId", cashierRegister.Id.ToString());
+        CashierId = cashierRegister.Id;
+        MudDialog.Close(DialogResult.Ok(CashierId));
+
+        // var currentCashierRegister = await sessionstorage.GetItemAsync<Dictionary<string, string>>("currentCashierRegister");
+    }
+
+
+    // private async void SaveCashier()
+    // {
+    //     if (_cashierDto != null)
+    //     {
+    //         if (_cashierDto.Id > 0)
+    //         {
+    //             await CashiersClient.UpdateAsync(_cashierDto);
+    //         }
+    //         else
+    //         {
+    //             _cashierDto.MandantId = MandantId;
+    //             _cashierDto = await CashiersClient.CreateAsync(_cashierDto);
+    //         }
+
+    //         await sessionstorage.SetItemAsStringAsync("currentCashierId", _cashierDto.Id.ToString());
+    //         await OnCashierIdChanged.InvokeAsync(_cashierDto.Id);
+    //         await OnOpenChanged.InvokeAsync(false);
+    //     }
+    // }
+
+    private async void Cancel()
+    {
+        // await OnOpenChanged.InvokeAsync(false);
+    }
+
+}

@@ -1,0 +1,105 @@
+﻿<MudPaper style="@{
+                            item.SourceList.Count(x => x.ItemNumber >= 9000) > 0 ? "background: #e91e63;" : ""
+                                }" Class="mt-2 ml-2 mr-2 mb-n2 pa-4">
+
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+
+            <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                <MudMenuItem OnClick="() => LocalDeleteBookingLineSummary(item)" Icon="@Icons.Material.Filled.Delete">@L["Delete"]</MudMenuItem>
+
+                @if(item.Amount > 1)
+                {
+                    <MudMenuItem OnClick="() => LocalSplitAmount(item)" Icon="@Icons.Material.Filled.Code">@L["Split Amount"]</MudMenuItem>
+                }
+
+                @if (item.Price > 1)
+                {
+                    <MudMenuItem OnClick="() => LocalSplitPrice(item)" Icon="@Icons.Material.Filled.Code">@L["Split Price"]</MudMenuItem>
+                }
+
+                <MudMenuItem>@L["Edit Description"]</MudMenuItem>
+                <MudMenuItem>@L["Edit ..."]</MudMenuItem>
+            </MudMenu>
+
+            @* <MudIconButton OnClick="() => LocalDeleteBookingLineSummary(item)" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton> *@
+
+            <MudText Style="width:20%; text-align:left;" Typo="Typo.body1">@item.Date.Date.ToString("dd.MM.yyyy")</MudText>
+
+            <MudStack Style="width:50%; margin-left:10px;" Justify="Justify.Center" Spacing="0">
+                <MudText Typo="Typo.body1">@item.Description</MudText>
+                <MudText Typo="Typo.body2">@item.Price.ToString("N2")</MudText>
+                @* @item.Description *@
+                @* @item.TaxLine *@
+                InvPos: @item.InvoicePosition |
+            @{
+                string Ids = "";
+                foreach (var bookingLine in item.SourceList)
+                {
+                    Ids += bookingLine.Id + " ";
+                }
+            }
+            Id's: @Ids |
+        </MudStack>
+
+        @if (cashierFunction == CashierFunctionEnum.TransferToRoom)
+        {
+
+        }
+
+
+
+        <MudText Style="width:15%; text-align:right" Typo="Typo.h6">@Convert.ToDecimal(item.Amount).ToString("N2")</MudText>  <MudText Style="width:3%;" Typo="Typo.h5"> X </MudText>
+
+            @* @if (cashierFunction == CashierFunctionEnum.SplitAmount & item.Amount > 1)
+        {
+            <MudIconButton OnClick="() => LocalSplitAmount(item)" Icon="@Icons.Material.Filled.Code" Title="@L["Split Amount"]" aria-label="delete"></MudIconButton>
+        } *@
+
+
+        <MudText Style="width:20%; text-align:right" Typo="Typo.h6">@item.Total.ToString("N2")</MudText>
+
+            @* @if (cashierFunction == CashierFunctionEnum.SplitPrice & Convert.ToInt32(item.Amount) == 1)
+        {
+            <MudIconButton OnClick="() => LocalSplitPrice(item)" Icon="@Icons.Material.Filled.Code" Title="@L["Split Price"]" aria-label="delete"></MudIconButton>
+        } *@
+
+    </MudStack>
+
+</MudPaper>
+
+@code {
+    [Parameter]
+    public CashierFunctionEnum cashierFunction { get; set; }
+
+    [Parameter]
+    public BookingLineSummaryLocal item { get; set; }
+
+    [Parameter]
+    public EventCallback<BookingLineSummaryLocal> DeleteBookingLineSummary { get; set; }
+
+    [Parameter]
+    public EventCallback<BookingLineSummaryLocal> SplitAmount { get; set; }
+
+    [Parameter]
+    public EventCallback<BookingLineSummaryLocal> SplitPrice { get; set; }
+
+
+    [Inject]
+    public IStringLocalizer<SharedResource> L { get; set; }
+
+    private async void LocalDeleteBookingLineSummary(BookingLineSummaryLocal item)
+    {
+        await DeleteBookingLineSummary.InvokeAsync(item);
+    }
+
+    private async void LocalSplitAmount(BookingLineSummaryLocal item)
+    {
+        await SplitAmount.InvokeAsync(item);
+    }
+
+    private async void LocalSplitPrice(BookingLineSummaryLocal item)
+    {
+        await SplitPrice.InvokeAsync(item);
+    }
+
+}

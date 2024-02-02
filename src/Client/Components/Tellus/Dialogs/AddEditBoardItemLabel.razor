@@ -1,0 +1,106 @@
+﻿@inject IStringLocalizer<AddEditBoardItemLabel> L
+@inject IBoardItemLabelsClient BoardItemLabelsClient
+@inject IBoardItemLabelGroupsClient BoardItemLabelGroupsClient
+
+@if (_loaded)
+{
+    <MudDialog Title="@L[HeaderText!]" MaxWidth="MaxWidth.Small">
+        <DialogContent>
+
+            <MudGrid>
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="request!.Text" Label="@L["Text"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudColorPicker T="string?" @bind-Text="request.Color" Style="@($"color:{request!.Color};")" Label="@L["BoardColor"]" ColorPickerView="ColorPickerView.Palette" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudCheckBox @bind-Checked="request!.DefaultLabel" Label="@L["Default Label"]" Size="Size.Large" Color="Color.Primary"></MudCheckBox>
+                </MudItem>
+                <MudSelect Style="width:300px;" Value="currentBoardItemLabelGroupId" ValueChanged="((e) => BoardItemLabelGroupChanged(e))" Class="ma-1" T="int" FullWidth="false" Placeholder="Please Select" Margin="Margin.Dense" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.Collections" AdornmentColor="Color.Primary">
+                    <MudSelectItem T="int" Value="0">@L["Select LabelGroup"]</MudSelectItem>
+                    @foreach (var item in BoardItemLabelGroups!)
+                    {
+                        <MudSelectItem T="int" Value="@item.Id">@item.Title</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudGrid>
+
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="SaveBoardItemLabel" Variant="Variant.Filled" Color="Color.Primary">@L["Save"]</MudButton>
+            <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">@L["Cancel"]</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance? MudDialog { get; set; }
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public BoardItemLabelDto? BoardItemLabel { get; set; }
+    [Parameter]
+    public int currentBoardItemLabelGroupId { get; set; }
+
+    public List<BoardItemLabelGroupSelectDto>? BoardItemLabelGroups { get; set; } = new List<BoardItemLabelGroupSelectDto>();
+    // public int boardItemLabelGroupId { get; set; } = 0;
+
+    public UpdateBoardItemLabelRequest? request { get; set; }
+
+    public bool _loaded { get; set; } = false;
+    public string? HeaderText { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        GetBoardItemLabelGroupSelectRequest getBoardItemLabelGroupSelectRequest = new GetBoardItemLabelGroupSelectRequest();
+        getBoardItemLabelGroupSelectRequest.MandantId = MandantId;
+        BoardItemLabelGroups = (await BoardItemLabelGroupsClient.GetBoardItemLabelGroupSelectAsync(getBoardItemLabelGroupSelectRequest)).ToList();
+
+        if (BoardItemLabel is not null)
+        {
+            request = BoardItemLabel.Adapt<UpdateBoardItemLabelRequest>();
+            currentBoardItemLabelGroupId = BoardItemLabel.BoardItemLabelGroupId;
+            HeaderText = $"Edit BoardItemLabel {request.Id}";
+        }
+        else
+        {
+            request = new UpdateBoardItemLabelRequest();
+            // request.BoardItemLabelGroupId = Convert.ToInt32(currentBoardItemLabelGroupId);
+            HeaderText = "Add BoardItemLabel";
+        };
+
+        _loaded = true;
+    }
+
+    private void BoardItemLabelGroupChanged(int e)
+    {
+        // boardItemLabelGroupId = e;
+        request!.BoardItemLabelGroupId = e; // boardItemLabelGroupId;
+    }
+
+    private async void SaveBoardItemLabel()
+    {
+        request!.MandantId = MandantId;
+        request.BoardItemLabelGroupId = currentBoardItemLabelGroupId;
+
+        if (request.Id > 0)
+        {
+            await BoardItemLabelsClient.UpdateAsync(request.Id, request);
+        }
+        else
+        {
+            var id = await BoardItemLabelsClient.CreateAsync(request.Adapt<CreateBoardItemLabelRequest>());
+            request.Id = id;
+        }
+
+        MudDialog!.Close(DialogResult.Ok(request));
+    }
+
+    private void Cancel()
+    {
+        MudDialog!.Close(DialogResult.Cancel());
+    }
+}

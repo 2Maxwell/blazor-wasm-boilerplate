@@ -6,7 +6,7 @@
 
 <h3>Booking Report</h3>
 
-<EditForm Model="@bookingReportDto" OnSubmit="GenerateReportForBookings">
+<EditForm Model="@bookingReportDto" OnSubmit="GenerateReportForBooking">
     <DataAnnotationsValidator />
 
     <div class="form-group">
@@ -45,9 +45,9 @@
 @code {
     private BookingReportDto bookingReportDto = new BookingReportDto();
 
-    private async Task GenerateReportForBookings()
+    private async Task GenerateReportForBooking()
     {
-        await reportService.GenerateReportForBookings(bookingReportDto);
+       await reportService.GenerateReportForBookings(bookingReportDto);
     }
 
     private class BookingDto

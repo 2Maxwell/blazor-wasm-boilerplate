@@ -13,6 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <Content Remove="Components\Cashier\CashierPackageCard.razor" />
       <Content Remove="Components\EntityTableExtended\EntityTableExtended.razor" />
       <Content Remove="Components\Periods\AddPeriodModal.razor" />
       <Content Remove="Components\Periods\EditPeriodModal.razor" />
@@ -24,7 +25,7 @@
         <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.5" PrivateAssets="all" />
         <PackageReference Include="Microsoft.AspNetCore.Localization" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
-        <PackageReference Include="MudBlazor" Version="6.0.10" />
+        <PackageReference Include="MudBlazor" Version="6.11.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -46,5 +47,17 @@
     <ItemGroup>
       <Folder Include="Components\EntityTableExtended\" />
       <Folder Include="Components\Periods\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <UpToDateCheckInput Remove="Components\Cashier\CashierPackageCard.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Components\Cashier\CashierPackageCard.razor" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="Components\Cashier\CashierPackageCard.razor" />
     </ItemGroup>
 </Project>

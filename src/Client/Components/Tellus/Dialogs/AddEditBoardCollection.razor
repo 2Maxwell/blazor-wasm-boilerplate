@@ -1,0 +1,234 @@
+﻿@inject IStringLocalizer<AddEditBoardCollection> L
+@inject IBoardCollectionsClient BoardCollectionClient
+@inject IBoardsClient BoardsClient
+@inject IBoardItemLabelsClient BoardItemLabelsClient
+
+@if (_loaded)
+{
+    <MudDialog Title="@L["AddEditBoardCollection"]" MaxWidth="MaxWidth.Small">
+        <DialogContent>
+            <MudGrid>
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="request.Title" Label="@L["Title"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="request.Description" Lines="3" Label="@L["Description"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudCheckBox @bind-Checked="request.UserOnly" Label="@L["Private BoardCollection"]" Size="Size.Large" Color="Color.Primary"></MudCheckBox>
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudDataGrid T="BoardSelectDto" MultiSelection="true" Dense="true" Items="@BoardSelects" SelectedItems="@BoardsSelected" RowClick="@RowClicked" SelectedItemsChanged="@SelectedItemsChanged">
+
+                        <ToolBarContent>
+                            <MudText Typo="Typo.h6">@L["Boards"] @request.BoardIds</MudText>
+                            <MudSpacer></MudSpacer>
+                            <MudFab OnClick="(() => AddNewBoard())" Title="@L["Add new Board"]" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" />
+                            @*                             <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                        AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        *@
+                        </ToolBarContent>
+                        <Columns>
+                            <SelectColumn T="BoardSelectDto" />
+                            <PropertyColumn Property="x => x.Id" Title="Id" />
+                            <PropertyColumn Property="x => x.Title" />
+                        </Columns>
+                    </MudDataGrid>
+                </MudItem>
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="SaveBoardCollection" Variant="Variant.Filled" Color="Color.Primary">@L["Save"]</MudButton>
+            <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">@L["Cancel"]</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance? MudDialog { get; set; }
+    [Parameter]
+    public string? _userId { get; set; }
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public int BoardCollectionId { get; set; }
+
+    public List<BoardItemLabelDto> boardItemLabels { get; set; }
+
+    // public ICollection<Board> Boards { get; set; } = new List<Board>();
+    public ICollection<BoardSelectDto> BoardSelects { get; set; } = new List<BoardSelectDto>();
+    public HashSet<BoardSelectDto> BoardsSelected { get; set; } = new HashSet<BoardSelectDto>();
+
+    public bool _loaded { get; set; } = false;
+    UpdateBoardCollectionRequest request = new UpdateBoardCollectionRequest();
+
+    private string valueBoards { get; set; } = "Nothing selected";
+    private IEnumerable<string> optionBoards { get; set; } = new HashSet<string>();
+    private string[] boardStrings;
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (BoardCollectionId > 0)
+        {
+            request = (await BoardCollectionClient.GetAsync(BoardCollectionId)).Adapt<UpdateBoardCollectionRequest>();
+        }
+        else
+        {
+            request = new UpdateBoardCollectionRequest();
+            request.Boards = new List<BoardDto>();
+            request.BoardItemLabels = new List<BoardItemLabelDto>();
+        }
+
+        GetBoardSelectDtoRequest requestBoards = new GetBoardSelectDtoRequest();
+        requestBoards.MandantId = MandantId;
+        requestBoards.UserId = _userId;
+
+        // BoardSelects = await BoardsClient.GetBoardSelectDtoAsync(requestBoards);
+
+        // Add new Board nur möglich wenn BoardCollectionId > 0
+        if (request.Id > 0)
+        {
+            BoardSelectDto boardSelectDto = new BoardSelectDto();
+            boardSelectDto.Id = 0;
+            boardSelectDto.Title = "Add New Board";
+            BoardSelects.ToList().Insert(0, boardSelectDto);
+            GetBoardItemLabelDefaultRequest requestBil = new GetBoardItemLabelDefaultRequest();
+            requestBil.MandantId = MandantId;
+            requestBil.BoardItemLabelIds = null; // null : weil neues Board
+            boardItemLabels = (await BoardItemLabelsClient.GetBoardItemLabelsByBoardItemIdAsync(requestBil)).ToList();
+        }
+
+        // BoardSelectDto boardSelectDto1 = new BoardSelectDto();
+        // boardSelectDto1.Id = 1;
+        // boardSelectDto1.Title = "Add New Board 1";
+
+        // BoardSelectDto boardSelectDto2 = new BoardSelectDto();
+        // boardSelectDto2.Id = 2;
+        // boardSelectDto2.Title = "Add New Board 2";
+
+        // BoardSelectDto boardSelectDto3 = new BoardSelectDto();
+        // boardSelectDto3.Id = 3;
+        // boardSelectDto3.Title = "Add New Board 3";
+
+
+        // BoardSelects.Add(boardSelectDto1);
+        // BoardSelects.Add(boardSelectDto2);
+        // BoardSelects.Add(boardSelectDto3);
+        // BoardsSelected.Add(boardSelectDto2);
+
+
+        // LoadBoardStrings();
+
+
+        _loaded = true;
+    }
+
+    private void LoadBoardStrings()
+    {
+        boardStrings = new string[BoardSelects.Count];
+        int i = 0;
+        foreach (var board in BoardSelects.OrderBy(x => x.Title))
+        {
+            boardStrings[i] = $"{board.Id} | {board.Title}";
+            i++;
+        }
+    }
+
+    void RowClicked(DataGridRowClickEventArgs<BoardSelectDto> args)
+    {
+        // _events.Insert(0, $"Event = RowClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
+        if (args.Item.Id == 0)
+        {
+            // TODO: Add new Board with BoardCollectionId in a new Dialog
+        }
+    }
+
+    void SelectedItemsChanged(HashSet<BoardSelectDto> items)
+    {
+        request.BoardIds = "";
+        // _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
+        foreach (var item in items)
+        {
+            request.BoardIds += item.Id.ToString() + "|";
+
+        }
+        // Console.WriteLine("request.BoardIds: " + request.BoardIds.ToString());
+    }
+
+    private async void SetDefaultBoardItemLabel()
+    {
+        GetBoardItemLabelDefaultRequest requestBil = new GetBoardItemLabelDefaultRequest();
+        requestBil.MandantId = MandantId;
+        requestBil.BoardItemLabelIds = null; // null : weil neues Board
+        boardItemLabels = (await BoardItemLabelsClient.GetBoardItemLabelsByBoardItemIdAsync(requestBil)).ToList();
+    }
+
+    private async void AddNewBoard()
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["_userId"] = _userId,
+                ["Board"] = null,
+                ["BoardItemLabelDtos"] = boardItemLabels,
+            };
+
+        var dialog = DialogService.Show<AddEditBoard>("AddEdit Board", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+
+            Console.WriteLine("result.Data: " + result.Data.ToString());
+        }
+    }
+
+    private async void SaveBoardCollection()
+    {
+        request.MandantId = MandantId;
+
+        request.BoardIds = "";
+        if (request.Boards is not null)
+        {
+            foreach (var item in request.Boards!)
+            {
+                request.BoardIds += item.Id.ToString() + "|";
+            }
+        }
+
+        request.BoardItemLabelIds = "";
+        if (request.BoardItemLabels is not null)
+        {
+            foreach (var item in request.BoardItemLabels)
+            {
+                request.BoardItemLabelIds += item.Id.ToString() + "|";
+            }
+        }
+
+        request.BoardIds = request.BoardIds.TrimEnd('|');
+        // request.BoardItemLabelIds = null; // null : weil neues Board
+        request.BoardItemLabelIds = request.BoardItemLabelIds.TrimEnd('|');
+        request.BoardItemLabelIds = request.BoardItemLabelIds.TrimStart('|');
+        request.BoardItemLabelIds = request.BoardItemLabelIds.Replace("||", "|");
+        request.BoardItemLabelIds = request.BoardItemLabelIds.TrimEnd('|');
+        request.BoardItemLabelIds = request.BoardItemLabelIds.TrimStart('|');
+
+        if (request.Id > 0)
+        {
+            await BoardCollectionClient.UpdateAsync(request.Id, request);
+        }
+        else
+        {
+            await BoardCollectionClient.CreateAsync(request.Adapt<CreateBoardCollectionRequest>());
+        }
+
+        MudDialog!.Close(DialogResult.Ok(request.Id));
+    }
+
+    private void Cancel()
+    {
+        MudDialog!.Close(DialogResult.Cancel());
+    }
+}

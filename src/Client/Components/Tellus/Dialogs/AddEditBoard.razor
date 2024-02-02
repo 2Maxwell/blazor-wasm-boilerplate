@@ -1,0 +1,136 @@
+﻿@inject IStringLocalizer<AddEditBoard> L
+@inject IBoardsClient BoardsClient
+@inject IBoardItemLabelsClient BoardItemLabelsClient
+@inject IBoardItemLabelGroupsClient BoardItemLabelGroupsClient
+
+@if (_loaded)
+{
+    <MudDialog Title="@L[HeaderText!]" MaxWidth="MaxWidth.Small">
+        <DialogContent>
+            <MudGrid>
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="request!.Title" For="@(() => request!.Title)" Label="@L["Title"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="request!.Description" For="@(() => request!.Description)" Lines="3" Label="@L["Description"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="6" md="6">
+                    <MudCheckBox @bind-Checked="request!.UserOnly" Label="@L["Private BoardCollection"]" Size="Size.Large" Color="Color.Primary"></MudCheckBox>
+                </MudItem>
+                <MudItem xs="6" md="6">
+                    <MudCheckBox @bind-Checked="request!.DoneBoard" Label="@L["DoneBoard"]" Size="Size.Large" Color="Color.Primary"></MudCheckBox>
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudSelect T="int" Label="BoardItemLabelAdd" MultiSelection="false" Value="@Convert.ToInt32(request!.BoardLabelAdd)">
+                        @if (boardItemLabels is not null)
+                        {
+                            foreach (BoardItemLabelDto boardItemLabelDto in boardItemLabels!)
+                            {
+                                <MudSelectItem T="int" Value="boardItemLabelDto.Id">@boardItemLabelDto.Text</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudSelect T="int" @bind-Value="request!.DefaultBoardItemLabelGroupId" For="@(() => request!.DefaultBoardItemLabelGroupId)" Label="DefaultLabelGroup" MultiSelection="false">
+                        @if (boardItemLabelGroups is not null)
+                        {
+                            foreach (BoardItemLabelGroupDto boardItemLabelGroup in boardItemLabelGroups!)
+                            {
+                                <MudSelectItem T="int" Value="boardItemLabelGroup.Id">@boardItemLabelGroup.Title</MudSelectItem>
+                            }
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="request!.BoardLabelAdd" Label="@L["BoardLabelAdd"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="request!.BoardLabelRemove" Label="@L["BoardLabelRemove"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+
+                <MudColorPicker T="string?" @bind-Text="request.Color" Style="@($"color:{request!.Color};")" Label="@L["BoardColor"]" ColorPickerView="ColorPickerView.Palette" />
+
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="SaveBoard" Variant="Variant.Filled" Color="Color.Primary">@L["Save"]</MudButton>
+            <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">@L["Cancel"]</MudButton>
+        </DialogActions>
+    </MudDialog>
+
+
+}
+
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance? MudDialog { get; set; }
+    [Parameter]
+    public List<BoardItemLabelDto>? boardItemLabels { get; set; } = new List<BoardItemLabelDto>();
+    [Parameter]
+    public List<BoardItemLabelGroupDto>? boardItemLabelGroups { get; set; } = new List<BoardItemLabelGroupDto>();
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public string? _userId { get; set; }
+    [Parameter]
+    public BoardDto? Board { get; set; }
+
+    public UpdateBoardRequest? request { get; set; }
+
+
+    public bool _loaded { get; set; } = false;
+    public string? HeaderText { get; set; }
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (Board is not null)
+        {
+            request = Board.Adapt<UpdateBoardRequest>();
+            HeaderText = $"Edit Board {request.Id}";
+        }
+        else
+        {
+            request = new UpdateBoardRequest();
+            HeaderText = "Add Board";
+        };
+
+        if (boardItemLabelGroups is null || boardItemLabelGroups.Count == 0)
+        {
+            GetBoardItemLabelGroupsRequest getBoardItemLabelGroupsRequest = new GetBoardItemLabelGroupsRequest();
+            getBoardItemLabelGroupsRequest.MandantId = MandantId;
+            boardItemLabelGroups = (await BoardItemLabelGroupsClient.GetBoardItemLabelGroupsAsync(getBoardItemLabelGroupsRequest)).ToList();
+        }
+        _loaded = true;
+    }
+
+    private async Task SaveBoard()
+    {
+        int savedId = 0;
+        request!.MandantId = MandantId;
+
+        if (Board is not null)
+        {
+            savedId = await BoardsClient.UpdateAsync(Board.Id, request);
+        }
+        else
+        {
+            savedId = await BoardsClient.CreateAsync(request.Adapt<CreateBoardRequest>());
+        }
+
+        MudDialog!.Close(DialogResult.Ok(request.Adapt<BoardDto>()));
+    }
+
+    private void Cancel()
+    {
+        MudDialog!.Close(DialogResult.Cancel());
+    }
+}

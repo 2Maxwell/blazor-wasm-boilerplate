@@ -7,4 +7,5 @@ public interface IReportService<T> where T : class
 {
     Task GenerateReport(string endpoint, List<T> reportData);
     Task GenerateReportForBookings(BookingReportDto report);
+    Task ProcessReportWriter(string responseType, string reportEndpoint, string jsonRequest);
 }

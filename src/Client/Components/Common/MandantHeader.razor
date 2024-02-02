@@ -23,19 +23,24 @@
 
     protected override async Task OnInitializedAsync()
     {
+        MandantId = Convert.ToInt32(await sessionStorage.GetItemAsStringAsync("currentMandantId"));
 
-        var user = (await AuthState).User;
-        if (user.Identity?.IsAuthenticated == true)
+        if (MandantId == 0)
         {
-            if(string.IsNullOrEmpty(UserId)){
-                UserId = user.GetUserId();
+            var user = (await AuthState).User;
+            if (user.Identity?.IsAuthenticated == true)
+            {
+                if (string.IsNullOrEmpty(UserId))
+                {
+                    UserId = user.GetUserId();
+                }
             }
-        }
-        if (await ApiHelper.ExecuteCallGuardedAsync(() => UsersClient.GetByIdAsync(UserId), Snackbar) is UserDetailsDto currentUser)
-        {
-            MandantId = Convert.ToInt32(currentUser.MandantId);
-            await sessionStorage.SetItemAsStringAsync("currentMandantId", MandantId.ToString());
 
+            if (await ApiHelper.ExecuteCallGuardedAsync(() => UsersClient.GetByIdAsync(UserId), Snackbar) is UserDetailsDto currentUser)
+            {
+                MandantId = Convert.ToInt32(currentUser.MandantId);
+                await sessionStorage.SetItemAsStringAsync("currentMandantId", MandantId.ToString());
+            }
         }
 
         await LoadMandantData(MandantId);
@@ -53,8 +58,7 @@
             }
         }
     }
-
-    }
+}
 
 
 

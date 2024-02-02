@@ -1,0 +1,808 @@
+﻿@inject IStringLocalizer<AddEditBoardItem> L
+@inject IBoardItemsClient BoardItemsClient
+@inject IBoardItemTagGroupsClient BoardItemTagGroupsClient
+@inject IBoardItemTagsClient BoardItemTagsClient
+@inject IBoardItemLabelGroupsClient BoardItemLabelGroupsClient
+@inject IBoardItemLabelsClient BoardItemLabelsClient
+@inject IEnumsClient EnumsClient
+@inject IBoardItemSubsClient BoardItemSubsClient
+
+@if (_loaded)
+{
+    <MudDialog Style="min-width:1000px;">
+
+        <DialogContent>
+            <MudGrid>
+
+                <MudItem xs="12">
+                    <MudPaper Class="pa-4">
+                        <MudStack>
+                            <MudStack Spacing="1" Row="true">
+                                @foreach (var tag in BoardItem!.ItemTags)
+                                {
+                                    <BoardItemTag boardItemTag="tag" showText="true"></BoardItemTag>
+                                }
+                                @foreach (var label in BoardItem!.ItemLabels)
+                                {
+                                    <BoardItemLabel boardItemLabel="label" showText="true"></BoardItemLabel>
+                                }
+                            </MudStack>
+                        </MudStack>
+
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="7">
+                    <MudPaper Class="pa-4">
+
+                        <MudGrid>
+
+
+                            <MudItem xs="12" md="12">
+                                <MudTextField @bind-Value="request!.Title" Label="@L["Text"]" For="@(() => request.Title)" Variant="Variant.Outlined" />
+                            </MudItem>
+
+                            <MudItem xs="12" md="12">
+                                <MudTextField @bind-Value="request!.Description" Lines="3" Label="@L["Description"]" For="@(() => request!.Description)" Variant="Variant.Outlined" />
+                            </MudItem>
+
+                            @if (request!.BoardItemTypeEnumId != 10)
+                            {
+                                <MudItem xs="7">
+                                    <MudDatePicker Label="Start" Editable="true" Date="@request!.Start!.Value" Variant="Variant.Outlined" Placeholder="Arrival Date" />
+                                </MudItem>
+                                <MudItem xs="5">
+                                    <MudTimePicker Label="Starttime" Editable="true" Time="@request!.Start!.Value.TimeOfDay" Variant="Variant.Outlined" />
+                                </MudItem>
+                                <MudItem xs="7">
+                                    <MudDatePicker Label="End" Editable="true" Date="@request!.End!.Value" Variant="Variant.Outlined" Placeholder="Departure Date" />
+                                </MudItem>
+                                <MudItem xs="5">
+                                    <MudTimePicker Label="Endtime" Editable="true" Time="@request!.End!.Value.TimeOfDay" Variant="Variant.Outlined" />
+                                </MudItem>
+                            }
+
+                            <MudItem xs="12" md="12">
+                                <MudSelect T="int?" @bind-Value="request!.DefaultBoardItemLabelGroupId" For="@(() => request!.DefaultBoardItemLabelGroupId)" Label="Default LabelGroup" Class="ma-1" FullWidth="false" Placeholder="Please Select" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.Collections" AdornmentColor="Color.Primary">
+                                    <MudSelectItem T="int?" Value="0">@L["Select LabelGroup"]</MudSelectItem>
+                                        @foreach (var item in boardItemLabelGroups!)
+                                    {
+                                        <MudSelectItem T="int?" Value="@item.Id">@item.Title</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+
+                            <MudItem xs="6">
+                                <MudCheckBox @bind-Checked="@request!.IsTemplate" Label="@L["Is Template"]"></MudCheckBox>
+                            </MudItem>
+
+                            <MudItem xs="6">
+                                <MudCheckBox @bind-Checked="@request!.FixedBoard" Label="@L["Fixed Board"]"></MudCheckBox>
+                            </MudItem>
+
+                            <MudItem xs="12">
+                                <MudExpansionPanels>
+                                    <MudExpansionPanel Text="@L["Source Details"]" Dense="true">
+                                        <MudStack>
+
+                                            <MudStack Row="true">
+                                                @* <MudTextField @bind-Value="boardSourceId.Source" Label="Source" Variant="Variant.Outlined" Margin="Margin.Dense"></MudTextField> *@
+                                                <MudSelect @bind-Value="boardSourceId.Source" Dense="true" T="string" Label="@L["Source"]" Margin="Margin.Dense" Variant="Variant.Outlined">
+                                                    <MudSelectItem Value="@("Reservation")" />
+                                                    <MudSelectItem Value="@("Appointment")" />
+                                                    <MudSelectItem Value="@("NightAudit")" />
+                                                </MudSelect>
+                                                <MudNumericField HideSpinButtons="true" @bind-Value="boardSourceId.SourceId" Margin="Margin.Dense" Label="SourceId" Variant="Variant.Outlined" />
+                                                <MudIconButton OnClick="AddSourceItem" Icon="@Icons.Material.Filled.Add" Color="Color.Secondary" />
+                                            </MudStack>
+                                            @if (request.BoardSourceIds.Count > 0)
+                                            {
+                                                <MudSimpleTable Dense="true">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Source</th>
+                                                            <th>SourceId</th>
+                                                            <th></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var item in request.BoardSourceIds)
+                                                        {
+                                                            <tr>
+                                                                <td>@item.Source</td>
+                                                                <td>@item.SourceId</td>
+                                                                <td><MudIconButton OnClick="(() => DeleteSourceItem(item))" Icon="@Icons.Material.Filled.Delete" Color="Color.Secondary" /></td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </MudSimpleTable>
+                                            }
+
+                                        </MudStack>
+
+                                    </MudExpansionPanel>
+                                </MudExpansionPanels>
+
+                            </MudItem>
+
+
+                        </MudGrid>
+
+                    </MudPaper>
+                </MudItem>
+
+                <MudItem xs="5">
+                    <MudPaper Class="pa-4 mud-height-full">
+
+                        <MudGrid>
+
+                            <MudItem xs="12" md="12">
+                                <MudSelect T="int?" @bind-Value="request!.BoardItemTypeEnumId" Label="@L["BoardItemType"]" Class="ma-1" FullWidth="false" Placeholder="Please Select" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.Collections" AdornmentColor="Color.Primary">
+                                    <MudSelectItem T="int?" Value="0">@L["Select BoardItemType"]</MudSelectItem>
+                                        @foreach (BoardItemTypeEnumDto item in BoardItemTypeEnums!)
+                                    {
+                                        <MudSelectItem T="int?" Value="@item.Value">@item.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </MudItem>
+
+                            <MudItem xs="12" md="12">
+                                <MudExpansionPanels Class="ma-2 pa-2" MultiExpansion="true">
+
+                                    <MudExpansionPanel Text="Labels">
+                                        <MudStack>
+                                            <MudPaper Class="ma-n2" MinHeight="300px">
+
+                                                <MudStack Class="pb-4" Justify="Justify.FlexStart" Spacing="3" AlignItems="AlignItems.Center" Row="true">
+                                                    <MudSelect Style="width:300px;" Value="boardItemLabelGroupId" ValueChanged="((e) => BoardItemLabelGroupChanged(e))" Label="LabelGroup" Class="ma-1" T="int" FullWidth="false" Placeholder="Please Select" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.Collections" AdornmentColor="Color.Primary">
+                                                        <MudSelectItem T="int" Value="0">@L["Select LabelGroup"]</MudSelectItem>
+                                                            @foreach (var item in boardItemLabelGroups!)
+                                                        {
+                                                            <MudSelectItem T="int" Value="@item.Id">@item.Title</MudSelectItem>
+                                                        }
+                                                    </MudSelect>
+
+                                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                                                        @if (boardItemLabelGroupId > 0)
+                                                        {
+                                                            <MudMenuItem OnClick="(() => AddBoardItemLabel())" Icon="@Icons.Material.Filled.Add">Add new Label</MudMenuItem>
+                                                            <MudMenuItem OnClick="(() => EditBoardItemLabelGroup())" Icon="@Icons.Material.Filled.Edit">Edit LabelGroup</MudMenuItem>
+                                                        }
+                                                        <MudMenuItem OnClick="(() => AddBoardItemLabelGroup())" Icon="@Icons.Material.Filled.Add">Add LabelGroup</MudMenuItem>
+                                                        <MudCheckBox Class="ml-2" T="bool" @bind-Checked="labelShowText" Label="@L["show LabelText"]" Size="Size.Medium" Color="Color.Primary" LabelPlacement="LabelPlacement.Start" />
+                                                    </MudMenu>
+                                                </MudStack>
+
+                                                @if (boardItemLabelGroupId > 0)
+                                                {
+                                                    <MudSimpleTable Style="overflow-x: auto;" Dense="true">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Check</th>
+                                                                <th>Label</th>
+                                                                <th></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach (BoardItemLabelDto labelDto1 in boardItemLabels!.Where(x => x.BoardItemLabelGroupId == boardItemLabelGroupId))
+                                                            {
+                                                                <tr style="height:30px;">
+                                                                    <td><MudCheckBox T="bool" Checked="@boardItemLabelAllIdsInt!.Contains(labelDto1.Id)" CheckedChanged="((e) => LabelCheckChanged(labelDto1))" Size="Size.Small" Color="Color.Primary" LabelPlacement="LabelPlacement.Start" /></td>
+                                                                    <td><BoardItemLabel boardItemLabel="labelDto1" showText="labelShowText"></BoardItemLabel></td>
+                                                                    <td><MudIconButton OnClick="(() => EditBoardItemLabel(labelDto1))" Icon="@Icons.Material.Filled.Edit" Label="@L["show LabelText"]" aria-label="edit" Size="Size.Small"></MudIconButton></td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </MudSimpleTable>
+                                                }
+
+                                            </MudPaper>
+                                        </MudStack>
+                                    </MudExpansionPanel>
+
+                                    <MudExpansionPanel Text="Tags">
+                                        <MudStack>
+                                            <MudPaper Class="ma-n2" MinHeight="300px">
+
+                                                <MudStack Class="pb-4" Justify="Justify.FlexStart" Spacing="3" AlignItems="AlignItems.Center" Row="true">
+                                                    <MudSelect Style="width:300px;" Value="boardItemTagGroupId" ValueChanged="((e) => BoardItemTagGroupChanged(e))" Label="TagGroup" Class="ma-1" T="int" FullWidth="false" Placeholder="Please Select" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.Collections" AdornmentColor="Color.Primary">
+                                                        <MudSelectItem T="int" Value="0">@L["Select TagGroup"]</MudSelectItem>
+                                                            @foreach (var item in boardItemTagGroups!)
+                                                        {
+                                                            <MudSelectItem Style="@($"Color:{item.Color};")" T="int" Value="@item.Id">@item.Title</MudSelectItem>
+                                                        }
+                                                    </MudSelect>
+
+                                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                                                        @if (boardItemTagGroupId > 0)
+                                                        {
+                                                            <MudMenuItem OnClick="(() => AddBoardItemTag())" Icon="@Icons.Material.Filled.Add">Add new Tag</MudMenuItem>
+                                                            <MudMenuItem OnClick="(() => EditBoardItemTagGroup())" Icon="@Icons.Material.Filled.Edit">Edit TagGroup</MudMenuItem>
+                                                        }
+                                                        <MudMenuItem OnClick="(() => AddBoardItemTagGroup())" Icon="@Icons.Material.Filled.Add">Add TagGroup</MudMenuItem>
+                                                        <MudCheckBox Class="ml-2" T="bool" @bind-Checked="tagShowText" Label="@L["show TagText"]" Size="Size.Medium" Color="Color.Primary" LabelPlacement="LabelPlacement.Start" />
+                                                    </MudMenu>
+                                                </MudStack>
+
+                                                @if (boardItemTagGroupId > 0)
+                                                {
+                                                    <MudSimpleTable Style="overflow-x: auto;" Dense="true">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Check</th>
+                                                                <th>Tag</th>
+                                                                <th></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach (BoardItemTagDto tagDto in boardItemTags!.Where(x => x.BoardItemTagGroupId == boardItemTagGroupId))
+                                                            {
+                                                                string color = tagDto.Color;
+                                                                <tr style="height:30px;">
+                                                                    <td><MudCheckBox T="bool" Checked="@boardItemTagAllIdsInt!.Contains(tagDto.Id)" CheckedChanged="((e) => TagCheckChanged(tagDto))" Size="Size.Small" Color="Color.Primary" LabelPlacement="LabelPlacement.Start" /></td>
+                                                                    <td><BoardItemTag boardItemTag="tagDto" showText="tagShowText"></BoardItemTag></td>
+                                                                    <td><MudIconButton OnClick="(() => EditBoardItemTag(tagDto))" Icon="@Icons.Material.Filled.Edit" Label="@L["show TagText"]" aria-label="edit" Size="Size.Small"></MudIconButton></td>
+                                                                </tr>
+                                                            }
+                                                        </tbody>
+                                                    </MudSimpleTable>
+                                                }
+
+                                            </MudPaper>
+                                        </MudStack>
+                                    </MudExpansionPanel>
+
+                                </MudExpansionPanels>
+                            </MudItem>
+
+                        </MudGrid>
+
+                    </MudPaper>
+                </MudItem>
+
+            </MudGrid>
+
+            @if (request!.BoardItemTypeEnumId == 40)
+            {
+
+                <MudItem xs="12">
+                    <MudPaper Style="overflow-y:auto;" Class="ma-1 pa-2" Width="100%" MinHeight="300px" Elevation="25">
+                        <MudGrid>
+
+                            <MudItem xs="11">
+                                <MudItem xs="12" md="12">
+                                    <MudTextField @bind-Value="currentBoardItemSub!.Title" Label="@L["Title"]" Variant="Variant.Outlined" />
+                                </MudItem>
+
+                                <MudItem xs="12" md="12">
+                                    <MudTextField @bind-Value="currentBoardItemSub!.Text" Lines="3" Label="@L["Text"]" Variant="Variant.Outlined" />
+                                </MudItem>
+
+                                <MudItem xs="12" md="12">
+                                    <MudRadioGroup @bind-SelectedOption="currentBoardItemSub!.ResultType">
+                                        <MudRadio Option="@("string")" Placement="Placement.Top">string</MudRadio>
+                                        <MudRadio Option="@("int")" Placement="Placement.Top">integer</MudRadio>
+                                        <MudRadio Option="@("decimal")" Placement="Placement.Top">decimal</MudRadio>
+                                        <MudRadio Option="@("bool")" Placement="Placement.Top">@L["Check only"]</MudRadio>
+
+                                        </MudRadioGroup>
+                                    </MudItem>
+
+                                </MudItem>
+                                <MudItem xs="1">
+                                    <MudStack>
+                                        <MudIconButton Icon="@Icons.Material.Filled.OpenInNew" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" />
+                                        <MudIconButton OnClick="(() => AddBoardItemSub())" Icon="@Icons.Material.Filled.Add" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" />
+                                        @*                                 <MudIconButton Icon="@Icons.Material.Filled.Save" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" />
+                            *@
+                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" />
+                                    </MudStack>
+                                </MudItem>
+
+                                <MudItem xs="12">
+                                    <MudStack>
+                                        @foreach (var item in boardItemSubs!)
+                                    {
+                                        <BoardItemSub boardItemSub="item"></BoardItemSub>
+                                    }
+                                </MudStack>
+                            </MudItem>
+                        </MudGrid>
+
+                    </MudPaper>
+
+                </MudItem>
+
+            }
+
+        </DialogContent>
+
+        <DialogActions>
+            <MudButton OnClick="SaveBoardItem" Variant="Variant.Filled" Color="Color.Primary">@L["Save"]</MudButton>
+                <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">@L["Cancel"]</MudButton>
+            </DialogActions>
+
+        </MudDialog>
+}
+
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance? MudDialog { get; set; }
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public BoardDto? Board { get; set; }
+    [Parameter]
+    public BoardItemDto? BoardItem { get; set; }
+    [Parameter]
+    public List<BoardItemLabelDto>? boardItemLabels { get; set; } = new List<BoardItemLabelDto>();
+    [Parameter]
+    public List<BoardItemLabelGroupDto>? boardItemLabelGroups { get; set; } = new List<BoardItemLabelGroupDto>();
+    [Parameter]
+    public List<BoardItemTagDto>? boardItemTags { get; set; } = new List<BoardItemTagDto>();
+    [Parameter]
+    public List<BoardItemTagGroupDto>? boardItemTagGroups { get; set; } = new List<BoardItemTagGroupDto>();
+    [Parameter]
+    public BoardSourceId? boardSourceIdCaller { get; set; }
+
+
+    public List<BoardItemTypeEnumDto>? BoardItemTypeEnums { get; set; } = new List<BoardItemTypeEnumDto>();
+    // Event = 5,
+    // Info = 10,
+    // Todo = 20,
+    // Appointment = 30,
+    // CheckList = 40,
+
+    public BoardSourceId boardSourceId { get; set; } = new BoardSourceId();
+
+    public UpdateBoardItemRequest? request { get; set; }
+    public int boardItemLabelGroupId { get; set; }
+    public bool labelShowText { get; set; } = false;
+    public List<int>? boardItemLabelAllIdsInt { get; set; } = new List<int>();
+    public List<int>? boardItemTagAllIdsInt { get; set; } = new List<int>();
+    public List<BoardItemSubDto>? boardItemSubs { get; set; }
+    public BoardItemSubDto? currentBoardItemSub { get; set; }
+
+    //public string ResultType { get; set; } = "string"; // "string", "integer", "decimal", "boolean" BoardItemSub ResultType
+    public int boardItemTagGroupId { get; set; }
+    public bool tagShowText { get; set; } = false;
+    public bool _loaded { get; set; } = false;
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        BoardItemTypeEnums = (await EnumsClient.GetBoardItemTypeEnumRequestAsync()).ToList();
+
+        // LoadBoardItemTagGroups();
+        // LoadBoardItemTags();
+
+        if (BoardItem is not null)
+        {
+
+            GetBoardItemSubByBoardIdRequest getBoardItemSubByBoardIdRequest = new GetBoardItemSubByBoardIdRequest();
+            getBoardItemSubByBoardIdRequest.BoardItemId = BoardItem!.Id;
+            getBoardItemSubByBoardIdRequest.MandantId = MandantId;
+            boardItemSubs = BoardItem.ItemSubs.ToList(); // (await BoardItemSubsClient.GetBoardItemSubsByBoardItemIdAsync(getBoardItemSubByBoardIdRequest)).ToList();
+
+            if (BoardItem.BoardSourceIds is null) BoardItem.BoardSourceIds = new List<BoardSourceId>();
+
+            currentBoardItemSub = new BoardItemSubDto();
+
+            request = BoardItem.Adapt<UpdateBoardItemRequest>();
+
+            if (!string.IsNullOrEmpty(request.BoardItemLabelIds!) && request.BoardItemLabelIds!.EndsWith("|")) request.BoardItemLabelIds = request.BoardItemLabelIds.Remove(request.BoardItemLabelIds.Length - 1);
+
+            if (!string.IsNullOrEmpty(request.BoardItemTagIds!) && request.BoardItemTagIds!.EndsWith("|")) request.BoardItemTagIds = request.BoardItemTagIds.Remove(request.BoardItemTagIds.Length - 1);
+        }
+        else
+        {
+            BoardItem = new BoardItemDto();
+            BoardItem.ItemTags = new List<BoardItemTagDto>();
+            BoardItem.ItemLabels = new List<BoardItemLabelDto>();
+            boardItemSubs = new List<BoardItemSubDto>();
+            currentBoardItemSub = new BoardItemSubDto();
+            BoardItem.BoardSourceIds = new List<BoardSourceId>();
+
+            // Develop BoardItemSub
+            currentBoardItemSub.Title = "Develop Title Test CheckList";
+            currentBoardItemSub.Text = "Develop Text Description Test CheckList";
+            currentBoardItemSub.ResultType = "string";
+
+            request = new UpdateBoardItemRequest();
+
+            request.MandantId = MandantId;
+            // request.Start auf Today 12:00 setzen
+            request.Start = DateTime.Today.AddHours(12);
+            // request.End auf Today 13:00 setzen
+            request.End = DateTime.Today.AddHours(13);
+            request.BoardId = Board!.Id;
+            request.IsTemplate = false;
+            request.FixedBoard = false;
+            request.RepeatMatchCode = Guid.NewGuid().ToString().Substring(0, 8);
+            request.DefaultBoardItemLabelGroupId = Board.DefaultBoardItemLabelGroupId;
+            request.BoardItemTypeEnumId = 10;
+            request.BoardSourceIds = new List<BoardSourceId>();
+            if (boardSourceIdCaller is not null)
+            {
+                request.BoardSourceIds.Add(boardSourceIdCaller);
+            }
+        };
+
+        _loaded = true;
+    }
+
+    private async Task SaveBoardItem()
+    {
+        int savedId = 0;
+
+         if (BoardItem is not null && BoardItem.Id > 0)
+        {
+            request.BoardItemLabelIds = "";
+            foreach (var item in boardItemLabelAllIdsInt!)
+            {
+                request!.BoardItemLabelIds += item + "|";
+            }
+            if (!string.IsNullOrEmpty(request!.BoardItemLabelIds) && request!.BoardItemLabelIds!.EndsWith("|")) request.BoardItemLabelIds = request.BoardItemLabelIds.Remove(request.BoardItemLabelIds.Length - 1);
+
+            request.BoardItemTagIds = "";
+            foreach (var item in boardItemTagAllIdsInt!)
+            {
+                request.BoardItemTagIds += item + "|";
+            }
+            if (!string.IsNullOrEmpty(request!.BoardItemTagIds) && request!.BoardItemTagIds!.EndsWith("|")) request.BoardItemTagIds = request.BoardItemTagIds.Remove(request.BoardItemTagIds.Length - 1);
+
+            if (request.BoardSourceIds.Count > 0) request.BoardSourceIdJson = System.Text.Json.JsonSerializer.Serialize(request.BoardSourceIds);
+
+            savedId = await BoardItemsClient.UpdateAsync(BoardItem!.Id, request);
+        }
+        else
+        {
+            
+            if (request.BoardSourceIds.Count > 0)
+            {
+                request.BoardSourceIdJson = System.Text.Json.JsonSerializer.Serialize(request.BoardSourceIds);
+            }
+            savedId = await BoardItemsClient.CreateAsync(request!.Adapt<CreateBoardItemRequest>());
+            request!.Id = savedId;
+        }
+
+        if (boardItemSubs is not null && boardItemSubs.Count > 0)
+        {
+            int ordernumber = 10;
+            foreach (var item in boardItemSubs)
+            {
+                item.BoardItemId = savedId;
+                item.MandantId = MandantId;
+                item.OrderNumber = ordernumber;
+                ordernumber += 10;
+
+                if (item.Id > 0)
+                {
+                    await BoardItemSubsClient.UpdateAsync(item.Id, item.Adapt<UpdateBoardItemSubRequest>());
+                }
+                else
+                {
+                    await BoardItemSubsClient.CreateAsync(item.Adapt<CreateBoardItemSubRequest>());
+                }
+            }
+        }
+
+        BoardItemDto boardItemDto = request.Adapt<BoardItemDto>();
+        boardItemDto.ItemLabels = new List<BoardItemLabelDto>();
+        boardItemDto.ItemTags = new List<BoardItemTagDto>();
+        boardItemDto.ItemSubs = new List<BoardItemSubDto>();
+        if (BoardItem is not null) boardItemDto.ItemLabels = BoardItem!.ItemLabels;
+        if (BoardItem is not null) boardItemDto.ItemTags = BoardItem!.ItemTags;
+        if (BoardItem is not null) boardItemDto.ItemSubs = boardItemSubs;
+           
+        
+
+
+
+
+        // MudDialog!.Close(DialogResult.Ok(request.Adapt<BoardDto>()));
+        MudDialog!.Close(DialogResult.Ok(boardItemDto));
+        // StateHasChanged();
+    }
+
+    private void Cancel()
+    {
+        MudDialog!.Close(DialogResult.Cancel());
+    }
+
+    #region BoardItemLabelGroup
+
+    private async void BoardItemLabelGroupChanged(int e)
+    {
+        boardItemLabelGroupId = e;
+        boardItemLabels = boardItemLabelGroups.First(x => x.Id == boardItemLabelGroupId).BoardItemLabels.ToList();
+        StateHasChanged();
+    }
+
+    private async void AddBoardItemLabelGroup()
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["BoardItemLabelGroup"] = null,
+            };
+        var dialog = DialogService.Show<AddEditBoardItemLabelGroup>("Add LabelGroup", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            LoadBoardItemLabelGroups();
+            StateHasChanged();
+        }
+    }
+
+    private async void EditBoardItemLabelGroup()
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["BoardItemLabelGroup"] = boardItemLabelGroups!.First(x => x.Id == boardItemLabelGroupId),
+            };
+        var dialog = DialogService.Show<AddEditBoardItemLabelGroup>("Edit LabelGroup", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            LoadBoardItemLabelGroups();
+            StateHasChanged();
+        }
+    }
+
+    private async void LoadBoardItemLabelGroups()
+    {
+        // BoardCollection laden
+        GetBoardItemLabelGroupsRequest request = new GetBoardItemLabelGroupsRequest();
+        request.MandantId = MandantId;
+        boardItemLabelGroups = (await BoardItemLabelGroupsClient.GetBoardItemLabelGroupsAsync(request)).ToList();
+        // _boardItemTagGroupId = boardItemTagGroups.First().Id;
+    }
+
+    #endregion
+
+    #region "BoardItemLabel"
+
+    private void LabelCheckChanged(BoardItemLabelDto label)
+    {
+        if (boardItemLabelAllIdsInt!.Contains(label.Id))
+        {
+            boardItemLabelAllIdsInt.Remove(label.Id);
+            BoardItem!.ItemLabels.Remove(label);
+        }
+        else
+        {
+            boardItemLabelAllIdsInt.Add(label.Id);
+            BoardItem!.ItemLabels.Add(label);
+        }
+        // boardItemLabelAllIdsInt.Add(id);
+        request!.BoardItemLabelIds = "";
+        foreach (int i in boardItemLabelAllIdsInt!)
+        {
+            request.BoardItemLabelIds += i + "|";
+        }
+        // request.BoardItemLabelIds = request.BoardItemLabelIds.Remove(request.BoardItemLabelIds.Length - 1);
+        StateHasChanged();
+    }
+
+    private async void AddBoardItemLabel()
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["BoardItemLabel"] = null,
+                ["currentBoardItemLabelGroupId"] = boardItemLabelGroupId,
+            };
+        var dialog = DialogService.Show<AddEditBoardItemLabel>("Add Label", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            BoardItemLabelDto boardItemLabelDto = result.Data.Adapt<BoardItemLabelDto>();
+            boardItemLabels!.Add(boardItemLabelDto);
+            // SetBoardCollectionItemLabelIds(boardCollectionDto!, boardItemLabels);
+            // await BoardCollectionClient.UpdateAsync(boardCollectionDto.Id, boardCollectionDto.Adapt<UpdateBoardCollectionRequest>());
+            StateHasChanged();
+        }
+    }
+
+    private async void EditBoardItemLabel(BoardItemLabelDto boardItemLabelDto)
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["BoardItemLabel"] = boardItemLabelDto,
+            };
+        var dialog = DialogService.Show<AddEditBoardItemLabel>("Edit Label", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            BoardItemLabelDto boardItemLabelDtoResult = result.Data.Adapt<BoardItemLabelDto>();
+            boardItemLabels!.Remove(boardItemLabelDto);
+            boardItemLabels!.Add(boardItemLabelDtoResult);
+            // SetBoardCollectionItemLabelIds(boardCollectionDto!, boardItemLabels);
+            // await BoardCollectionClient.UpdateAsync(boardCollectionDto.Id, boardCollectionDto.Adapt<UpdateBoardCollectionRequest>());
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+
+    #region "BoardItemTagGroup"
+
+    private async void LoadBoardItemTagGroups()
+    {
+        GetBoardItemTagGroupSelectRequest request = new GetBoardItemTagGroupSelectRequest();
+        request.MandantId = MandantId;
+        boardItemTagGroups = (await BoardItemTagGroupsClient.GetBoardItemTagGroupSelectAsync(request)).ToList();
+    }
+
+    private async void BoardItemTagGroupChanged(int e)
+    {
+        boardItemTagGroupId = e;
+        // TODO Display Tags in Box
+        StateHasChanged();
+    }
+
+    private async void AddBoardItemTagGroup()
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["BoardItemTagGroup"] = null,
+            };
+        var dialog = DialogService.Show<AddEditBoardItemTagGroup>("Add TagGroup", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            LoadBoardItemTagGroups();
+            StateHasChanged();
+        }
+    }
+
+    private async void EditBoardItemTagGroup()
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["BoardItemTagGroup"] = boardItemTagGroups!.First(x => x.Id == boardItemTagGroupId),
+            };
+        var dialog = DialogService.Show<AddEditBoardItemTagGroup>("Edit TagGroup", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            // BoardItemTagGroupDto tagDto = result.Data.Adapt<BoardItemTagGroupDto>();
+            // boardItemTagGroups!.Remove(tagDto);
+            // boardItemTagGroups!.Add(tagDto);
+            LoadBoardItemTagGroups();
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+
+    #region "BoardItemTag"
+
+    private void TagCheckChanged(BoardItemTagDto tag)
+    {
+        if (boardItemTagAllIdsInt!.Contains(tag.Id))
+        {
+            boardItemTagAllIdsInt.Remove(tag.Id);
+            BoardItem!.ItemTags.Remove(tag);
+        }
+        else
+        {
+            boardItemTagAllIdsInt.Add(tag.Id);
+            BoardItem!.ItemTags.Add(tag);
+        }
+
+        request!.BoardItemTagIds = "";
+        foreach (int i in boardItemTagAllIdsInt!)
+        {
+            request.BoardItemTagIds += i + "|";
+        }
+        request.BoardItemTagIds = request.BoardItemTagIds.Remove(request.BoardItemTagIds.Length - 1);
+        StateHasChanged();
+    }
+
+    private async void LoadBoardItemTags()
+    {
+        // BoardCollection laden
+        GetBoardItemTagsRequest request = new GetBoardItemTagsRequest();
+        request.MandantId = MandantId;
+        boardItemTags = (await BoardItemTagsClient.GetBoardItemTagsAsync(request)).ToList();
+        if (boardItemTags is not null && boardItemTags.Count > 0)
+        {
+            foreach (var item in boardItemTags)
+            {
+                item.Color = boardItemTagGroups!.First(x => x.Id == item.BoardItemTagGroupId).Color;
+            }
+        }
+    }
+
+    private async void AddBoardItemTag()
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["BoardItemTag"] = null,
+                ["currentBoardItemTagGroupId"] = boardItemTagGroupId,
+                ["boardItemTagGroups"] = boardItemTagGroups,
+                ["currentBoardItemTagGroupId"] = boardItemTagGroupId,
+            };
+        var dialog = DialogService.Show<AddEditBoardItemTag>("Add Tag", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            BoardItemTagDto boardItemTagDto = result.Data.Adapt<BoardItemTagDto>();
+            boardItemTags!.Add(boardItemTagDto);
+            // SetBoardCollectionItemLabelIds(boardCollectionDto!, boardItemLabels);
+            // await BoardCollectionClient.UpdateAsync(boardCollectionDto.Id, boardCollectionDto.Adapt<UpdateBoardCollectionRequest>());
+            StateHasChanged();
+        }
+    }
+
+    private async void EditBoardItemTag(BoardItemTagDto boardItemTagDto)
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["BoardItemTag"] = boardItemTagDto,
+                ["currentBoardItemTagGroupId"] = boardItemTagGroupId,
+                ["boardItemTagGroups"] = boardItemTagGroups,
+
+            };
+        var dialog = DialogService.Show<AddEditBoardItemTag>("Edit Tag", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            BoardItemTagDto boardItemTagDtoResult = result.Data.Adapt<BoardItemTagDto>();
+            boardItemTags!.Remove(boardItemTagDtoResult);
+            boardItemTags!.Add(boardItemTagDtoResult);
+            // SetBoardCollectionItemLabelIds(boardCollectionDto!, boardItemLabels);
+            // await BoardCollectionClient.UpdateAsync(boardCollectionDto.Id, boardCollectionDto.Adapt<UpdateBoardCollectionRequest>());
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+
+    #region "BoardItemSub"
+
+    private async void AddBoardItemSub()
+    {
+        // currentBoardItemSub!.BoardItemId = BoardItem!.Id;
+        // currentBoardItemSub!.MandantId = MandantId;
+        // currentBoardItemSub!.ResultType = "string";
+        // currentBoardItemSub!.Title = "New Sub";
+        // currentBoardItemSub!.Text = "New Sub";
+        // currentBoardItemSub!.Id = await BoardItemSubsClient.CreateAsync(currentBoardItemSub!.Adapt<CreateBoardItemSubRequest>());
+        currentBoardItemSub.ResultValueBool = false;
+        boardItemSubs!.Add(currentBoardItemSub!);
+        currentBoardItemSub = new BoardItemSubDto();
+        StateHasChanged();
+    }
+
+    #endregion
+
+    #region "BoardSourceId"
+
+
+    private async void AddSourceItem()
+    {
+        boardSourceId.Search = $"{boardSourceId.Source}|{boardSourceId.SourceId}";
+        request!.BoardSourceIds.Add(boardSourceId);
+        boardSourceId = new BoardSourceId();
+        StateHasChanged();
+    }
+
+    private async void DeleteSourceItem(BoardSourceId boardSourceId)
+    {
+        request!.BoardSourceIds.Remove(boardSourceId);
+        StateHasChanged();
+    }
+
+    #endregion
+
+}

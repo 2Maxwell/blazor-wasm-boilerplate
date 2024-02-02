@@ -14,11 +14,14 @@
     <MudText Typo="Typo.subtitle2" Color="Color.Primary" Class="ml-4 my-3">@L["Personal"]</MudText>
     @if (_canViewDashboard)
     {
-        <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Filled.Dashboard">@L["Dashboard"]</MudNavLink>
+        <MudNavLink Href="/dashboard" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">@L["Dashboard"]</MudNavLink>
     }
-    <MudNavLink Href="/account" Icon="@Icons.Filled.ManageAccounts">@L["Account"]</MudNavLink>
+    <MudNavLink Href="/tellus/tellus" Icon="@Icons.Material.Filled.Leaderboard">@L["Tellus Board"]</MudNavLink>
+    <MudNavLink Href="@($"/hotel/housekeeping/{MandantId}")" Icon="@Icons.Material.Filled.Bed">@L["Housekeeping"]</MudNavLink>
+
+    <MudNavLink Href="/account" Icon="@Icons.Material.Filled.ManageAccounts">@L["Account"]</MudNavLink>
     <MudNavLink Href="/audit-logs" Icon="@Icons.Material.Filled.SecurityUpdateGood">@L["Logs"]</MudNavLink>
-    <MudNavLink Href="/hotel/reservations/reservationDetail/1/0" Icon="@Icons.Filled.ManageAccounts">@L["ResTest"]</MudNavLink>
+    <MudNavLink Href="/environment/reports/1" Icon="@Icons.Material.Filled.Print">@L["Reports"]</MudNavLink>
 
     @if (_canViewProducts || _canViewBrands)
     {
@@ -88,7 +91,17 @@
 
                     <MudNavLink Href="/accounts/taxes" Icon="@Icons.Filled.MonetizationOn" Class="fsh-nav-child">
                         @L["Taxes"]
+                    </MudNavLink>                    
+                    
+                    <MudNavLink Href="@($"/accounts/mandantdetails/{MandantId}")" Icon="@Icons.Filled.MonetizationOn" Class="fsh-nav-child">
+                        @L["MandantDetails"]
                     </MudNavLink>
+
+                    <MudNavLink Href="@($"/accounts/cashierregisters/{MandantId}")" Icon="@Icons.Filled.MonetizationOn" Class="fsh-nav-child">
+                        @L["CashierRegisters"]
+                    </MudNavLink>
+
+
                 }
             </MudNavGroup>
 
@@ -106,7 +119,6 @@
                     </MudNavLink>                
                 }
             </MudNavGroup>
-
 
         </MudNavGroup>
 

@@ -1,0 +1,11 @@
+﻿@{
+    string text = showText ? boardItemTag!.Text : "";
+}
+<MudChip Style="@($"background:{boardItemTag.Color}; MinWidth:50px;")" Label="true" Text="@text" Value="@boardItemTag!.Id" Size="Size.Medium"></MudChip>
+
+@code {
+    [Parameter]
+    public BoardItemTagDto? boardItemTag { get; set; }
+    [Parameter]
+    public bool showText { get; set; }
+}

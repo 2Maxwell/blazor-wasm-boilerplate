@@ -1,0 +1,325 @@
+﻿@using System.Text.Json;
+@using FSH.BlazorWebAssembly.Client.Components.Dialogs;
+@inject IMandantsClient MandantClient
+@inject ICategorysClient CategoryClient
+@inject IReservationsClient ReservationsClient
+@inject IStringLocalizer<StayDetails> L
+
+@if (_loaded)
+{
+    <MudCard style="min-height:500px">
+        <MudCardHeader Class="mb-n5">
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Group details"]</MudButton>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+
+                @if (reservationDto.IsGroupMaster)
+            {
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+
+                    <MudItem xs="6">
+                        <MudTextField Label="@L["Transfer"]" @bind-Value="reservationDto.Transfer" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    @if (reservationListDtos.Count > 1)
+                    {
+                        <MudItem xs="6">
+                            <MudButton Variant="Variant.Filled" OnClick="(() => changeTransfer())" StartIcon="@Icons.Material.Filled.ExitToApp" Color="Color.Primary" FullWidth="true">@L["Change Transfer for all members"]</MudButton>
+                            </MudItem>
+
+                    }
+
+                </MudStack>
+
+                @if (reservationDto.RoomAmount > 0)
+                {
+                    <MudStack Class="mt-3" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+
+                        <MudItem xs="2">
+                            <MudNumericField Label="@L["Split Rooms"]" @bind-Value="roomAmountInit" Max="@reservationDto.RoomAmount" Min="0" Variant="Variant.Outlined" />
+                        </MudItem>
+
+                        <MudItem xs="7">
+                        </MudItem>
+
+                        <MudItem xs="3">
+                            <MudButton Variant="Variant.Filled" OnClick="(() => splitRooms())" StartIcon="@Icons.Material.Filled.ExitToApp" FullWidth="true" Color="Color.Primary">@L["Split"]</MudButton>
+                            </MudItem>
+
+                        </MudStack>
+
+                }
+            }
+
+            @if (reservationDto.RoomAmount > 1 && state == "multiRoom" | state == "matchCode")
+            {
+                <MudStack Class="mt-3" Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+
+                    <MudItem xs="2">
+                        <MudNumericField Label="@L["Split Rooms"]" @bind-Value="roomAmountInit" Max="@roomAmountInit" Min="0" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="7">
+                    </MudItem>
+
+                    <MudItem xs="3">
+                        <MudButton Variant="Variant.Filled" OnClick="(() => splitRooms())" StartIcon="@Icons.Material.Filled.ExitToApp" FullWidth="true" Color="Color.Primary">@L["Split"]</MudButton>
+                        </MudItem>
+
+                    </MudStack>
+
+            }
+
+
+
+            @if (reservationDto.GroupMasterId > 0 || !string.IsNullOrEmpty(reservationDto.MatchCode))
+            {
+                @*                 // Button für TransferTemplate ändern
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Transfer template"]</MudButton>
+        // CheckBox für Transfer bei allen Gruppenmitgliedern ändern
+        <MudCheckBox Label="@L["change Transfer for all group members"]" @bind-Checked="changeTransferForAllMembers" />
+        // TextFeld für reservationDto.Transfer anlegen
+        <MudTextField Label="@L["Transfer"]" @bind-Value="reservationDto.Transfer" />
+
+        // Button für Gruppenaustritt anlegen
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Leave group"]</MudButton>
+
+        // Tabelle für Reservierungen die schon abgespalten wurden Suchbegriff GroupMasterId
+        *@
+
+                string[] headings = { "", "ResId", "Kz", "Arrival", "Departure", "GM", "A|C|B", "#", "Category", "Room", "Guest" };
+
+
+                <MudTable Items="reservationListDtos" Hover="true" Dense="true" Striped="true" Bordered="true" Breakpoint="Breakpoint.Sm" RowsPerPage="25" Loading="false" LoadingProgressColor="Color.Info">
+                    <HeaderContent>
+                        @foreach (var h in headings)
+                        {
+                            <MudTh>@h</MudTh>
+                        }
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            @if (context.Id != reservationDto.Id)
+                            {
+                                <MudIconButton OnClick="(() => NavToRes(_mandantId, context.Id))" Icon="@Icons.Material.Filled.Edit" Title="@L["Edit"]" aria-label="@L["Edit"]"></MudIconButton>
+                            }
+
+                        </MudTd>
+                        <MudTd>@context.Id</MudTd>
+                            <MudTd><MudAvatar Style="@($"background:{ColorByResKz(@context.ResKz)};color:black;")" Size="Size.Medium">@context.ResKz</MudAvatar></MudTd>
+                            <MudTd>@Convert.ToDateTime(context.Arrival).ToShortDateString()</MudTd>
+                            <MudTd>@Convert.ToDateTime(context.Departure).ToShortDateString()</MudTd>
+                            <MudTd><MudCheckBox Checked="@context.IsGroupMaster" ReadOnly="true" Color="Color.Secondary"> @(context.GroupMasterId > 0 ? context.GroupMasterId : "")</MudCheckBox></MudTd>
+                            <MudTd>@getPaxSummary(context.PaxString)</MudTd>
+                            @if (context.RoomAmount > 1)
+                        {
+                            <MudTd Style="@($"color:{Colors.Red.Accent4};")">@context.RoomAmount</MudTd>
+                        }
+                        else
+                        {
+                            <MudTd>@context.RoomAmount</MudTd>
+                        }
+                        <MudTd>@getCategoryKz(context.CategoryId)</MudTd>
+                            <MudTd>@context.RoomNumber</MudTd>
+                            @if (context.GuestName != null)
+                        {
+                            <MudTd>@context.GuestName, @context.GuestFirstName, @context.GuestSalutationName @context.GuestTitle</MudTd>
+                        }
+                        else
+                        {
+                            <MudTd Style="@($"color:{Colors.DeepOrange.Accent2};")">
+                                <MudStack Row="true" Justify="Justify.FlexStart" AlignItems="AlignItems.Center">
+                                    <MudIcon Icon="@Icons.Material.Filled.AddCircle" Title="Add" />
+                                    @L["no GuestName"]
+                                </MudStack>
+                            </MudTd>
+                        }
+                    </RowTemplate>
+                    <PagerContent>
+                        <TablePager />
+                    </PagerContent>
+
+                </MudTable>
+            }
+
+        </MudCardContent>
+    </MudCard>
+}
+
+
+@code {
+    // [CascadingParameter]
+    // MudDialogInstance MudDialog { get; set; } = default!;
+
+    public bool _loaded { get; set; } = false;
+    public string state { get; set; } = "group";
+    [Parameter]
+    public int _mandantId { get; set; }
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    public bool changeTransferForAllMembers { get; set; } = false;
+    public List<ReservationListDto>? reservationListDtos { get; set; }
+    [Parameter]
+    public List<CategorySelectDto>? categorySelectDtoList { get; set; }
+    public int roomAmountInit { get; set; } = 0;
+
+    // Funktionen notwendig:
+    // TransferTemplate in GM für alle noch nicht abgespalteten Res bei Groupmembern nur für die GroupmemberReservierung
+    // Reservierungen abspalten
+    // Gruppenaustritt bei Gruppenmember (kann auch in der Hauspansicht sein)
+    // Liste der Gruppenmember sowohl als Groupmaster als auch als Gruppenmember
+    // in der Liste kann gleich auf die Reservierungen der Liste gewechselt werden
+    // Gruppenmaster kann Gruppenmember hinzufügen und entfernen
+
+    public async void NavToRes(int mandantId, int resId)
+    {
+        Navigation.NavigateTo($"/hotel/reservations/reservationDetail/{mandantId}/{resId}");
+    }
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (reservationDto.IsGroupMaster || reservationDto.GroupMasterId > 0)
+        {
+            GetReservationsByGroupIdRequest request = new GetReservationsByGroupIdRequest();
+            request.MandantId = _mandantId;
+            request.GroupId = reservationDto.GroupMasterId;
+            reservationListDtos = (await ReservationsClient.GetReservationsByGroupIdAsync(request)).ToList();
+            roomAmountInit = reservationDto.RoomAmount;
+        }
+        else if (!string.IsNullOrEmpty(reservationDto.MatchCode))
+        {
+            state = "matchCode";
+            GetReservationsByMatchCodeRequest request = new GetReservationsByMatchCodeRequest();
+            request.MandantId = _mandantId;
+            request.MatchCode = reservationDto.MatchCode;
+            reservationListDtos = (await ReservationsClient.GetReservationsByMatchCodeAsync(request)).ToList();
+            roomAmountInit = reservationDto.RoomAmount - 1;
+        }
+        else
+        {
+            state = "multiRoom";
+            reservationListDtos = new List<ReservationListDto>();
+            reservationListDtos.Add(reservationDto.Adapt<ReservationListDto>());
+            roomAmountInit = reservationDto.RoomAmount - 1;
+        }
+
+        _loaded = true;
+    }
+
+    public string ColorByResKz(string resKz)
+    {
+        string result = string.Empty;
+        switch (resKz)
+        {
+            case "P": // Pending
+                result = "#66BB6A"; // Green Lighten1
+                break;
+            case "R":
+                result = "#1B5E20"; // Green Darken4
+                break;
+            case "S":
+                result = "#C62828"; // Red Darken3
+                break;
+            case "T":
+                result = "pink";
+                break;
+            case "C":
+                result = "yellow";
+                break;
+            case "W":
+                result = "lime";
+                break;
+            default:
+                result = "white";
+                break;
+        }
+        return result;
+    }
+
+    private string getPaxSummary(string? paxString)
+    {
+        string result = string.Empty;
+        if (paxString != null)
+        {
+            Pax? pax = JsonSerializer.Deserialize<Pax>(paxString!);
+            if (pax != null)
+            {
+                result += pax.Adult + "|" + pax.Children.Count() + "|" + pax.Beds;
+            }
+        }
+
+        return result;
+    }
+
+    private string getCategoryKz(int categoryId)
+    {
+        string? result = string.Empty;
+        var cat = categorySelectDtoList!.Where(x => x.Id == categoryId).SingleOrDefault().Kz;
+        result = cat != null ? cat.ToString() : string.Empty;
+        return result;
+    }
+
+    private async void changeTransfer()
+    {
+        UpdateReservationsTransferRequest request = new UpdateReservationsTransferRequest();
+        request.MandantId = _mandantId;
+        request.GroupMasterId = reservationDto.GroupMasterId;
+        request.Transfer = reservationDto.Transfer;
+
+        var result = await ReservationsClient.ChangeTransferByGroupIdAsync(request);
+        if (result != null && result > 1)
+        {
+            GetReservationsByGroupIdRequest requestGroup = new GetReservationsByGroupIdRequest();
+            requestGroup.MandantId = _mandantId;
+            requestGroup.GroupId = reservationDto.GroupMasterId;
+            reservationListDtos = (await ReservationsClient.GetReservationsByGroupIdAsync(requestGroup)).ToList();
+        }
+        updateReservation();
+    }
+
+    private async void splitRooms()
+    {
+        string reservationNumbers = string.Empty;
+        int roomCounterSplitted = 0;
+
+        for (int i = 0; i < roomAmountInit; i++)
+        {
+            CreateReservationRequest request = new CreateReservationRequest();
+            request = reservationDto.Adapt<CreateReservationRequest>();
+            request.RoomAmount = 1;
+            request.IsGroupMaster = false;
+            request.Persons = null;
+            request.GuestId = 0;
+            request.RoomNumberId = 0;
+            request.RoomNumber = null;
+            request.RoomFixed = false;
+            request.PriceTag = reservationDto.PriceTagDto;
+            // request.PriceTag.Id = 0;
+            request.PriceTag.PriceTagDetails = reservationDto.PriceTagDto!.PriceTagDetails;
+            request.PackageExtendList = reservationDto.PackageExtendOptionDtos;
+
+            var result = await ReservationsClient.CreateAsync(request);
+            reservationNumbers += result + ", ";
+            roomCounterSplitted++;
+        }
+        // updateReservation();
+
+        // Show MessageBox with ReservationNumbers
+        await DialogService.ShowMessageBox(@L["Note"], $"Rooms splitted for GM {reservationDto.GroupMasterId} to {reservationNumbers}", yesText: "OK!");
+
+        reservationDto.RoomAmount -= roomCounterSplitted;
+
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+
+        StateHasChanged();
+    }
+
+    private async void updateReservation()
+    {
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+    }
+}

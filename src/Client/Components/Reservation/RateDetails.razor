@@ -7,14 +7,14 @@
 
 @if (_loaded)
 {
-    <MudCard style="min-height:620px">
-        <MudCardHeader>
+    <MudCard style="min-height:500px">
+        <MudCardHeader Class="mb-n10">
             <CardHeaderContent>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Rate details"]</MudButton>
             </CardHeaderContent>
             <CardHeaderActions>
-                <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
-            </CardHeaderActions>
+@*                 <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="Color.Default" />
+ *@            </CardHeaderActions>
         </MudCardHeader>
         <MudCardContent>
             <MudGrid>
@@ -25,7 +25,7 @@
                 </MudItem>
 
                 <MudItem xs="12">
-                    <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" MultiSelection="true" @bind-Value="rateDto.Packages"
+                    <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" MultiSelection="true" @bind-Value="reservationDto.RatePackages"
                            SelectedValues="reservationDto.RatePackages!.Split(',', StringSplitOptions.TrimEntries).AsEnumerable().ToHashSet<string>()" Label="@L["Packages included"]">
                         @foreach (var item in packagesKzMultiSelectList)
                         {
@@ -155,12 +155,12 @@
 
             *@
             </MudGrid>
-
-
         </MudCardContent>
-        <MudCardActions>
+
+@*         <MudCardActions>
             <MudButton Variant="Variant.Text" Color="Color.Primary">Read More</MudButton>
         </MudCardActions>
+ *@
     </MudCard>
 }
 

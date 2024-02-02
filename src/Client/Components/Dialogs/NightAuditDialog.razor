@@ -1,0 +1,124 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Tellus
+@inject IStringLocalizer<NightAuditDialog> L
+
+@* <h3>NightAuditDialog</h3> *@
+
+@if (_loaded)
+{
+    <MudDialog Style="height:1200px; width:800px">
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.People" Class="mr-3 mb-n1" />
+                @L["NightAudit Dialog"]
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+
+
+            @* <MudButton Style="width:90%" OnClick="StartNightAudit"> *@
+            <MudStack Style="width:100%">
+
+                @if (boardItems.Count > 0)
+                {
+                    <BoardItem boardItem="boardItems[0]" showCheckList="true"></BoardItem>
+                }
+
+                <MudPaper Class="pa-4" Style="background:#37474F;">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+
+                        <MudAvatar Style="width:80px;" Size="Size.Medium" Color="Color.Warning" Rounded="true">@mandantDto!.Kz</MudAvatar>
+
+                            <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center" Spacing="0">
+                                <MudText Typo="Typo.h6">@mandantDto!.Name</MudText>
+
+                                <MudText Typo="Typo.h6">@mandantDto.HotelDate.Value.ToString("dd.MM.yyyy") =>> @mandantDto.HotelDate.Value.AddDays(1).ToString("dd.MM.yyyy")</MudText>
+                            </MudStack>
+
+                            @* <MudStack Justify="Justify.Center" AlignItems="AlignItems.Center" Spacing="0">
+                    <MudText Typo="Typo.body2">@mandantDto!.GroupMember</MudText>
+                    <MudText Typo="Typo.h4">@L["Start NightAudit"]</MudText>
+                    </MudStack> *@
+
+                        </MudStack>
+                        <br />
+
+                        <MudButton OnClick="StartNightAudit" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"><MudText Typo="Typo.h4">@L["Start NightAudit"]</MudText></MudButton>
+                    </MudPaper>
+                </MudStack>
+                @* </MudButton> *@
+
+            </DialogContent>
+
+            <DialogActions>
+                <MudButton StartIcon="@Icons.Filled.Cancel" OnClick="Cancel">@L[CancelText]</MudButton>
+                @if (_nightAuditFinished)
+            {
+                <MudButton StartIcon="@Icons.Filled.Delete" Color="Color.Error" Variant="Variant.Filled" OnClick="Submit">@L[ConfirmText]</MudButton>
+            }
+        </DialogActions>
+
+    </MudDialog>
+
+
+}
+
+
+
+@code {
+    [Inject]
+    private IGeneralClient GeneralClient { get; set; } = default!;
+    [Inject]
+    private IBoardItemsClient BoardItemsClient { get; set; } = default!;
+
+
+    [CascadingParameter]
+    MudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter]
+    public MandantDto? mandantDto { get; set; }
+
+    public List<BoardItemDto> boardItems { get; set; } = new List<BoardItemDto>();
+
+    public bool _loaded { get; set; } = false;
+    public bool _nightAuditStarted { get; set; } = false;
+    public bool _nightAuditFinished { get; set; } = false;
+    private string CancelText = "Cancel";
+    private string ConfirmText = "NightAudit Done";
+
+    protected async override Task OnInitializedAsync()
+    {
+        GetBoardItemBySourceIdRequest getBoardItemBySourceIdRequest = new GetBoardItemBySourceIdRequest();
+        getBoardItemBySourceIdRequest.MandantId = mandantDto!.Id;
+        getBoardItemBySourceIdRequest.SourceId = 1;
+        getBoardItemBySourceIdRequest.Source = "NightAudit";
+        boardItems = (await BoardItemsClient.GetBoardItemBySourceIdAsync(getBoardItemBySourceIdRequest)).ToList();
+        boardItems[0].Title += " " + mandantDto!.HotelDate;
+        Console.WriteLine("boardItems.Count: " + boardItems.Count);
+        _loaded = true;
+    }
+
+
+    private async void StartNightAudit()
+    {
+        _nightAuditStarted = true;
+
+        GetNightAuditRequest getNightAuditRequest = new GetNightAuditRequest
+            {
+                MandantId = mandantDto!.Id,
+                Date = mandantDto!.HotelDate,
+            };
+
+        GetNightAuditResponse? nightAuditResponse = await GeneralClient.GetNightAuditAsync(getNightAuditRequest);
+
+        _nightAuditFinished = true;
+
+
+        // MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
+    void Cancel() => MudDialog.Cancel();
+}

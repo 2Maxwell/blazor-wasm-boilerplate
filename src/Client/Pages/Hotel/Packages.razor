@@ -22,26 +22,26 @@
 
         @if (!Context.AddEditModal.IsCreate) // Edit
         {
-            <MudItem xs="3" md="3">
+            <MudItem xs="2" md="2">
                 <MudTextField Value="context.Id" ReadOnly DisableUnderLine Label="@L[$"Package Id"]" />
-            </MudItem>
+             </MudItem>
         }
 
         @if (!Context.AddEditModal.IsCreate) // Edit
         {
 
-            <MudItem xs="4" md="4">
+            <MudItem xs="7" md="7">
                 <MudTextField Variant="Variant.Outlined" ReadOnly="true" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
             </MudItem>
         }
         else // Create
         {
-            <MudItem xs="4" md="4">
+            <MudItem xs="9" md="9">
                 <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
             </MudItem>
         }
 
-        <MudItem xs="4" md="4">
+        <MudItem xs="3" md="3">
             <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Kz)" @bind-Value="context.Kz" Label="@L["Kz"]" />
         </MudItem>
 
@@ -133,7 +133,7 @@
         {
             <MudItem xs="12">
                 <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" MultiSelection="true" @bind-Value="context.PackageTargetEnum"
-                       SelectedValues="context.PackageTargetEnum.Split(',', StringSplitOptions.TrimEntries).AsEnumerable().ToHashSet<string>()" Label="@L["Package Targets"]">
+                           SelectedValues="context.PackageTargetEnum.Split(',', StringSplitOptions.TrimEntries).AsEnumerable().ToHashSet<string>()" Label="@L["Package Targets"]">
                     @foreach (var item in PackageTargetStringEnumList)
                     {
                         <MudSelectItem T="string" Value="@item">@item</MudSelectItem>
@@ -145,7 +145,7 @@
         {
             <MudItem xs="12">
                 <MudSelect T="string" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" MultiSelection="true" @bind-Value="context.PackageTargetEnum"
-                       Label="@L["Package Targets"]">
+                           Label="@L["Package Targets"]">
                     @foreach (var item in PackageTargetStringEnumList)
                     {
                         <MudSelectItem T="string" Value="@item">@item</MudSelectItem>
@@ -153,6 +153,34 @@
                 </MudSelect>
             </MudItem>
 
+        }
+
+        @if (context.PackageBookingRhythmEnumId == 290)
+        {
+            <MudItem xs="4">
+
+                <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="context.AppointmentTargetEnum" Label="@L["AppointmentTargetEnum"]">
+                    <MudSelectItem T="int?" Value="0">@L["nothing selected"]</MudSelectItem>
+                    @foreach (var item in AppointmentTargetEnumList)
+                    {
+                        <MudSelectItem T="int?" Value="@item.Value">@item.Text</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="4">
+                <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" @bind-Value="context.DurationUnitEnumId" Label="@L["DurationUnit"]">
+                    <MudSelectItem T="int?" Value="0">@L["nothing selected"]</MudSelectItem>
+                    @foreach (var item in DurationUnitEnumList)
+                    {
+                        <MudSelectItem T="int?" Value="@item.Value">@item.Text</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="4" md="4">
+                <MudNumericField Variant="Variant.Outlined" T="int?" For="@(() => context.Duration)" @bind-Value="context.Duration" Label="@L["Duration"]" />
+            </MudItem>
         }
 
         <MudItem xs="4" md="6">
@@ -190,6 +218,8 @@
     public List<PackageBookingBaseEnumDto> PackageBaseEnumList { get; set; } = new List<PackageBookingBaseEnumDto>();
     public List<PackageBookingRhythmEnumDto> PackageRhythmEnumList { get; set; } = new List<PackageBookingRhythmEnumDto>();
     public List<PackageItemCoreValueEnumDto> PackageItemCoreValueEnumList { get; set; } = new List<PackageItemCoreValueEnumDto>();
+    public List<DurationUnitEnumDto> DurationUnitEnumList { get; set; } = new List<DurationUnitEnumDto>();
+    public List<AppointmentTargetEnumDto> AppointmentTargetEnumList { get; set; } = new List<AppointmentTargetEnumDto>();
     public List<string> PackageTargetStringEnumList { get; set; } = new List<string>();
     [CascadingParameter]
     public List<ItemSelectDto> ItemsList { get; set; } = new List<ItemSelectDto>();
@@ -199,21 +229,23 @@
     public PackageItemDto? selectedPackageItem { get; set; }
     public bool PriceIsStatic_Checked { get; set; }
     public string PackageItemSum { get; set; }
+    public int durationUnitId { get; set; } = 0;
+
 
     protected EntityServerTableContext<PackageDto, int, UpdatePackageRequest> Context { get; set; } = default!;
 
-    protected override void OnInitialized() =>
+    protected override async void OnInitialized() =>
     Context = new(
         entityName: L["Package"],
         entityNamePlural: L["Packages"],
         entityResource: FSHResource.Packages,
         fields: new()
-                {
+                        {
             // new(package => package.Id, L["Id"], "Id"),
             new(package => package.Kz, L["Kz"], "Kz"),
                 new(package => package.Name, L["Name"], "Name"),
                 new(package => package.Display, L["Display"], "Display")
-                },
+                        },
         idFunc: package => package.Id,
         idMandantFunc: item => item.MandantId,
         editNotAsModal: false,
@@ -239,11 +271,23 @@
 
         updateFunc: async (id, package) =>
         {
+            // if (durationUnitId > 0)
+            // {
+            //     package.DurationUnitEnumId = durationUnitId;
+            // }
+            // else
+            // {
+            //     package.DurationUnitEnumId = null;
+            // }
+
             await PackagesClient.UpdateAsync(id, package.Adapt<UpdatePackageRequest>());
             // selectedPackage = package;
             // LastEndDate = package.Periods.LastOrDefault() == null ? null: package.Periods.LastOrDefault().End;
         },
-        // editFormInitializedFunc: selectedPackage = Context.AddEditModal.RequestModel,
+        // editFormInitializedFunc: async package =>
+        // {
+        //     durationUnitId = package.DurationUnitEnumId is not null ? Convert.ToInt16(package.DurationUnitEnumId : 0
+        // }
 
         // deleteFunc: async id => await RoomsClient.DeleteAsync(id),
         exportAction: string.Empty);
@@ -255,12 +299,13 @@
 
         PackageRhythmEnumList = (await EnumsClient.GetPackageBookingRhythmEnumRequestAsync()).ToList();
         Debug.Print("Anzahl items in PackageRhythmEnumList: " + PackageRhythmEnumList.Count());
-
         PackageItemCoreValueEnumList = (await EnumsClient.GetPackageItemCoreValueEnumRequestAsync()).ToList();
+        DurationUnitEnumList = (await EnumsClient.GetDurationUnitEnumRequestAsync()).ToList();
 
         ItemsList = (await ItemsClient.GetItemSelectAsync(_mandantId)).ToList();
 
         PackageTargetStringEnumList = (await EnumsClient.GetPackageTargetStringEnumRequestAsync()).ToList();
+        AppointmentTargetEnumList = (await EnumsClient.GetAppointmentTargetEnumRequestAsync()).ToList();
     }
 
 
@@ -367,98 +412,5 @@
         }
         PackageItemSum = result;
     }
-
-    //private async Task AddPeriod()
-    //{
-    //    selectedPackage = Context.AddEditModal.RequestModel;
-
-    //    LastEndDate = selectedPackage.Periods.LastOrDefault() == null ? null : selectedPackage.Periods.LastOrDefault().End;
-    //    var parameters = new DialogParameters { ["LastPeriodEnd"] = LastEndDate == null ? null : LastEndDate.Value.AddDays(1) };
-    //    var dialog = DialogService.Show<AddPeriodModal>("", parameters);
-    //    var result = await dialog.Result;
-    //    if (!result.Cancelled)
-    //    {
-    //        PeriodDto period = (PeriodDto)result.Data;
-    //        period.Source = "package";
-    //        period.SourceId = selectedPackage.Id;
-    //        // Context.AddEditModal.RequestModel.Periods.Add(period);
-
-    //        selectedPackage.Periods.Add(period);
-
-    //        //if (period != null && Context.AddEditModal.RequestModel.Periods != null) Context.AddEditModal.RequestModel.Periods.Add(period);
-    //        // StateHasChanged();
-    //        Context.AddEditModal.ForceRender();
-    //    }
-    //}
-
-
-
-    //private async Task DeletePeriod(PeriodDto period)
-    //{
-    //    //selectedPackage = Context.AddEditModal.RequestModel;
-    //    //selectedPackage.Periods.Remove(period);
-    //    Context.AddEditModal.RequestModel.Periods.Remove(period);
-
-    //    if (period.Id > 0)
-    //    {
-    //        await PeriodsClient.DeleteAsync(period.Id);
-    //    }
-
-    //    Context.AddEditModal.ForceRender();
-    //}
-
-
-
-    //async Task EditPeriod(PeriodDto period)
-    //{
-    //    var parameters = new DialogParameters { ["period"] = PeriodToModal(period) };
-    //    var dialog = DialogService.Show<EditPeriodModal>("", parameters);
-    //    var result = await dialog.Result;
-
-    //    if (!result.Cancelled)
-    //    {
-    //        selectedPackage = Context.AddEditModal.RequestModel;
-
-    //        PeriodDto? annonceDTORes = (PeriodDto)result.Data;
-    //        PeriodDto? p = selectedPackage.Periods.FirstOrDefault(p => p.Id == annonceDTORes.Id);
-    //        p.End = annonceDTORes.End;
-    //        p.Start = annonceDTORes.Start;
-    //        p.Source = annonceDTORes.Source;
-    //        p.Id = annonceDTORes.Id;
-    //        p.Price = annonceDTORes.Price;
-    //        p.SourceId = annonceDTORes.SourceId;
-    //        Context.AddEditModal.ForceRender();
-    //    }
-    //}
-
-
-
-    //public void PriceIsStatic_changed(bool value)
-    //{
-    //    bool valueDelivered = false;
-    //    valueDelivered = value;
-    //    PriceIsStatic_Checked = value;
-    //    Context.AddEditModal.RequestModel.PriceIsStatic = value;
-    //    Context.AddEditModal.ForceRender();
-    //}
-
-    //private PeriodDto PeriodToModal(PeriodDto period)
-    //{
-    //    PeriodDto currentPeriod = new PeriodDto();
-    //    currentPeriod.End = period.End;
-    //    currentPeriod.Start = period.Start;
-    //    currentPeriod.Source = period.Source;
-    //    currentPeriod.Id = period.Id;
-    //    currentPeriod.Price = period.Price;
-    //    currentPeriod.SourceId = period.SourceId;
-    //    return currentPeriod;
-    //}
-
-    //public class PerTest
-    //{
-    //   public DateTime? Start { get; set; }
-    //   public DateTime? End { get; set; }
-    //   public decimal Price { get; set; }
-    //}
 }
 

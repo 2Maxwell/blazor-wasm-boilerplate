@@ -16,12 +16,13 @@
         }
 
 
-@*        <MudMenuItem OnClick="(() => ViewProfile(context.Id))" Icon >@L["View Profile"]</MudMenuItem>
+@*         <MudMenuItem OnClick="(() => ViewProfile(context.Id))" Icon="@Icons.Material.Filled.Person">@L["View Profile"]</MudMenuItem>
         @if (_canViewRoles)
         {
             <MudMenuItem OnClick="(() => ManageRoles(context.Id))">@L["Manage Roles"]</MudMenuItem>
         }
-*@    </ExtraActions>
+ *@
+    </ExtraActions>
 
     <EditFormContent>
         <MudItem xs="12" md="6">

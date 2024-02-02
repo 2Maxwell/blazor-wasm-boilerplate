@@ -1,0 +1,204 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Tellus.Dialogs
+@inject IStringLocalizer<BoardItem> L
+@inject IBoardItemsClient BoardItemsClient
+@inject IBoardItemSubsClient BoardItemSubsClient
+
+@if (_loaded)
+{
+
+    <MudPaper Class="ma-1 pa-1" Elevation="25" Style="height: 100%">
+
+        <MudStack>
+            <MudStack Spacing="1" Row="true">
+                @foreach (var tag in boardItem!.ItemTags)
+                {
+                    <BoardItemTag boardItemTag="tag" showText="true"></BoardItemTag>
+                }
+                @foreach (var label in boardItem!.ItemLabels)
+                {
+                    <BoardItemLabel boardItemLabel="label" showText="true"></BoardItemLabel>
+                }
+
+            </MudStack>
+
+            <MudStack Spacing="1" Row="true">
+            </MudStack>
+        </MudStack>
+
+
+        <MudTextField @bind-Value="boardItem!.Title" DisableUnderLine="true" Variant="Variant.Text" Margin="Margin.Dense" />
+        <MudStack Row="true">
+            @if (boardItem!.Description is not null && boardItem.Description.Length > 0)
+            {
+                <MudIconButton OnClick="ToggleDescription" Icon="@Icons.Material.Filled.WrapText" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" aria-label="delete"></MudIconButton>
+            }
+            <MudIconButton OnClick="(() => EditBoardItem(boardItem))" Icon="@Icons.Material.Filled.Edit" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" />
+            <MudIconButton OnClick="(() => SaveBoardItem(boardItem))" Icon="@Icons.Material.Filled.Save" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" />
+            <MudIconButton OnClick="(() => ToogleCalendar(boardItem))" Icon="@Icons.Material.Filled.CalendarToday" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" />
+            @if (boardItemSubs.Count > 0)
+            {
+                <MudIconButton OnClick="(() => ToogleCheckList(boardItem))" Icon="@Icons.Material.Filled.Checklist" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" />
+            }
+            <MudSpacer></MudSpacer>
+            <MudIconButton OnClick="(() => DeleteBoardItem(boardItem))" Icon="@Icons.Material.Filled.Delete" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" />
+
+        </MudStack>
+        @if (showDescription)
+        {
+            <MudTextField @bind-Value="boardItem!.Description" Lines="5" Label="@L["Description"]" Variant="Variant.Filled" />
+        }
+
+        @if (showCheckList)
+        {
+            <MudStack Spacing="1">
+                @foreach (var item in boardItemSubs!)
+                {
+                    <BoardItemSub boardItemSub="item"></BoardItemSub>
+                }
+
+            </MudStack>
+        }
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public BoardItemDto? boardItem { get; set; }
+    [Parameter]
+    public List<BoardItemLabelDto>? boardItemLabels { get; set; }
+    [Parameter]
+    public List<BoardItemLabelGroupDto>? boardItemLabelGroups { get; set; }
+
+    [Parameter]
+    public List<BoardItemTagDto>? boardItemTags { get; set; }
+    [Parameter]
+    public List<BoardItemTagGroupDto>? boardItemTagGroups { get; set; }
+
+    public List<BoardItemSubDto>? boardItemSubs { get; set; }
+
+    // public List<BoardItemLabelDto>? currentBoardItemLabels { get; set; }
+    // public List<BoardItemTagDto>? currentBoardItemTags { get; set; }
+
+    public bool _loaded { get; set; } = false;
+    public bool showDescription { get; set; } = false;
+    [Parameter]
+    public bool showCheckList { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        List<int>? ItemLabelInt = new List<int>();
+        List<int>? ItemTagInt = new List<int>();
+        if (!string.IsNullOrEmpty(boardItem!.BoardItemLabelIds))
+        {
+            if (boardItem.BoardItemLabelIds.EndsWith("|")) boardItem.BoardItemLabelIds = boardItem.BoardItemLabelIds.Remove(boardItem.BoardItemLabelIds.Length - 1);
+            ItemLabelInt = boardItem.BoardItemLabelIds.Split("|").Select(int.Parse).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(boardItem.BoardItemTagIds))
+        {
+            if (boardItem.BoardItemTagIds.EndsWith("|")) boardItem.BoardItemTagIds = boardItem.BoardItemTagIds.Remove(boardItem.BoardItemTagIds.Length - 1);
+            ItemTagInt = boardItem.BoardItemTagIds.Split("|").Select(int.Parse).ToList();
+        }
+
+        if (boardItem.ItemLabels is null) boardItem.ItemLabels = new List<BoardItemLabelDto>();
+        // boardItem.ItemLabels = boardItemLabels!.Where(x => boardItem.BoardItemLabelIds!.Contains(x.Id.ToString())).ToList();
+        if (ItemLabelInt.Count > 0) boardItem.ItemLabels = boardItemLabels!.Where(x => ItemLabelInt.Contains(x.Id)).ToList();
+
+        if (boardItem.ItemTags is null) boardItem.ItemTags = new List<BoardItemTagDto>();
+        // boardItem.ItemTags = boardItemTags!.Where(x => boardItem.BoardItemTagIds!.Contains(x.Id.ToString())).ToList();
+        if (ItemTagInt.Count > 0) boardItem.ItemTags = boardItemTags!.Where(x => ItemTagInt.Contains(x.Id)).ToList();
+
+        GetBoardItemSubByBoardIdRequest getBoardItemSubByBoardIdRequest = new GetBoardItemSubByBoardIdRequest();
+        getBoardItemSubByBoardIdRequest.BoardItemId = boardItem!.Id;
+        getBoardItemSubByBoardIdRequest.MandantId = boardItem.MandantId;
+        boardItemSubs = (await BoardItemSubsClient.GetBoardItemSubsByBoardItemIdAsync(getBoardItemSubByBoardIdRequest)).ToList();
+
+        _loaded = true;
+    }
+
+    void ToggleDescription()
+    {
+        showDescription = !showDescription;
+    }
+
+    private async void SaveBoardItem(BoardItemDto boardItem)
+    {
+        // TODO: Repeaterfunktion setzen
+        // BoardItemSub erstellen und Funktion erstellen
+        boardItem.BoardItemLabelIds = "";
+        foreach (var item in boardItem.ItemLabels)
+        {
+            boardItem.BoardItemLabelIds += item.Id + "|";
+        }
+
+        boardItem.BoardItemTagIds = "";
+        foreach (var item in boardItem.ItemTags)
+        {
+            boardItem.BoardItemTagIds += item.Id + "|";
+        }
+
+        if (boardItem.Id > 0)
+        {
+            await BoardItemsClient.UpdateAsync(boardItem.Id, boardItem.Adapt<UpdateBoardItemRequest>());
+
+        }
+        else
+        {
+            await BoardItemsClient.CreateAsync(boardItem.Adapt<CreateBoardItemRequest>());
+        }
+        Console.WriteLine("SaveBoardItem Clicked");
+    }
+
+    private async void EditBoardItem(BoardItemDto boardItem)
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = boardItem.MandantId,
+                ["Board"] = null,
+                ["BoardItem"] = boardItem,
+                ["boardItemLabels"] = boardItemLabels,
+                ["boardItemLabelGroups"] = boardItemLabelGroups,
+                ["boardItemTags"] = boardItemTags,
+                ["boardItemTagGroups"] = boardItemTagGroups,
+            };
+
+        var dialog = DialogService.Show<AddEditBoardItem>("Add BoardItem", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+            BoardItemDto boardItemDto = result.Data.Adapt<BoardItemDto>();
+            boardItem.Title = boardItemDto.Title;
+            boardItem.Description = boardItemDto.Description;
+            boardItem.ItemLabels = boardItemDto.ItemLabels;
+            boardItem.ItemTags = boardItemDto.ItemTags;
+            boardItem.ItemSubs = boardItemDto.ItemSubs;
+            // boardItem = boardItemDto;
+
+            StateHasChanged();
+        }
+
+
+        Console.WriteLine("EditBoardItem Clicked");
+    }
+
+    void ToogleCalendar(BoardItemDto boardItem)
+    {
+        Console.WriteLine("ToogleCalendar Clicked");
+    }
+
+    void ToogleCheckList(BoardItemDto boardItem)
+    {
+        showCheckList = !showCheckList;
+        Console.WriteLine("ToogleCheckList Clicked");
+    }
+
+    async void DeleteBoardItem(BoardItemDto boardItem)
+    {
+        int id = await BoardItemsClient.DeleteAsync(boardItem.Id);
+        _loaded = false;
+        StateHasChanged();
+        Console.WriteLine("DeleteBoardItem Clicked: " + id);
+
+    }
+}

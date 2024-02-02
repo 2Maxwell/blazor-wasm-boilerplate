@@ -86,6 +86,30 @@
             <MudDatePicker Variant="Variant.Outlined" Editable="true" For="@(() => context.BlockedEnd)" @bind-Date="context.BlockedEnd" Placeholder="Select Date" Label="@L["BlockedEnd"]" />
         </MudItem>
 
+        <MudItem xs="4" md="4">
+            <MudNumericField Variant="Variant.Outlined" T="int" For="@(() => context.CleaningState)" @bind-Value="context.CleaningState" Label="@L["CleaningState"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudNumericField Variant="Variant.Outlined" T="int" For="@(() => context.DirtyDays)" @bind-Value="context.DirtyDays" Label="@L["DirtyDays"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudNumericField Variant="Variant.Outlined" T="int" For="@(() => context.AssignedId)" @bind-Value="context.AssignedId" Label="@L["AssignedId"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudNumericField Variant="Variant.Outlined" T="int" For="@(() => context.MinutesOccupied)" @bind-Value="context.MinutesOccupied" Label="@L["MinutesOccupied"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudNumericField Variant="Variant.Outlined" T="int" For="@(() => context.MinutesDeparture)" @bind-Value="context.MinutesDeparture" Label="@L["MinutesDeparture"]" />
+        </MudItem>
+
+        <MudItem xs="4" md="4">
+            <MudNumericField Variant="Variant.Outlined" T="int" For="@(() => context.MinutesDefault)" @bind-Value="context.MinutesDefault" Label="@L["MinutesDefault"]" />
+        </MudItem>
+
 
         <MudPaper Class="pa-16 ma-2"></MudPaper>
         <MudPaper Class="pa-16 ma-2" Outlined="true" Square="true"></MudPaper>
@@ -114,9 +138,7 @@
                     new(room => room.Beds, L["Beds"], "Beds"),
                     new(room => room.CategoryName, L["Category"], "Category.Name"),
                     new(room => room.Description, L["Description"], "Description"),
-                // new(room => room.BedsMax, L["BedsMax"], "BedsMax"),
-                //new(room => room.Properties, L["Properties"], "Properties"),
-                //new(room => room.VkatRelevant, L["VkatRelevanz"], "VkatRelevant"),
+                    // new(room => room.VkatRelevant, L["VkatRelevanz"], "VkatRelevant"),
                 //new(room => room.VkatDone, L["VkatDone"], "VkatDone"),
                 //new(room => room.NumberOfBeds, L["NumberOfBeds"], "NumberOfBeds"),
                 //new(room => room.NumberOfExtraBeds, L["NumberOfExtraBeds"], "NumberOfExtraBeds"),

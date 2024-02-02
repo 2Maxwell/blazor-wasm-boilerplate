@@ -179,20 +179,20 @@
         MudDialog.Close(DialogResult.Ok(resQuery));
     }
 
-    private void startShopMandantCatRatePrice()
-    {
-        resQuery.Arrival = _dateRange!.Start;
-        resQuery.Departure = _dateRange.End;
+    // private void startShopMandantCatRatePrice()
+    // {
+    //     resQuery.Arrival = _dateRange!.Start;
+    //     resQuery.Departure = _dateRange.End;
 
-        ResQueryTransferService resQueryTransferService = new(resQuery);
-        resQueryTransferService.PaxTransferServiceList[0].Adults = adults;
+    //     ResQueryTransferService resQueryTransferService = new(resQuery);
+    //     resQueryTransferService.PaxTransferServiceList[0].Adults = adults;
 
-        string testResQuery = resQueryTransferService.ToString();
-        List<Pax> paxes = resQuery.RoomOccupancy!.ToList();
-        Pax pax = paxes[0];
-        // string paxStringJson = JsonSerializer.Serialize<List<Pax>>(resQuery.RoomOccupancy!.ToList());
-        Navigation.NavigateTo($"/shop/CatRatePrices/{resQueryTransferService.ToString()}");
-    }
+    //     string testResQuery = resQueryTransferService.ToString();
+    //     List<Pax> paxes = resQuery.RoomOccupancy!.ToList();
+    //     Pax pax = paxes[0];
+    //     // string paxStringJson = JsonSerializer.Serialize<List<Pax>>(resQuery.RoomOccupancy!.ToList());
+    //     Navigation.NavigateTo($"/shop/CatRatePrices/{resQueryTransferService.ToString()}");
+    // }
 
     #region "Person AddPerson, EditPerson"
 

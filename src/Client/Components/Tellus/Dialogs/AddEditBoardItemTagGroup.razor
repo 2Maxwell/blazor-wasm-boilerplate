@@ -1,0 +1,82 @@
+﻿@inject IStringLocalizer<AddEditBoardItemTag> L
+@inject IBoardItemTagGroupsClient BoardItemTagGroupsClient
+
+@if (_loaded)
+{
+    <MudDialog Title="@L[HeaderText!]" MaxWidth="MaxWidth.Small">
+
+        <DialogContent>
+            <MudGrid>
+
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="request!.Title" Tag="@L["Title"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudColorPicker T="string?" @bind-Text="request.Color" Style="@($"color:{request!.Color};")" Label="@L["TagGroupColor"]" ColorPickerView="ColorPickerView.Palette" />
+                </MudItem>
+
+            </MudGrid>
+        </DialogContent>
+
+        <DialogActions>
+            <MudButton OnClick="SaveBoardItemTagGroup" Variant="Variant.Filled" Color="Color.Primary">@L["Save"]</MudButton>
+            <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">@L["Cancel"]</MudButton>
+        </DialogActions>
+
+    </MudDialog>
+
+}
+@code {
+
+    [CascadingParameter]
+    public MudDialogInstance? MudDialog { get; set; }
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public BoardItemTagGroupDto? BoardItemTagGroup { get; set; }
+
+    public UpdateBoardItemTagGroupRequest? request { get; set; }
+
+    public bool _loaded { get; set; } = false;
+    public string? HeaderText { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+
+        if (BoardItemTagGroup is not null)
+        {
+            request = BoardItemTagGroup.Adapt<UpdateBoardItemTagGroupRequest>();
+            HeaderText = $"Edit BoardItemTagGroup {request.Id}";
+        }
+        else
+        {
+            request = new UpdateBoardItemTagGroupRequest();
+            HeaderText = "Add BoardItemTagGroup";
+        };
+
+        _loaded = true;
+    }
+
+    private async Task SaveBoardItemTagGroup()
+    {
+        request!.MandantId = MandantId;
+
+        if (request!.Id > 0)
+        {
+            await BoardItemTagGroupsClient.UpdateAsync(request.Id, request!);
+        }
+        else
+        {
+            await BoardItemTagGroupsClient.CreateAsync(request.Adapt<CreateBoardItemTagGroupRequest>());
+        }
+
+        MudDialog!.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel()
+    {
+        MudDialog!.Cancel();
+    }
+
+}

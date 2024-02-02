@@ -1,71 +1,141 @@
 ﻿@inject IStringLocalizer<BookingLinesDetails> L
+@inject IReservationsClient reservationsClient
 
 @if (_loaded)
 {
-    <MudCard style="min-height:620px">
-        <MudCardHeader>
+    <MudCard style="min-height:500px">
+        <MudCardHeader Class="mb-n10">
             <CardHeaderContent>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["BookingLine Details"]</MudButton>
-            </CardHeaderContent>
-        </MudCardHeader>
-        <MudCardContent>
-            <MudGrid>
-                <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
-                    <thead>
-                        <tr>
-                            <th>@L["Date"]</th>
-                            <th>@L["Description"]</th>
-                            <th style="text-align:right">@L["Amount"]</th>
-                            <th style="text-align:right">@L["Price"]</th>
-                            <th style="text-align:right">@L["Total"]</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @{
-                            decimal total = 0;
-                        }
+                </CardHeaderContent>
+                <CardHeaderActions>
+                    @* <MudIconButton OnClick="(() => CalculatePackages())" Icon="@Icons.Material.Filled.Autorenew" Color="Color.Default" /> *@
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent Class="mt-3">
+                <MudTabs Elevation="0" Rounded="true" MaxHeight="30" Centered="true">
+                    <MudTabPanel Text="Booked">
+                        <MudGrid>
+                            <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+                                <thead>
+                                    <tr>
+                                        <th>@L["Date"]</th>
+                                    <th>@L["Description"]</th>
+                                    <th style="text-align:right">@L["Amount"]</th>
+                                    <th style="text-align:right">@L["Price"]</th>
+                                    <th style="text-align:right">@L["Total"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    decimal total = 0;
+                                }
 
-                        @foreach (BookingLineSummary bl in reservationDto.BookingLineSummaries.OrderBy(x => x.Date))
-                        {
-                            <tr>
-                                <td>
-                                    @bl.Date.ToString("dd.MM.yyyy")
-                                </td>
-                                <td>
-                                    @bl.Description
-                                    @bl.TaxLine
-                                </td>
-                                <td style="text-align:right">
-                                    @Convert.ToDecimal(bl.Amount).ToString("N2")
-                                </td>
-                                <td style="text-align:right">
-                                    @bl.Price.ToString("N2")
-                                </td>
-                                <td style="text-align:right">
-                                    @bl.Total.ToString("N2")
-                                </td>
-                            </tr>
-                            total += @bl.Total;
-                        }
+                                @foreach (BookingLineSummary bl in reservationDto.BookingLineSummaries.OrderBy(x => x.Date))
+                                {
+                                    <tr>
+                                        <td>
+                                            @bl.Date.ToString("dd.MM.yyyy")
+                                        </td>
+                                        <td>
+                                            @bl.Description
+                                            @bl.TaxLine
+                                        </td>
+                                        <td style="text-align:right">
+                                            @Convert.ToDecimal(bl.Amount).ToString("N2")
+                                        </td>
+                                        <td style="text-align:right">
+                                            @bl.Price.ToString("N2")
+                                        </td>
+                                        <td style="text-align:right">
+                                            @bl.Total.ToString("N2")
+                                        </td>
+                                    </tr>
+                                    total += @bl.Total;
+                                }
 
-                        <tr>
-                            <td>
-                            </td>
-                            <td>
-                                @L["Total"]
-                            </td>
-                            <td>
-                            </td>
-                            <td>
-                            </td>
-                            <td style="text-align:right">
-                                @total.ToString("N2")
-                            </td>
-                        </tr>
-                    </tbody>
-                </MudSimpleTable>
+                                <tr>
+                                    <td>
+                                    </td>
+                                    <td>
+                                        @L["Total"]
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td style="text-align:right">
+                                        @total.ToString("N2")
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </MudSimpleTable>
 
-            </MudGrid>
+                    </MudGrid>
+
+                </MudTabPanel>
+
+                <MudTabPanel Text="Calculated">
+                    <MudGrid>
+                        <MudSimpleTable Hover="true" Dense="true" FixedHeader="true">
+                            <thead>
+                                <tr>
+                                    <th>@L["Date"]</th>
+                                    <th>@L["Description"]</th>
+                                    <th style="text-align:right">@L["Amount"]</th>
+                                    <th style="text-align:right">@L["Price"]</th>
+                                    <th style="text-align:right">@L["Total"]</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    decimal total = 0;
+                                }
+
+                                @foreach (BookingLineSummary bl in calculatedBookingLineSummaries.OrderBy(x => x.Date))
+                                {
+                                    <tr>
+                                        <td>
+                                            @bl.Date.ToString("dd.MM.yyyy")
+                                        </td>
+                                        <td>
+                                            @bl.Description
+                                            @bl.TaxLine
+                                        </td>
+                                        <td style="text-align:right">
+                                            @Convert.ToDecimal(bl.Amount).ToString("N2")
+                                        </td>
+                                        <td style="text-align:right">
+                                            @bl.Price.ToString("N2")
+                                        </td>
+                                        <td style="text-align:right">
+                                            @bl.Total.ToString("N2")
+                                        </td>
+                                    </tr>
+                                    total += @bl.Total;
+                                }
+
+                                <tr>
+                                    <td>
+                                    </td>
+                                    <td>
+                                        @L["Total"]
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td>
+                                    </td>
+                                    <td style="text-align:right">
+                                        @total.ToString("N2")
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </MudSimpleTable>
+
+                    </MudGrid>
+
+                </MudTabPanel>
+            </MudTabs>
         </MudCardContent>
         <MudCardActions>
         </MudCardActions>
@@ -81,9 +151,22 @@
     public ReservationDto reservationDto { get; set; }
     [Parameter]
     public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    [Parameter]
+    public List<BookingLineSummary> calculatedBookingLineSummaries { get; set; } = new List<BookingLineSummary>();
 
     protected override async Task OnInitializedAsync()
     {
         _loaded = true;
     }
+
+    private async void CalculatePackages()
+    {
+        GetReservationPackageCalculationRequest request = new GetReservationPackageCalculationRequest();
+        request.MandantId = reservationDto.MandantId;
+        request.Arrival = Convert.ToDateTime(reservationDto.Arrival);
+        request.Departure = Convert.ToDateTime(reservationDto.Departure);
+        request.ReservationDto = reservationDto;
+        calculatedBookingLineSummaries = (await reservationsClient.GetReservationPackageCalulationAsync(request)).ToList();
+    }
+
 }

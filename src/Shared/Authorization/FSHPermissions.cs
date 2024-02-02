@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Dynamic;
 
 namespace FSH.WebApi.Shared.Authorization;
 
@@ -34,6 +35,7 @@ public static class FSHResource
     public const string Items = nameof(Items);
     public const string PriceSchema = nameof(PriceSchema);
     public const string Taxes = nameof(Taxes);
+    public const string CashierRegisters = nameof(CashierRegisters);
 
 }
 
@@ -114,6 +116,12 @@ public static class FSHPermissions
         new("Create Tax", FSHAction.Create, FSHResource.Taxes),
         new("Update Tax", FSHAction.Update, FSHResource.Taxes),
         new("Delete Tax", FSHAction.Delete, FSHResource.Taxes),
+        new("View CashierRegister", FSHAction.View, FSHResource.CashierRegisters, IsBasic: true),
+        new("Search CashierRegister", FSHAction.Search, FSHResource.CashierRegisters, IsBasic: true),
+        new("Create CashierRegister", FSHAction.Create, FSHResource.CashierRegisters),
+        new("Update CashierRegister", FSHAction.Update, FSHResource.CashierRegisters),
+        new("Delete CashierRegister", FSHAction.Delete, FSHResource.CashierRegisters),
+
     };
 
     public static IReadOnlyList<FSHPermission> All { get; } = new ReadOnlyCollection<FSHPermission>(_all);

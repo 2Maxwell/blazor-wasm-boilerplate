@@ -1,0 +1,230 @@
+﻿@using FSH.BlazorWebAssembly.Client.Components.Tellus.Dialogs;
+@inject IStringLocalizer<Board> L
+@inject IBoardsClient BoardsClient
+@inject IBoardItemsClient BoardItemsClient
+@inject IBoardItemLabelGroupsClient BoardItemLabelGroupsClient
+@inject IBoardItemLabelsClient BoardItemLabelsClient
+@inject IBoardItemTagGroupsClient BoardItemTagGroupsClient
+@inject IBoardItemTagsClient BoardItemTagsClient
+
+@if (_loaded)
+{
+    @if (Display == "Tellus")
+    {
+    <MudPaper Style="background:#37474F;" Class="ml-2 mt-2 rounded-lg" Width="450px" MinHeight="500px" Elevation="25">
+
+        <MudToolBar Style="@($"color:{Colors.LightGreen.Accent3}; background:{boardDto!.Color}; width:100%;")" Class="" WrapContent="true">
+
+            <MudStack Justify="Justify.FlexStart" Spacing="3" AlignItems="AlignItems.Center" Row="true">
+
+                <MudTooltip Text="@boardDto.Description">
+                    <h3>@boardDto!.Title</h3>
+                </MudTooltip>
+
+                <MudSpacer></MudSpacer>
+
+                <MudFab Class="ma-1" OnClick="(() => AddBoardItem())" Title="@L["Add BoardItem"]" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" />
+
+
+                <MudText Typo="Typo.caption">BcId: @boardDto.Id</MudText>
+                    <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                        <MudMenuItem OnClick="(() => EditBoard())">Edit Board</MudMenuItem>
+                    </MudMenu>
+                </MudStack>
+
+            </MudToolBar>
+
+            <MudStack Justify="Justify.FlexStart" Spacing="3" AlignItems="AlignItems.Center">
+                <div style="width: 400px;">
+                    <MudPaper>
+
+                    </MudPaper>
+                </div>
+            </MudStack>
+
+            <MudStack Spacing="1">
+                @if (boardItems is not null)
+            {
+                foreach (BoardItemDto item in boardItems)
+                {
+                    <BoardItem boardItem="item"
+                               boardItemLabels="boardItemLabels"
+                               boardItemTags="boardItemTags"
+                               boardItemLabelGroups="boardItemLabelGroups"
+                               boardItemTagGroups="boardItemTagGroups"></BoardItem>
+                }
+            }
+        </MudStack>
+    </MudPaper>
+    }
+
+    @if (Display == "Reservation")
+    {
+        <MudCard style="min-height:500px">
+            <MudCardHeader Class="mb-n10">
+                <CardHeaderContent>
+
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                        <MudTooltip Text="@boardDto!.Description">
+                            @boardDto!.Title
+                        </MudTooltip>
+                    </MudButton>
+
+               </CardHeaderContent>
+
+                <CardHeaderActions>
+
+@*                     <MudFab Class="ma-1" OnClick="(() => AddBoardItem())" Title="@L["Add BoardItem"]" Size="Size.Small" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" />
+ *@
+                    <MudMenu Class="mt-2" Icon="@Icons.Material.Filled.MoreVert">
+
+                        <MudMenuItem OnClick="(() => EditBoard())">@L["Edit Board"]</MudMenuItem>
+                        <MudMenuItem OnClick="(() => AddBoardItem())">@L["Add BoardItem"]</MudMenuItem>
+
+                    </MudMenu>
+
+                </CardHeaderActions>
+            </MudCardHeader>
+
+            <MudCardContent>
+                <MudStack Spacing="1">
+                    @if (boardItems is not null)
+                    {
+                        foreach (BoardItemDto item in boardItems)
+                        {
+                            <BoardItem boardItem="item"
+                            boardItemLabels="boardItemLabels"
+                            boardItemTags="boardItemTags"
+                            boardItemLabelGroups="boardItemLabelGroups"
+                            boardItemTagGroups="boardItemTagGroups">
+                            </BoardItem>
+                        }
+                    }
+                </MudStack>
+            </MudCardContent>
+
+        </MudCard>
+    }
+
+
+
+}
+
+@code {
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public BoardDto? boardDto { get; set; }
+    [Parameter]
+    public List<BoardItemLabelDto>? boardItemLabels { get; set; }
+    [Parameter]
+    public List<BoardItemLabelGroupDto>? boardItemLabelGroups { get; set; }
+    [Parameter]
+    public List<BoardItemTagGroupDto>? boardItemTagGroups { get; set; }
+    [Parameter]
+    public List<BoardItemTagDto>? boardItemTags { get; set; }
+    [Parameter]
+    public string? Display { get; set; } = "Tellus";
+    [Parameter]
+    public List<BoardItemDto>? boardItems { get; set; }
+    [Parameter]
+    public BoardSourceId? boardSourceIdCaller { get; set; }
+    public bool _loaded { get; set; } = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Notwendig für die Nutzung von Boards in anderen Teilen der Anwendung
+        if (boardItemLabelGroups is null)
+        {
+            GetBoardItemLabelGroupsRequest request = new GetBoardItemLabelGroupsRequest();
+            request.MandantId = MandantId;
+
+            boardItemLabelGroups = (await BoardItemLabelGroupsClient.GetBoardItemLabelGroupsAsync(request)).ToList();
+            Console.WriteLine($"boardItemLabelGroups manuell nachgeladen: {boardItemLabelGroups.Count}");
+        }
+
+        if (boardItemLabels is null)
+        {
+            GetBoardItemLabelsRequest request = new GetBoardItemLabelsRequest();
+            request.MandantId = MandantId;
+
+            boardItemLabels = (await BoardItemLabelsClient.GetBoardItemLabelsAsync(request)).ToList();
+            Console.WriteLine($"boardItemLabels manuell nachgeladen: {boardItemLabels.Count}");
+        }
+
+        if (boardItemTagGroups is null)
+        {
+            GetBoardItemTagGroupSelectRequest request = new GetBoardItemTagGroupSelectRequest();
+            request.MandantId = MandantId;
+            boardItemTagGroups = (await BoardItemTagGroupsClient.GetBoardItemTagGroupSelectAsync(request)).ToList();
+            Console.WriteLine($"boardItemTagGroups manuell nachgeladen: {boardItemTagGroups.Count}");
+        }
+
+        if (boardItemTags is null)
+        {
+            GetBoardItemTagsRequest request = new GetBoardItemTagsRequest();
+            request.MandantId = MandantId;
+            boardItemTags = (await BoardItemTagsClient.GetBoardItemTagsAsync(request)).ToList();
+            Console.WriteLine($"boardItemTags manuell nachgeladen: {boardItemTags.Count}");
+        }
+
+        if (boardItems is null) LoadBoardItems();
+
+        _loaded = true;
+    }
+
+    private async void LoadBoardItems()
+    {
+        GetBoardItemByBoardIdRequest request = new GetBoardItemByBoardIdRequest();
+        request.MandantId = MandantId;
+        request.BoardId = boardDto!.Id;
+
+        boardItems = (await BoardItemsClient.GetBoardItemByBoardIdAsync(request)).ToList();
+        StateHasChanged();
+    }
+
+    private async void EditBoard()
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["Board"] = boardDto,
+                ["boardItemLabels"] = boardItemLabels,
+            };
+        var dialog = DialogService.Show<AddEditBoard>("Edit Board", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            boardDto = result.Data.Adapt<BoardDto>();
+            // LoadBoard((int)result.Data);
+            StateHasChanged();
+        }
+    }
+
+    private async Task AddBoardItem()
+    {
+        var parameters = new DialogParameters
+            {
+                ["MandantId"] = MandantId,
+                ["Board"] = boardDto,
+                ["BoardItem"] = null,
+                ["boardItemLabels"] = boardItemLabels,
+                ["boardItemLabelGroups"] = boardItemLabelGroups,
+                ["boardItemTags"] = boardItemTags,
+                ["boardItemTagGroups"] = boardItemTagGroups,
+                ["boardSourceIdCaller"] = boardSourceIdCaller,
+            };
+
+        var dialog = DialogService.Show<AddEditBoardItem>("Add BoardItem", parameters, new DialogOptions() { CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (!result!.Canceled)
+        {
+            BoardItemDto boardItemDto = result.Data.Adapt<BoardItemDto>();
+            // Add boardItemDto to boardItems at first place
+
+            boardItems!.Insert(0, boardItemDto);
+            // boardItems.Add(boardItemDto);
+            StateHasChanged();
+        }
+    }
+}

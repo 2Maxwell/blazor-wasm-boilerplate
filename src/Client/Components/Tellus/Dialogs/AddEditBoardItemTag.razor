@@ -1,0 +1,108 @@
+﻿@inject IStringLocalizer<AddEditBoardItemTag> L
+@inject IBoardItemTagsClient BoardItemTagsClient
+@inject IBoardItemTagGroupsClient BoardItemTagGroupsClient
+
+@if (_loaded)
+{
+    <MudDialog Title="@L[HeaderText!]" MaxWidth="MaxWidth.Small">
+        <DialogContent>
+
+            <MudGrid>
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="request!.Text" Tag="@L["Title"]" Variant="Variant.Outlined" />
+                </MudItem>
+                <MudItem xs="12" md="12">
+                    <MudSelect Value="request!.BoardItemTagGroupId" ValueChanged="((e) => BoardItemTagGroupChanged(e))" Class="ma-1" T="int" FullWidth="false" Placeholder="Please Select" Margin="Margin.Dense" Variant="Variant.Outlined" AdornmentIcon="@Icons.Material.Filled.Collections" AdornmentColor="Color.Primary">
+                        @foreach (var item in boardItemTagGroups!)
+                        {
+                            <MudSelectItem T="int" Value="@item.Id">@item.Title</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                @*                 <MudItem xs="12" md="12">
+            <MudCheckBox @bind-Checked="request!.DefaultTag" Tag="@L["Default Tag"]" Size="Size.Large" Color="Color.Primary"></MudCheckBox>
+            </MudItem>
+            *@
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="SaveBoardItemTag" Variant="Variant.Filled" Color="Color.Primary">@L["Save"]</MudButton>
+            <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">@L["Cancel"]</MudButton>
+        </DialogActions>
+    </MudDialog>
+
+
+}
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance? MudDialog { get; set; }
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public BoardItemTagDto? BoardItemTag { get; set; }
+    [Parameter]
+    public List<BoardItemTagGroupDto>? boardItemTagGroups { get; set; }
+    [Parameter]
+    public int currentBoardItemTagGroupId { get; set; }
+
+
+    public UpdateBoardItemTagRequest? request { get; set; }
+
+    public bool _loaded { get; set; } = false;
+    public string? HeaderText { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        GetBoardItemTagGroupSelectRequest getBoardItemTagGroupSelectRequest = new GetBoardItemTagGroupSelectRequest();
+        getBoardItemTagGroupSelectRequest.MandantId = MandantId;
+        boardItemTagGroups = (await BoardItemTagGroupsClient.GetBoardItemTagGroupSelectAsync(getBoardItemTagGroupSelectRequest)).ToList();
+
+        if (BoardItemTag is not null)
+        {
+            request = BoardItemTag.Adapt<UpdateBoardItemTagRequest>();
+            HeaderText = $"Edit BoardItemTag {request.Id}";
+        }
+        else
+        {
+            request = new UpdateBoardItemTagRequest();
+            request.BoardItemTagGroupId = currentBoardItemTagGroupId;
+            HeaderText = "Add BoardItemTag";
+        };
+
+
+        _loaded = true;
+    }
+
+    private async void BoardItemTagGroupChanged(int e)
+    {
+        request.BoardItemTagGroupId = e;
+
+        //StateHasChanged();
+    }
+
+
+    private async void SaveBoardItemTag()
+    {
+        request!.MandantId = MandantId;
+
+        if (request.Id > 0)
+        {
+            await BoardItemTagsClient.UpdateAsync(request.Id, request);
+        }
+        else
+        {
+            var id = await BoardItemTagsClient.CreateAsync(request.Adapt<CreateBoardItemTagRequest>());
+            request.Id = id;
+        }
+
+        MudDialog!.Close(DialogResult.Ok(request));
+    }
+
+    private void Cancel()
+    {
+        MudDialog!.Close(DialogResult.Cancel());
+    }
+
+
+}

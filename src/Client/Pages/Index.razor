@@ -9,33 +9,91 @@
 @inject IStringLocalizer<Index> L
 @inject ISessionStorageService sessionstorage
 @inject IMandantsClient MandantsClient
+@inject IReservationsClient ReservationsClient
 
 @if (_loaded)
 {
     <MudContainer Fixed="true">
         <MudGrid>
-            <MudStack Row="true" Justify="Justify.FlexStart" AlignItems="AlignItems.Center">
-                <MudButton OnClick="OpenChasierDialog" Variant="Variant.Filled" Color="Color.Secondary">Cashier</MudButton>
+@*             <MudStack Class="ml-3" Row="true" Justify="Justify.FlexStart" AlignItems="AlignItems.Center">
+                <MudButton OnClick="OpenCashierDialog" Variant="Variant.Filled" Color="Color.Primary">@L["Cashier"] @_cashierRegisterName </MudButton>
 
-            </MudStack>
+                </MudStack>
+                <br />
+ *@
+                <ResQuerys UserCase="Mandant"></ResQuerys>
+                <br />
+                @if (_mandantId > 0)
+            {
+                <MudItem xs="12" sm="12" md="12">
+                    <FSH.BlazorWebAssembly.Client.Components.VCats.VCatVertical></FSH.BlazorWebAssembly.Client.Components.VCats.VCatVertical>
 
-            <br />
-            <ResQuerys UserCase="Mandant"></ResQuerys>
-            <br />
+                </MudItem>
 
-            <MudItem xs="12" sm="12" md="12">
-                <FSH.BlazorWebAssembly.Client.Components.VCats.VCatVertical></FSH.BlazorWebAssembly.Client.Components.VCats.VCatVertical>
+                @* <div class="lp-app-grid"> *@
+                <MudPaper Class="py-4 px-6 rounded-lg d-flex align-center">
+                    <div class="flex-grow-1">
+                        <MudText Typo="Typo.h6">@L["Arrivalstats"]</MudText>
+                            <MudItem xs="12" sm="12" md="12">
+                                <MudStack Row="true" Spacing="4">
 
-            </MudItem>
+                                    <MudStack Style="min-width:92px;" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.subtitle2">@L["Reservations"]</MudText>
+                                        <MudText Typo="Typo.h6">@resStatArr!.ReservationTodayDone!.Value / @resStatArr!.ReservationToday!.Value</MudText>
+                                        <MudProgressLinear Color="Color.Success" Rounded="true" Size="Size.Large" Value="resToday" />
+                                    </MudStack>
+                                    <MudStack Style="min-width:92px;" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.subtitle2">@L["Rooms"]</MudText>
+                                        <MudText Typo="Typo.h6">@resStatArr!.ReservationRoomsTodayDone!.Value / @resStatArr!.ReservationRoomsToday!.Value</MudText>
+                                        <MudProgressLinear Color="Color.Success" Rounded="true" Size="Size.Large" Value="resRoomToday" />
+                                    </MudStack>
+                                    <MudStack Style="min-width:92px;" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.subtitle2">@L["Adults"]</MudText>
+                                        <MudText Typo="Typo.h6">@resStatArr!.ReservationAdultTodayDone!.Value / @resStatArr!.ReservationAdultToday!.Value</MudText>
+                                        <MudProgressLinear Color="Color.Success" Rounded="true" Size="Size.Large" Value="adultToday" />
+                                    </MudStack>
+                                    <MudStack Style="min-width:92px;" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.subtitle2">@L["Children"]</MudText>
+                                        <MudText Typo="Typo.h6">@resStatArr!.ReservationChildTodayDone!.Value / @resStatArr!.ReservationChildToday!.Value</MudText>
+                                        <MudProgressLinear Color="Color.Success" Rounded="true" Size="Size.Large" Value="childToday" />
+                                    </MudStack>
+                                    <MudStack Style="min-width:92px;" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                                        <MudText Typo="Typo.subtitle2">@L["XBeds"]</MudText>
+                                        <MudText Typo="Typo.h6">@resStatArr!.ReservationExtraBedTodayDone!.Value / @resStatArr!.ReservationExtraBedToday!.Value</MudText>
+                                        <MudProgressLinear Color="Color.Success" Rounded="true" Size="Size.Large" Value="XBedsToday" />
+
+                                    </MudStack>
+
+                                </MudStack>
+
+                            </MudItem>
 
 
-            @*        <FSH.BlazorWebAssembly.Client.Components.VCats.VCatHorizontal></FSH.BlazorWebAssembly.Client.Components.VCats.VCatHorizontal>
-        *@
 
-            <MudItem xs="12" sm="12" md="12">
-                <SearchReservationsList></SearchReservationsList>
+                        </div>
 
-            </MudItem>
+                        @*                             <div class="d-flex align-end justify-end mud-height-full py-8">
+            <MudPaper Height="65%" Width="6px" Square="true" Class="mud-secondary mr-1 rounded-t" />
+            <MudPaper Height="52%" Width="6px" Square="true" Class="mud-secondary mr-1 rounded-t" />
+            <MudPaper Height="40%" Width="6px" Square="true" Class="mud-secondary mr-1 rounded-t" />
+            <MudPaper Height="38%" Width="6px" Square="true" Class="mud-secondary mr-1 rounded-t" />
+            <MudPaper Height="36%" Width="6px" Square="true" Class="mud-secondary mr-1 rounded-t" />
+            <MudPaper Height="20%" Width="6px" Square="true" Class="mud-secondary mr-1 rounded-t" />
+            <MudPaper Height="@GetArrivalProzent("resToday")" Width="6px" Square="true" Class="mud-primary mr-1 rounded-t" />
+            <MudPaper Height="@GetArrivalProzent("resTodayDone")" Width="6px" Square="true" Class="mud-primary mr-1 rounded-t" />
+            <MudPaper Height="@GetArrivalProzent("resRoomToday")" Width="6px" Square="true" Class="mud-primary mr-1 rounded-t" />
+            <MudPaper Height="@GetArrivalProzent("resRoomTodayDone")" Width="6px" Square="true" Class="mud-primary mr-1 rounded-t" />
+            </div>
+            *@
+                    </MudPaper>
+                @* </div> *@
+
+                <MudItem xs="12" sm="12" md="12">
+                    <SearchReservationsList></SearchReservationsList>
+
+                </MudItem>
+
+            }
 
 
             <MudItem xs="12" sm="12" md="12">
@@ -52,10 +110,10 @@
         *@
             <MudItem xs="12" sm="12" md="12">
                 <MudText Align="Align.Center" Typo="Typo.h5" Class="smaller">@L["Lunnax"]</MudText>
-                <MudText Align="Align.Center" Typo="Typo.h4">@L["ATLAS"]</MudText>
-            </MudItem>
+                    <MudText Align="Align.Center" Typo="Typo.h4">@L["ATLAS"]</MudText>
+                </MudItem>
 
-            @*        <MudItem xs="12" sm="12" md="12">
+                @*        <MudItem xs="12" sm="12" md="12">
         <MudText Align="Align.Center">
         @L["Built with the goodness of"] <MudLink Href="https://www.mudblazor.com" Target="_blank">MudBlazor</MudLink> @L["Component Library"].
         </MudText>
@@ -119,8 +177,8 @@
         <MudAlert Style="margin-top:10px;justify-content:center" Severity="Severity.Info"><MudLink Href="https://github.com/fullstackhero/blazor-wasm-boilerplate">@L["Liked this Boilerplate? Star us on Github!"]</MudLink></MudAlert>
         </MudItem>
         *@
-        </MudGrid>
-    </MudContainer>
+            </MudGrid>
+        </MudContainer>
 }
 
 @code {
@@ -129,8 +187,18 @@
 
     public IEnumerable<Claim>? Claims { get; set; }
     public int _mandantId { get; set; }
+    public int _cashierId { get; set; }
     public bool _loaded { get; set; } = false;
     public MandantDto? _mandantDto { get; set; } = null;
+    public string _cashierRegisterName { get; set; }
+
+    public ReservationStatArrivalDto? resStatArr { get; set; }
+    public int resToday { get; set; }
+    public int resRoomToday { get; set; }
+    public int adultToday { get; set; }
+    public int childToday { get; set; } = 0;
+    public int XBedsToday { get; set; } = 0;
+
     protected override async Task OnInitializedAsync()
     {
 
@@ -138,25 +206,121 @@
         Claims = authState.User.Claims;
 
         _mandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
-        if(_mandantId > 0)
-{
+        if (_mandantId > 0)
+        {
             _mandantDto = await MandantsClient.GetAsync(_mandantId);
         }
+
+        DateTime arrival = Convert.ToDateTime(_mandantDto!.HotelDate!.Value);
+        resStatArr = await ReservationsClient.GetReservationStatArrivalAsync(_mandantId, arrival);
+
+        GetStats();
 
         _loaded = true;
     }
 
-    private async void OpenChasierDialog()
+    private void GetStats()
     {
-        var parameters = new DialogParameters
+        if (resStatArr!.ReservationToday!.Value > 0)
         {
-            ["mandantDto"] = _mandantDto,
-            //["reservationDtoChanged"] = reservationDtoChanged,
-        };
 
-        var dialog = DialogService.ShowModal<CashierDialog>(parameters);
-        var result = await dialog.Result;
-        StateHasChanged();
+            double resTotal = Convert.ToDouble(resStatArr!.ReservationToday!.Value);
+            double resTodayDone = Convert.ToDouble(resStatArr!.ReservationTodayDone!.Value);
+
+            resToday = Convert.ToInt16((resTodayDone / resTotal) * 100);
+        }
+
+        if (resStatArr!.ReservationRoomsToday!.Value > 0)
+        {
+
+            double roomsTotal = Convert.ToDouble(resStatArr!.ReservationRoomsToday!.Value);
+            double roomsDone = Convert.ToDouble(resStatArr!.ReservationRoomsTodayDone!.Value);
+
+            resRoomToday = Convert.ToInt16((roomsDone / roomsTotal) * 100);
+        }
+
+        if (resStatArr!.ReservationAdultToday!.Value > 0)
+        {
+            double adultTotal = Convert.ToDouble(resStatArr!.ReservationAdultToday!.Value);
+            double adultDone = Convert.ToDouble(resStatArr!.ReservationAdultTodayDone!.Value);
+
+            adultToday = Convert.ToInt16((adultDone / adultTotal) * 100);
+        }
+        else if (resStatArr.ReservationAdultTodayDone > 0)
+        {
+            adultToday = 100;
+            resStatArr.ReservationAdultToday = resStatArr.ReservationAdultTodayDone;
+        }
+
+
+        if (resStatArr!.ReservationChildToday!.Value > 0)
+        {
+            double childTotal = Convert.ToDouble(resStatArr!.ReservationChildToday!.Value);
+            double childDone = Convert.ToDouble(resStatArr!.ReservationChildTodayDone!.Value);
+
+            childToday = Convert.ToInt16((childDone / childTotal) * 100);
+        }
+        else if (resStatArr.ReservationChildTodayDone > 0)
+        {
+            childToday = 100;
+            resStatArr.ReservationChildToday = resStatArr.ReservationChildTodayDone;
+        }
+
+        if (resStatArr!.ReservationExtraBedToday!.Value > 0)
+        {
+            double XBedsTotal = Convert.ToDouble(resStatArr!.ReservationExtraBedToday!.Value);
+            double XBedsDone = Convert.ToDouble(resStatArr!.ReservationExtraBedTodayDone!.Value);
+
+            XBedsToday = Convert.ToInt16((XBedsDone / XBedsTotal) * 100);
+        }
+        else if (resStatArr.ReservationExtraBedTodayDone > 0)
+        {
+            XBedsToday = 100;
+            resStatArr.ReservationExtraBedToday = resStatArr.ReservationExtraBedTodayDone;
+        }
+
+    }
+
+    private async void OpenCashierDialog()
+    {
+        if (_cashierId == 0)
+        {
+            int cashierRequest = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentCashierId"));
+            if (cashierRequest > 0)
+            {
+                _cashierId = cashierRequest;
+            }
+            else
+            {
+                // Dialog ChashierRegister ausführen und speichern
+                var parametersCRDialog = new DialogParameters
+                    {
+                        ["MandantId"] = _mandantDto.Id,
+                        //["reservationDtoChanged"] = reservationDtoChanged,
+                    };
+                var dialogCR = DialogService.ShowModal<CashierRegisterDialog>(parametersCRDialog);
+                var resultCR = await dialogCR.Result;
+
+            }
+        }
+        _cashierId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentCashierId"));
+
+        if (_cashierId > 0)
+        {
+            var currentCashierRegister = await sessionstorage.GetItemAsync<Dictionary<string, string>>("currentCashierRegister");
+            _cashierRegisterName = currentCashierRegister["currentCashierRegisterName"];
+            var parameters = new DialogParameters
+                {
+                    ["mandantDto"] = _mandantDto,
+                    ["CashierRegisterId"] = Convert.ToInt32(currentCashierRegister["currentCashierRegisterId"]),
+                    ["CashierRegisterName"] = currentCashierRegister["currentCashierRegisterName"],
+                };
+
+            var dialog = DialogService.ShowModal<CashierDialog>(parameters);
+            var result = await dialog.Result;
+            StateHasChanged();
+
+        }
     }
 
 }

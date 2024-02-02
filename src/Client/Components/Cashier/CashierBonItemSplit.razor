@@ -1,0 +1,54 @@
+﻿<MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+
+    @* <MudIconButton OnClick="() => LocalDeleteBookingLineSummary(item)" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton> *@
+
+    <MudText Style="width:20%; text-align:left;" Typo="Typo.body1">@item.Date.Date.ToString("dd.MM.yyyy")</MudText>
+
+        <MudStack Style="width:50%; margin-left:10px;" Justify="Justify.Center" Spacing="0">
+            <MudText Typo="Typo.body1">@item.Description</MudText>
+            @* <MudText Typo="Typo.body2">@item.Price.ToString("N2")</MudText> *@
+            @* @item.Description *@
+            @* @item.TaxLine *@
+            @* InvPos: @item.InvoicePosition | *@
+        @{
+            string Ids = "";
+            foreach (var bookingLine in item.SourceList)
+            {
+                Ids += bookingLine.Id + " ";
+            }
+        }
+        @* Id's: @Ids | *@
+    </MudStack>
+
+@*     @if (cashierFunction == CashierFunctionEnum.TransferToRoom)
+    {
+
+    }
+ *@
+
+
+    <MudText Style="width:15%; text-align:right" Typo="Typo.body1">@Convert.ToDecimal(item.Amount).ToString("N2")</MudText>  <MudText Style="width:3%;" Typo="Typo.h5"> x </MudText>
+
+@*         @if (cashierFunction == CashierFunctionEnum.SplitAmount & item.Amount > 1)
+    {
+        <MudIconButton OnClick="() => LocalSplitAmount(item)" Icon="@Icons.Material.Filled.Code" Title="@L["Split Amount"]" aria-label="delete"></MudIconButton>
+    }
+ *@
+
+        <MudText Style="width:20%; text-align:right" Typo="Typo.body1">@item.Total.ToString("N2")</MudText>
+
+@*         @if (cashierFunction == CashierFunctionEnum.SplitPrice & Convert.ToInt32(item.Amount) == 1)
+    {
+        <MudIconButton OnClick="() => LocalSplitPrice(item)" Icon="@Icons.Material.Filled.Code" Title="@L["Split Price"]" aria-label="delete"></MudIconButton>
+    }
+ *@
+</MudStack>
+
+@code {
+    [Parameter]
+    public BookingLineSummaryLocal item { get; set; }
+
+    [Inject]
+    public IStringLocalizer<SharedResource> L { get; set; }
+
+}

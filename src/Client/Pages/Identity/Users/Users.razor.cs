@@ -52,6 +52,7 @@ public partial class Users
                 new(user => user.UserName, L["UserName"]),
                 new(user => user.Email, L["Email"]),
                 new(user => user.PhoneNumber, L["PhoneNumber"]),
+                new(user => user.MandantId, L["Mandant"]),
                 new(user => user.EmailConfirmed, L["Email Confirmation"], Type: typeof(bool)),
                 new(user => user.IsActive, L["Active"], Type: typeof(bool))
             },

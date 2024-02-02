@@ -1,0 +1,67 @@
+﻿<MudItem>
+    <MudCard Style="background-color:#d5b173;color:#0E2954;margin-top:3px;width:180px;height:180px;">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudStack Row="true" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.body2"><b>@packageId</b></MudText>
+                    @if (packageKz.Length < 14)
+                    {
+                        <MudText Typo="Typo.body2"><b>@packageKz</b></MudText>
+                    }
+                    else if (packageKz.Length >= 14)
+                    {
+                        <MudText Typo="Typo.caption"><b>@packageKz</b></MudText>
+                    }
+                </MudStack>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent Style="height:80px; padding:8px; overflow-x:auto; overflow-y:hidden">
+            <MudItem xs="12" sm="12" md="12">
+                @if (productName.Length < 20)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.body1"><b>@productName</b></MudText>
+                }
+                else if (productName.Length >= 20 && productName.Length < 35)
+                {
+                    <MudText Align="Align.Center" Typo="Typo.body2"><b>@productName</b></MudText>
+                }
+                else
+                {
+                    <MudText Align="Align.Center" Typo="Typo.caption"><b>@productName</b></MudText>
+                }
+            </MudItem>
+        </MudCardContent>
+        <MudCardActions>
+            <MudItem xs="4" sm="4" md="4">
+                <MudText Align="Align.Left" Typo="Typo.body2"><b>@vatTitle</b></MudText>
+                <MudText Align="Align.Left" Typo="Typo.body2"><b>@vat</b></MudText>
+            </MudItem>
+            <MudItem xs="8" sm="8" md="8">
+                <MudText Align="Align.Right" Typo="Typo.body2"><b>@priceTitle</b></MudText>
+                <MudText Align="Align.Right" Typo="Typo.body2"><b>@price</b></MudText>
+            </MudItem>
+        </MudCardActions>
+    </MudCard>
+</MudItem>
+
+
+@code {
+    [Parameter]
+    public int packageId { get; set; }
+    [Parameter]
+    public string? packageKz { get; set; }
+    [Parameter]
+    public string productName { get; set; } = "Super Cool Sneaker";
+    [Parameter]
+    public string vatTitle { get; set; } = "Vat";
+    [Parameter]
+    public string priceTitle { get; set; } = "Price";
+    [Parameter]
+    public string images { get; set; } = "images/Footwear.png";
+    [Parameter]
+    public decimal? price { get; set; }
+    [Parameter]
+    public string? vat { get; set; }
+
+
+}

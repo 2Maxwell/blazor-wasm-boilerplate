@@ -22,6 +22,7 @@ public partial class Profile
     protected IPersonalClient PersonalClient { get; set; } = default!;
 
     private readonly UpdateUserRequest _profileModel = new();
+    public string? mandantIdTest { get; set; }
 
     private string? _imageUrl;
     private string? _userId;
@@ -38,6 +39,7 @@ public partial class Profile
             _profileModel.FirstName = user.GetFirstName() ?? string.Empty;
             _profileModel.LastName = user.GetSurname() ?? string.Empty;
             _profileModel.PhoneNumber = user.GetPhoneNumber();
+            _profileModel.MandantId = Convert.ToInt32(user.GetMandantId() ?? string.Empty);
             _imageUrl = string.IsNullOrEmpty(user?.GetImageUrl()) ? string.Empty : (Config[ConfigNames.ApiBaseUrl] + user?.GetImageUrl());
             if (_userId is not null) _profileModel.Id = _userId;
         }

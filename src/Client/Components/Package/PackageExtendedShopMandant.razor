@@ -72,12 +72,6 @@
     public List<PackageBookingRhythmEnumDto> PackageRhythmEnumList { get; set; } = new List<PackageBookingRhythmEnumDto>();
     public string SelectedString { get; set; } = " *** Selected ***";
 
-    //protected async override Task OnInitializedAsync()
-    //{
-    //    PackageRhythmEnumList = (await EnumsClient.GetPackageBookingRhythmEnumRequestAsync()).ToList();
-    //}
-
-
     private string getPackageRhytmusString(int enumId)
     {
         string result = string.Empty;

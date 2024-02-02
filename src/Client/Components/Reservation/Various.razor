@@ -1,0 +1,101 @@
+﻿@inject IStringLocalizer<Various> L
+
+
+@if (_loaded)
+{
+    <MudCard style="min-height:500px">
+        <MudCardHeader Class="mb-n10">
+            <CardHeaderContent>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Various"]</MudButton>
+            </CardHeaderContent>
+            <CardHeaderActions>
+
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            <MudGrid>
+                @{
+                    // bool checkedIn = reservationDto.ResKz == "C" ? true : false;
+                    // bool isPreCheckIn = reservationDto.ResKz == "P" || reservationDto.ResKz == "R" ? true : false;
+                    // bool isPreCheckInOpposit = reservationDto.ResKz == "P" || reservationDto.ResKz == "R" ? false : true;
+                }
+
+                <MudItem xs="12">
+                    <MudStack Row="true">
+                        <MudItem xs="8">
+                            <MudTextField @bind-Value="@reservationDto.MatchCode" Label="@L["MatchCode"]" Variant="Variant.Outlined" />
+                        </MudItem>
+                        <MudItem xs="4">
+                            <MudIconButton OnClick="GenerateMatchCode" Icon="@Icons.Material.Filled.Autorenew" aria-label="generate">generate</MudIconButton>
+                            <MudIconButton OnClick="DeleteMatchCode" Icon="@Icons.Material.Filled.Delete" aria-label="delete"></MudIconButton>
+                        </MudItem>
+                    </MudStack>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudButton Style="background-color: #263238; color: white; height:50px" Variant="Variant.Filled" Color="Color.Warning" FullWidth="true">CRS-Number: @reservationDto.CrsNumber</MudButton>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudDatePicker Label="@L["OptionDate"]" Editable="true" Date="@reservationDto.OptionDate!.Value" DateChanged="((e) => OnOptionDateChanged(e))" MinDate="@Convert.ToDateTime(mandantDto.HotelDate).AddDays(-1)" Variant="Variant.Outlined" Placeholder="@L["OptionDate"]" />
+                </MudItem>
+
+                <MudItem xs="12" md="12">
+                    <MudNumericField Variant="Variant.Outlined" T="int" Lines="3" @bind-Value="@reservationDto.OptionFollowUp" Label="@L["Option FollowUp"]" />
+                </MudItem>
+
+                <MudItem xs="3">
+                </MudItem>
+
+                <MudItem xs="5" md="5">
+                </MudItem>
+
+
+
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+}
+
+@code {
+
+    public bool _loaded { get; set; } = false;
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    [Parameter]
+    public MandantDto? mandantDto { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (reservationDto.OptionDate == null)
+        {
+            reservationDto.OptionDate = mandantDto!.HotelDate!.Value.AddDays(-1);
+        }
+        _loaded = true;
+
+    }
+
+    private void GenerateMatchCode()
+    {
+        reservationDto.MatchCode = Guid.NewGuid().ToString().Substring(0, 8);
+    }
+
+    private async void DeleteMatchCode()
+    {
+        reservationDto.MatchCode = null;
+        await reservationDtoChanged.InvokeAsync(reservationDto);
+
+    }
+
+    private async void OnOptionDateChanged(DateTime? date)
+    {
+        if (reservationDto.OptionDate!.Value != date)
+        {
+            reservationDto.OptionDate = Convert.ToDateTime(date).AddHours(12);
+            await reservationDtoChanged.InvokeAsync(reservationDto);
+        }
+    }
+
+}

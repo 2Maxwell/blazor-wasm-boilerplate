@@ -7,8 +7,8 @@
 
 @if (_loaded)
 {
-    <MudCard style="min-height:620px">
-        <MudCardHeader>
+    <MudCard style="min-height:500px">
+        <MudCardHeader Class="mb-n10">
             <CardHeaderContent>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Option details"]</MudButton>
             </CardHeaderContent>
@@ -49,7 +49,6 @@
                                         <td>
                                             <MudText Typo="Typo.body1">@packageRhythmEnumList.First(x => x.Value == packageExtendDto.PackageDto.PackageBookingRhythmEnumId).Text</MudText>
                                         </td>
-
                                         <td>
                                             <MudText Typo="Typo.body1">@packageExtendDto.Amount.ToString("N2")</MudText>
                                         </td>
@@ -70,7 +69,7 @@
             </MudGrid>
         </MudCardContent>
         <MudCardActions>
-            <MudButton OnClick="OpenOption" Variant="Variant.Filled" Color="Color.Warning">@L["Book Option"]</MudButton>
+            <MudButton Class="ml-3" OnClick="OpenOption" Variant="Variant.Filled" Color="Color.Warning">@L["Book Option"]</MudButton>
         </MudCardActions>
     </MudCard>
 }
@@ -101,6 +100,23 @@
 
     public async void EditOption(ReservationDto reservationDto, PackageExtendDto packageExtendDto)
     {
+        // Open Dialog
+            var parameters = new DialogParameters
+            {
+                ["reservationDto"] = reservationDto,
+                ["reservationDtoChanged"] = reservationDtoChanged, // weiss nicht ob das nötig ist
+                ["packageExtendDto"] = packageExtendDto,
+                ["packageRhythmEnumList"] = packageRhythmEnumList,
+            };
+
+
+        // Dialog muss die Daten des Package anzeigen und die Möglichkeit bieten, die Anzahl zu ändern
+        // und wenn das Package eine Appointment notwendig macht (Tischreservierung) muss die entsprechende Komponente
+        // angezeigt werden.
+
+        var dialog = DialogService.ShowModal<ReservationPackageExtendEditDialog>(parameters);
+        var result = await dialog.Result;
+
 
     }
 

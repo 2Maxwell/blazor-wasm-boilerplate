@@ -2,73 +2,43 @@
 
 @if (_loaded)
 {
-
     <MudCard Style="@($"height:{ExpandHeight}px;max-height:{ExpandHeight}px; overflow-y: scroll;")">
         <MudCardHeader Class="mb-n10">
             <CardHeaderContent>
 
-@*                <MudGrid>
-                    <MudItem xs="11">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
-                            <MudText Typo="Typo.subtitle1">
-                                @if (!isGuest)
-                                {
-                                    if (reservationDto.BookerId == reservationDto.GuestId)
-                                    {
-                                        @L["Booker / Guest details"]  <MudText Typo="Typo.overline">@reservationDto.BookerId</MudText>
-
-                                    }
-                                    else
-                                    {
-                                        @L["Booker details"] <MudText Typo="Typo.overline">@reservationDto.BookerId</MudText>
-                                    }
-                                }
-                                else
-                                {
-                                    @L["Guest details"] <MudText Typo="Typo.overline">@reservationDto.GuestId</MudText>
-                                }
-                            </MudText>
-                        </MudButton>
-                    </MudItem>
-                    <MudItem xs="1" Class="pr-4">
-                        <MudToggleIconButton @bind-Toggled="@AlarmOn"
-                                             Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="@Color.Primary" Title="Down"
-                                             ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp" ToggledColor="@Color.Success" ToggledTitle="Up" />
-                    </MudItem>
-                </MudGrid>
-*@
                 <MudStack Row="true">
-                    <MudToggleIconButton Toggled="@ExpandOn" ToggledChanged="ExpandBookerGuestCard"
-                                         Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="@Color.Primary" Title="Down"
-                                         ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp" ToggledColor="@Color.Primary" ToggledTitle="Up" />
                     <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
                         <MudText Typo="Typo.subtitle1">
                             @if (!isGuest)
                             {
                                 if (reservationDto.BookerId == reservationDto.GuestId)
                                 {
-                                    @L["Booker / Guest details"]  <MudText Typo="Typo.overline">@reservationDto.BookerId</MudText>
+                                    @L["Booker / Guest details"]  <MudText Typo="Typo.overline"> (@reservationDto.BookerId)</MudText>
 
                                 }
                                 else
                                 {
-                                    @L["Booker details"] <MudText Typo="Typo.overline">@reservationDto.BookerId</MudText>
+                                    @L["Booker details"] <MudText Typo="Typo.overline"> (@reservationDto.BookerId)</MudText>
                                 }
                             }
                             else
                             {
-                                @L["Guest details"] <MudText Typo="Typo.overline">@reservationDto.GuestId</MudText>
+                                @L["Guest details"] <MudText Typo="Typo.overline"> (@reservationDto.GuestId)</MudText>
                             }
-
                         </MudText>
-
                     </MudButton>
-
 
 
                 </MudStack>
 
             </CardHeaderContent>
+            <CardHeaderActions>
+                <MudToggleIconButton Toggled="@ExpandOn" ToggledChanged="ExpandBookerGuestCard"
+                                     Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="@Color.Primary" Title="Down"
+                                     ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp" ToggledColor="@Color.Primary" ToggledTitle="Up" />
+
+            </CardHeaderActions>
+
         </MudCardHeader>
         <MudCardContent>
             @if (isGuest)

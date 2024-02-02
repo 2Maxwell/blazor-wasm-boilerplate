@@ -1,0 +1,73 @@
+﻿@page "/accounts/cashierregisters/{_mandantId:int}"
+
+@using System.Diagnostics
+@using Blazored.SessionStorage
+@attribute [MustHavePermission(FSHAction.View, FSHResource.CashierRegisters)]
+
+@inject IStringLocalizer<CashierRegisters> L
+@inject ICashierRegisterClient CashierRegisterClient
+@inject ISessionStorageService sessionstorage
+
+<FshTitle Title="@L["CashierRegisters"]" Description="@L["Manage CashierRegisters."]" />
+
+<EntityTable TEntity="CashierRegisterDto" TId="int" TRequest="UpdateCashierRegisterRequest" Context="@Context">
+
+    <EditFormContent>
+        <MudItem xs="9" md="9">
+            <MudTextField Variant="Variant.Outlined" ReadOnly="false" T="string" For="@(() => context.Name)" @bind-Value="context.Name" Label="@L["Name"]" />
+        </MudItem>
+
+        <MudItem xs="3" md="3">
+            <MudTextField Variant="Variant.Outlined" T="string" For="@(() => context.Location)" @bind-Value="context.Location" Label="@L["Location"]" />
+        </MudItem>
+
+        <MudItem xs="3" md="3">
+            <MudNumericField Variant="Variant.Outlined" T="decimal" Min="0" Max="99999" For="@(() => context.Stock)" @bind-Value="context.Stock" Label="@L["Stock"]" />
+        </MudItem>
+
+        <MudItem xs="12">
+            <MudCheckBox T="bool" Color="Color.Secondary" Size="Size.Large" For="@(() => context.Open)" @bind-Checked="context.Open" Label="@L["Open"]" />
+        </MudItem>
+
+
+    </EditFormContent>
+
+</EntityTable>
+
+
+
+@code {
+
+    [Parameter]
+    public int _mandantId { get; set; }
+    protected EntityServerTableContext<CashierRegisterDto, int, UpdateCashierRegisterRequest> Context { get; set; } = default!;
+
+    protected override void OnInitialized() =>
+        Context = new(
+            entityName: L["CashierRegister"],
+            entityNamePlural: L["CashierRegisters"],
+            entityResource: FSHResource.CashierRegisters,
+            fields: new()
+                    {
+                    // new(itemGroup => itemGroup.Id, L["Id"], "Id"),
+                    new(item => item.Name, L["Name"], "Name"),
+                     new(item => item.Location, L["Location"], "Location"),
+               },
+            idFunc: item => item.Id,
+            searchFunc: async filter =>
+            {
+                var itemfilter = filter.Adapt<SearchCashierRegisterRequest>();
+                itemfilter.MandantId = Convert.ToInt32(await sessionstorage.GetItemAsStringAsync("currentMandantId"));
+                _mandantId = itemfilter.MandantId;
+                var result = await CashierRegisterClient.SearchAsync(itemfilter);
+                return result.Adapt<PaginationResponse<CashierRegisterDto>>();
+            },
+            createFunc: async item =>
+            {
+                item.MandantId = _mandantId;
+                await CashierRegisterClient.CreateAsync(item.Adapt<CreateCashierRegisterRequest>());
+            },
+            updateFunc: async (id, item) => await CashierRegisterClient.UpdateAsync(id, item.Adapt<UpdateCashierRegisterRequest>()),
+            exportAction: string.Empty);
+
+}

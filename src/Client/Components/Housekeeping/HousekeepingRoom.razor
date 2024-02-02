@@ -1,0 +1,250 @@
+﻿
+<MudCard Outlined="true" Style="width:250px;height:260px;">
+    <MudCardHeader Style="background:#353940; height:80px;">
+        <CardHeaderContent>
+            @if (!String.IsNullOrEmpty(blockedString))
+            {
+                <MudChip Color="Color.Dark" Size="Size.Small">@blockedString</MudChip>
+            }
+            else
+            {
+                @* <MudText Typo="Typo.body2">@($"{ArrExp} {ArrCi} {Occ} {DepExp} {DepOut}")</MudText> *@
+                <MudText Typo="Typo.body1">@occupancyString</MudText>
+            }
+            <MudText Typo="Typo.body1">@category</MudText>
+                <!-- <MudChip Size="Size.Small">Default</MudChip>
+                <MudChip Color="Color.Primary" Size="Size.Small">OCC</MudChip>
+                <MudChip Color="Color.Secondary" Size="Size.Small">ARREXP</MudChip>
+                <MudChip Color="Color.Info" Size="Size.Small">ARRCI</MudChip>
+                <MudChip Color="Color.Success" Size="Size.Small">DEPEXP</MudChip>
+                <MudChip Color="Color.Warning" Size="Size.Small">DEPOUT</MudChip>
+                <MudChip Color="Color.Error" Size="Size.Small">OO</MudChip>
+                <MudChip Color="Color.Dark" Size="Size.Small">BLOCKED</MudChip> -->
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                    <MudMenuItem OnClick="@setCleanDirty">Clean Dirty</MudMenuItem>
+                    <MudMenuItem>Maintenance</MudMenuItem>
+                    <MudMenuItem>Minibar</MudMenuItem>
+                    <MudMenuItem>Lost & Found</MudMenuItem>
+
+                </MudMenu>
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent Style="@cleanDirtyColor(roomDto!.Clean)">
+            <MudStack Row="true" Justify="Justify.FlexStart">
+                <MudAvatar Color="Color.Secondary" Size="Size.Medium"> @((roomDto.DepExp || roomDto.DepOut) ? "CO" : "ST") </MudAvatar>
+                <MudText Style="text-align:center;" Typo="Typo.h4">@roomDto.Name</MudText>
+                <MudChip style="color:black;" Icon="@Icons.Material.Filled.Bed" IconColor="Color.Dark" Size="Size.Medium">@bedsString</MudChip>
+            </MudStack>
+
+            @if (resDto is not null)
+        {
+            <MudStack Row="false" Justify="Justify.Center" Spacing="0">
+                <MudStack Row="true">
+                    <MudText Typo="Typo.body2">@resDto.Arrival.Value.ToString("dd.MM.yyyy")</MudText>
+                        <MudText Typo="Typo.body2">@resDto.Departure.Value.ToString("dd.MM.yyyy")</MudText>
+                    </MudStack>
+                    <MudStack Row="false" Spacing="0">
+                    @if (resDto.Guest is not null)
+                    {
+                        <MudText Typo="Typo.body2">@resDto.Guest.SalutationName @resDto.Guest.Name @resDto.Guest.FirstName</MudText>
+                    }
+                    @if (resDto.Company is not null)
+                    {
+                        <MudText Typo="Typo.body2">@resDto.Company!.Name1</MudText>
+                    }
+                </MudStack>
+            </MudStack>
+        }
+    </MudCardContent>
+    <MudCardActions style="background:#585b62;">
+        @if (manageRoom)
+        {
+            <MudGrid>
+                <MudItem xs="3">
+                    <MudIconButton class="ml-2" OnClick="@(() => roomDto.CleaningState = roomDto.CleaningState -1)" Icon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Medium" />
+                </MudItem>
+
+                <MudItem xs="6">
+                    <MudButton Variant="Variant.Filled" Color="Color.Default" FullWidth="true"><MudText Class="ms-2">@cleaningStateName(roomDto.CleaningState)</MudText></MudButton>
+                    </MudItem>
+
+                    <MudItem xs="3">
+                        <MudIconButton OnClick="@(() => roomDto.CleaningState = roomDto.CleaningState +1)" Icon="@Icons.Material.Filled.ArrowForward" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Medium" />
+                    </MudItem>
+                </MudGrid>
+        }
+        else
+        {
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"><MudText Class="ms-2">@cleaningStateName(roomDto.CleaningState)</MudText></MudButton>
+                </MudItem>
+
+        }
+    </MudCardActions>
+</MudCard>
+
+
+@code {
+    [Parameter]
+    public DateTime hotelDate { get; set; } = DateTime.Now;
+    [Parameter]
+    public RoomHousekeepingDto? roomDto { get; set; }
+    [Parameter]
+    public ReservationDto? resDto { get; set; }
+    [Parameter]
+    public string category { get; set; }
+    [Parameter]
+    public bool manageRoom { get; set; }
+    public string? blockedString { get; set; }
+    public string? occupancyString { get; set; }
+    public string? bedsString { get; set; }
+
+
+    // private string roomNumber { get; set; } = "312";
+    // private string arrival { get; set; } = "02.09.2022";
+    // private string departure { get; set; } = "03.09.2022";
+    // private string guestName { get; set; } = "Herr Wegner, Michael";
+    // private string companyName { get; set; } = "Lunnax Solutions";
+    // private int cleaningState { get; set; }
+    // private bool clean { get; set; } = true;
+    private string? cleaningName { get; set; }
+    // private bool blocked { get; set; } = false;
+    // private DateTime? startBlocked { get; set; }
+    // private DateTime? endBlocked { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        blockedString = getBlockedState();
+        occupancyString = getOccupancyState();
+        bedsString = getBeds();
+    }
+
+    private void setCleanDirty()
+    {
+        roomDto.Clean = !roomDto.Clean;
+    }
+
+    private string getBeds()
+    {
+        string result = $"{roomDto.Beds}|{roomDto.BedsExtra}|{roomDto.BedsMax}";
+        return result;
+
+    }
+
+    private string cleanDirtyColor(bool clean)
+    {
+        string result = "";
+        if (clean)
+        {
+            result = "background:#4a775f; height:125px; padding:8px; overflow-x:auto; overflow-y:hidden";
+        }
+        else
+        {
+            result = "background:#814545; height:125px; padding:8px; overflow-x:auto; overflow-y:hidden";
+        }
+        return result;
+    }
+
+    private string cleaningStateName(int cleaningState)
+    {
+
+        var result = "leer";
+
+        switch (cleaningState)
+        {
+            case 0:
+                result = "UnAssigned";
+                break;
+            case 1:
+                result = "Assigned";
+                break;
+            case 2:
+                result = "isCleaning";
+                break;
+            case 3:
+                result = "PendingClean";
+                break;
+            case 4:
+                result = "CheckedClean";
+                break;
+            default:
+                result = "No State";
+                break;
+        }
+
+        return result;
+    }
+
+    private string getBlockedState()
+    {
+        var result = "";
+
+        if (roomDto.Blocked)
+        {
+            result = "BL";
+
+            if (roomDto.BlockedEnd > hotelDate && roomDto.BlockedStart < hotelDate) // Blocked
+            {
+                result = $"BL => {roomDto.BlockedEnd.Value.ToString("dd.MM.yyyy")}";
+            }
+            else if (roomDto.BlockedEnd < hotelDate && roomDto.BlockedStart < hotelDate) // Blocked abgelaufen
+            {
+                result = "";
+            }
+            else if (roomDto.BlockedEnd > hotelDate && roomDto.BlockedStart > hotelDate) // Blocked zukünftig
+            {
+                result = $"BL {roomDto.BlockedStart.Value.ToString("dd.MM.yyyy")} - {roomDto.BlockedEnd.Value.ToString("dd.MM.yyyy")}";
+            }
+            else
+            {
+                result = "Blocked Error";
+            }
+        }
+        else
+        {
+            result = "";
+        }
+
+        return result;
+    }
+
+    private string getOccupancyState()
+    {
+        var result = $"{ArrExp()} {ArrCi()} {Occ()} {DepExp()} {DepOut()}";
+        return result;
+    }
+
+    private string ArrExp()
+    {
+        string result = roomDto!.ArrExp ? "ArrExp" : "";
+        return result;
+    }
+
+    private string ArrCi()
+    {
+        string result = roomDto!.ArrCi ? "ArrCi" : "";
+        return result;
+    }
+
+    private string Occ()
+    {
+        string result = roomDto!.Occ ? "Occ" : "";
+        return result;
+    }
+
+    private string DepExp()
+    {
+        string result = roomDto!.DepExp ? "DepExp" : "";
+        return result;
+    }
+
+    private string DepOut()
+    {
+        string result = roomDto!.DepOut ? "DepOut" : "";
+        return result;
+    }
+
+
+}

@@ -186,4 +186,171 @@ public class ReservationHelper
         pricetag.Departure = Departure;
         pricetag.AverageRate = result;
     }
+
+    public async void InitOrSetPersonShopItems(ReservationDto reservationDto, Pax pax)
+    {
+        if (reservationDto.Persons != null)
+        {
+            reservationDto.PersonShopItems = JsonSerializer.Deserialize<List<PersonShopItem>>(reservationDto.Persons);
+            // Anzahl PersonShopItem mit der Summe RoomAmount * (Pax.Adult + PaxChildren) vergleichen
+            // Wenn nicht gleich, dann fehlen noch Personen
+            if (reservationDto.PersonShopItems.Count != reservationDto.RoomAmount * (pax!.Adult + pax!.Children.Count))
+            {
+                EditPersonShopItemList(reservationDto, pax);
+            }
+        }
+        else
+        {
+            SetNewPersonShopItemList(reservationDto, pax);
+        }
+    }
+
+    private async void EditPersonShopItemList(ReservationDto reservationDto, Pax pax)
+    {
+        Console.WriteLine("EditPersonShopItemList wird ausgeführt!");
+        int personNeeded = (int)reservationDto.RoomAmount * (pax.Adult + pax.Children.Count);
+        int personCount = reservationDto.PersonShopItems.Count;
+        int personCounter = 0;
+
+        if (personNeeded > personCount)
+        {
+
+            for (int i = 0; i < reservationDto.RoomAmount; i++) // Zimmeranzahl
+            {
+                for (int person = 1; person <= pax!.Adult; person++) // Anzahl Erw im Zimmer
+                {
+                    personCounter = person;
+                    string index = $"{i}R{person}P";
+
+                    if (reservationDto.PersonShopItems.Where(x => x.Index == index).Count() == 0)
+                    {
+                        // wenn person = 1 dann Guest erzeugen, wenn person = 2 dann Sharer erzeugen
+                        PersonShopItem psi = new();
+                        psi.Index = index;
+                        psi.PersonId = 0;
+                        psi.PersonShopType = person == 1 ? "guest" : "sharer";
+                        psi.Name = string.Empty;
+                        psi.FirstName = string.Empty;
+                        reservationDto.PersonShopItems.Add(psi);
+                    }
+                }
+
+                if (pax.Children != null)
+                {
+                    List<Child> childs = pax.Children.ToList();
+
+                    for (int i2 = 0; i2 < childs.Count; i2++)
+                    {
+                        int childPersonCounter = personCounter + i2 + 1;
+                        string index = $"{i}R{childPersonCounter}P";
+                        if (reservationDto.PersonShopItems.Where(x => x.Index == index).Count() == 0)
+                        {
+                            PersonShopItem psi = new();
+                            psi.PersonShopType = "child";
+                            psi.ChildAge = childs[i2].Age;
+                            psi.ExtraBed = childs[i2].ExtraBed;
+                            psi.Index = index;
+                            reservationDto.PersonShopItems.Add(psi);
+                        }
+                    }
+                }
+            }
+
+            reservationDto.Persons = JsonSerializer.Serialize<List<PersonShopItem>>(reservationDto.PersonShopItems.ToList());
+
+        }
+
+        if (personNeeded < personCount)
+        {
+            for (int i = 0; i < reservationDto.RoomAmount; i++) // Zimmeranzahl
+            {
+                for (int person = 1; person <= pax!.Adult; person++) // Anzahl Erw im Zimmer
+                {
+                    int iIndex = i + reservationDto.RoomAmount + 1;
+                    int personIndex = person + pax.Adult + 1;
+                    string index = $"{iIndex}R{personIndex}P";
+                    var psi = reservationDto.PersonShopItems.Where(x => x.Index == index).FirstOrDefault();
+                    if (psi != null)
+                    {
+                        reservationDto.PersonShopItems.Remove(psi);
+                    }
+                    else
+                    {
+                        // for-Schleife beenden
+                        break;
+                    }
+                }
+            }
+
+            reservationDto.Persons = JsonSerializer.Serialize<List<PersonShopItem>>(reservationDto.PersonShopItems.ToList());
+
+        }
+    }
+
+    public async void SetNewPersonShopItemList(ReservationDto reservationDto, Pax pax)
+    {
+        Console.WriteLine("SetNewPersonShopItemList wird ausgeführt!");
+        reservationDto.PersonShopItems = new List<PersonShopItem>();
+        int personCounter = 0;
+
+        for (int i = 0; i < reservationDto.RoomAmount; i++) // Zimmeranzahl
+        {
+            for (int person = 1; person <= pax!.Adult; person++) // Anzahl Erw im Zimmer
+            {
+                personCounter = person;
+                if ((reservationDto.BookerId == reservationDto.GuestId) & person == 1 & i == 0)
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonId = reservationDto.BookerId;
+                    psi.PersonShopType = "booker";
+                    psi.Name = reservationDto.Booker != null ? reservationDto.Booker.Name : string.Empty;
+                    psi.FirstName = reservationDto.Booker != null ? reservationDto.Booker.FirstName : string.Empty;
+                    psi.PersonId = reservationDto.BookerId;
+                    psi.Index = $"{i}R{person}P";
+                    reservationDto.PersonShopItems.Add(psi);
+                }
+                else if ((reservationDto.GuestId == null || reservationDto.GuestId != reservationDto.BookerId) & person == 1)
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "guest";
+                    psi.Index = $"{i}R{person}P";
+                    reservationDto.PersonShopItems.Add(psi);
+                }
+                else if ((reservationDto.GuestId == null || reservationDto.GuestId == reservationDto.BookerId) & person == 1 & i > 0)
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "guest";
+                    psi.Index = $"{i}R{person}P";
+                    reservationDto.PersonShopItems.Add(psi);
+                }
+                else
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "sharer";
+                    psi.Index = $"{i}R{person}P";
+                    reservationDto.PersonShopItems.Add(psi);
+                }
+            }
+
+            if (pax.Children != null)
+            {
+                List<Child> childs = pax.Children.ToList();
+
+                for (int i2 = 0; i2 < childs.Count; i2++)
+                {
+                    PersonShopItem psi = new();
+                    psi.PersonShopType = "child";
+                    psi.ChildAge = childs[i2].Age;
+                    psi.ExtraBed = childs[i2].ExtraBed;
+                    int childPersonCounter = personCounter + i2 +1;
+                    psi.Index = $"{i}R{childPersonCounter}P";
+                    reservationDto.PersonShopItems.Add(psi);
+                }
+            }
+        }
+
+        reservationDto.Persons = JsonSerializer.Serialize<List<PersonShopItem>>(reservationDto.PersonShopItems.ToList());
+    }
+
+
 }

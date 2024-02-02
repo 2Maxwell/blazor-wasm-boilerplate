@@ -1,0 +1,404 @@
+﻿@page "/environment/reports/{mandantId:int}"
+@using System.Text;
+
+
+@inject IStringLocalizer<Reports> L
+@inject IReportClient reportClient
+@inject IJSRuntime _jsRuntime
+@inject HttpClient _httpClient
+
+<h3>Reports</h3>
+
+<FshTitle Title="@L["Reports"]" Description="@L["Reports for Categorys, Rooms, Property, Restaurant ..."]" />
+
+<MudGrid>
+
+    <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+
+        <MudCard Style="min-height:410px;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Reservations</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem>
+                        <MudDatePicker Label="Arrival" Editable="true" @bind-Date="@reservationsArrival" Variant="Variant.Outlined" Placeholder="Arrival Date" />
+                    </MudItem>
+                    <MudItem>
+                        <MudDatePicker Label="Departure" Editable="true" @bind-Date="@reservationsDeparture" Variant="Variant.Outlined" Placeholder="Departure Date" />
+
+                    </MudItem>
+                    <MudItem>
+                        <MudTextField @bind-Value="@reservationsResKz" Label="@L["ResKz"]" Variant="Variant.Outlined" />
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+            <MudCardActions>
+                <MudStack AlignItems="AlignItems.End" Justify="Justify.Center">
+                    <MudButton OnClick="ProcessReservationsReport" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Primary">@L["Get Report"]</MudButton>
+                </MudStack>
+            </MudCardActions>
+        </MudCard>
+
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+
+        <MudCard Style="min-height:410px;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">Invoice</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Style="min-height:400px;">
+                <MudGrid>
+                    <MudItem xs="5">
+                        <MudNumericField @bind-Value="invoice_invoiceId" Label="@L["InvoiceNumber Part A"]" Variant="Variant.Outlined" Min="0" />
+                    </MudItem>
+                    <MudItem xs="7">
+                        <MudNumericField @bind-Value="invoice_invoiceIdMandant" Label="@L["InvoiceNumber Part B"]" Variant="Variant.Outlined" Min="0" />
+                    </MudItem>
+
+                </MudGrid>
+
+            </MudCardContent>
+            <MudCardActions>
+                <MudStack Row="true" AlignItems="AlignItems.End" Justify="Justify.Center">
+                    <MudIconButton OnClick="@(() => InvoiceReport("PRINT"))" Icon="@Icons.Material.Filled.Print" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                    <MudIconButton OnClick="@(() => InvoiceReport("PDF"))" Icon="@Icons.Material.Filled.PictureAsPdf" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                    <MudIconButton OnClick="@(() => InvoiceReport("xls"))" Icon="@Icons.Custom.FileFormats.FileExcel" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                    <MudIconButton OnClick="@(() => InvoiceReport("Word"))" Icon="@Icons.Custom.FileFormats.FileWord" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                </MudStack>
+            </MudCardActions>
+        </MudCard>
+
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+
+        <MudCard Style="min-height:410px;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">ReservationReport RDLC</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem>
+                        <MudDatePicker Label="Arrival" Editable="true" @bind-Date="@reservationsArrival" Variant="Variant.Outlined" Placeholder="Arrival Date" />
+                    </MudItem>
+                    <MudItem>
+                        <MudDatePicker Label="Departure" Editable="true" @bind-Date="@reservationsDeparture" Variant="Variant.Outlined" Placeholder="Departure Date" />
+
+                    </MudItem>
+                    <MudItem>
+                        <MudTextField @bind-Value="@reservationsResKz" Label="@L["ResKz"]" Variant="Variant.Outlined" />
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+            <MudCardActions>
+                <MudStack Row="true" AlignItems="AlignItems.End" Justify="Justify.Center">
+
+                    @*<MudButton OnClick="ProcessInvoiceReport" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Primary">@L["Get Report"]</MudButton>*@
+
+                    <MudIconButton OnClick="@(() => ProcessReservationReport("PRINT"))" Icon="@Icons.Material.Filled.Print" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                    <MudIconButton OnClick="@(() => ProcessReservationReport("PDF"))" Icon="@Icons.Material.Filled.PictureAsPdf" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                    <MudIconButton OnClick="@(() => ProcessReservationReport("XLS"))" Icon="@Icons.Custom.FileFormats.FileExcel" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                    <MudIconButton OnClick="@(() => ProcessReservationReport("WORD"))" Icon="@Icons.Custom.FileFormats.FileWord" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+
+                </MudStack>
+            </MudCardActions>
+        </MudCard>
+
+    </MudItem>
+
+    <MudItem xs="12" sm="6" md="4" lg="3" xl="2">
+
+        <MudCard Style="min-height:410px;">
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">ReservationReport BR</MudText>
+                </CardHeaderContent>
+            </MudCardHeader>
+            <MudCardContent Style="min-height:400px;">
+                <MudGrid>
+                    <MudItem xs="6">
+                        <MudDatePicker Label="Arrival" Editable="true" @bind-Date="@reservationsArrival" Variant="Variant.Outlined" Placeholder="Arrival Date" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudDatePicker Label="Departure" Editable="true" @bind-Date="@reservationsDeparture" Variant="Variant.Outlined" Placeholder="Departure Date" />
+                    </MudItem>
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="@reservationsResKz" Label="@L["ResKz"]" Variant="Variant.Outlined" />
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+            <MudCardActions>
+                <MudStack Row="true" AlignItems="AlignItems.End" Justify="Justify.Center">
+
+                    @*<MudButton OnClick="ProcessInvoiceReport" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Send" Color="Color.Primary">@L["Get Report"]</MudButton>*@
+
+                    <MudIconButton OnClick="@(() => ReservationReport("PRINT"))" Icon="@Icons.Material.Filled.Print" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                    <MudIconButton OnClick="@(() => ReservationReport("PDF"))" Icon="@Icons.Material.Filled.PictureAsPdf" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                    <MudIconButton OnClick="@(() => ReservationReport("xls"))" Icon="@Icons.Custom.FileFormats.FileExcel" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+                    <MudIconButton OnClick="@(() => ReservationReport("Word"))" Icon="@Icons.Custom.FileFormats.FileWord" Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Medium" />
+
+                </MudStack>
+            </MudCardActions>
+        </MudCard>
+
+    </MudItem>
+
+</MudGrid>
+
+@code {
+
+    [Parameter]
+    public int MandantId { get; set; }
+
+    public int invoice_invoiceId { get; set; }
+    public int invoice_invoiceIdMandant { get; set; }
+
+    public DateTime? reservationsArrival { get; set; }
+    public DateTime? reservationsDeparture { get; set; }
+    public string reservationsResKz { get; set; } = "P,R,A,C,O";
+
+    public int invoiceIdMandant { get; set; }
+
+    public async Task ProcessReservationsReport()
+    {
+        GetReservationsReportRequest request = new GetReservationsReportRequest();
+        request.Arrival = reservationsArrival;
+        request.Departure = reservationsDeparture;
+        request.ResKz = reservationsResKz;
+
+        string endPoint = "https://localhost:5001/api/v1/Report/";
+        string reportEndpoint = "reservationsReport";
+        string endPointToSend = endPoint + reportEndpoint;
+        var jsonData = JsonSerializer.Serialize(request);
+        var httpContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(endPointToSend, httpContent);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseObject = JsonSerializer.Deserialize<ReportResult>(responseContent);
+
+            var reportBytes = Convert.FromBase64String(responseObject.fileContents);
+            var reportFileName = responseObject.fileDownloadName;
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var fileName = $"{timestamp}_{reportFileName}";
+
+            var memoryStream = new MemoryStream(reportBytes);
+            var downloadStream = new MemoryStream();
+            await memoryStream.CopyToAsync(downloadStream);
+            downloadStream.Position = 0;
+
+            var mimeType = "application/pdf";
+
+            await _jsRuntime.InvokeVoidAsync("saveAsFile", fileName, downloadStream.ToArray());
+        }
+        else
+        {
+            Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+        }
+
+    }
+
+    public async Task ProcessInvoiceReport()
+    {
+        //GetReservationsReportRequest request = new GetReservationsReportRequest();
+        //request.Arrival = reservationsArrival;
+        //request.Departure = reservationsDeparture;
+        //request.ResKz = reservationsResKz;
+
+        GetInvoiceReportRequest request = new GetInvoiceReportRequest();
+        request.InvoiceIdMandant = invoiceIdMandant;
+
+        string endPoint = "https://localhost:5001/api/v1/Report/";
+        string reportEndpoint = "invoiceReport";
+        string endPointToSend = endPoint + reportEndpoint;
+        var jsonData = JsonSerializer.Serialize(request);
+        var httpContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(endPointToSend, httpContent);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseObject = JsonSerializer.Deserialize<ReportResult>(responseContent);
+
+            var reportBytes = Convert.FromBase64String(responseObject.fileContents);
+            var reportFileName = responseObject.fileDownloadName;
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var fileName = $"{timestamp}_{reportFileName}";
+
+            var memoryStream = new MemoryStream(reportBytes);
+            var downloadStream = new MemoryStream();
+            await memoryStream.CopyToAsync(downloadStream);
+            downloadStream.Position = 0;
+
+            var mimeType = "application/pdf";
+
+            await _jsRuntime.InvokeVoidAsync("saveAsFile", fileName, downloadStream.ToArray());
+        }
+        else
+        {
+            Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+        }
+    }
+
+    public async Task ProcessReservationReport(string responseType)
+    {
+        GetReservationReportDtoRequest request = new GetReservationReportDtoRequest();
+        request.Arrival = reservationsArrival;
+        request.Departure = reservationsDeparture;
+        request.ResKz = reservationsResKz;
+        request.ResponseType = responseType;
+        request.MandantId = MandantId;
+
+        // var response = await reportClient.PrintRptReservationAsync(request);
+
+        string endPoint = "https://localhost:5001/api/v1/Report/";
+        string reportEndpoint = "reservationsReportRDLC";
+        string endPointToSend = endPoint + reportEndpoint;
+        var jsonData = JsonSerializer.Serialize(request);
+        var httpContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(endPointToSend, httpContent);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseObject = JsonSerializer.Deserialize<ReportResult>(responseContent);
+
+            var reportBytes = Convert.FromBase64String(responseObject.fileContents);
+            var reportFileName = responseObject.fileDownloadName;
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var fileName = $"{timestamp}_{reportFileName}";
+
+            var memoryStream = new MemoryStream(reportBytes);
+            var downloadStream = new MemoryStream();
+            await memoryStream.CopyToAsync(downloadStream);
+            downloadStream.Position = 0;
+
+            var mimeType = "application/pdf";
+
+            await _jsRuntime.InvokeVoidAsync("saveAsFile", fileName, downloadStream.ToArray());
+        }
+        else
+        {
+            Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+        }
+
+
+    }
+
+    public async Task ProcessReservationReportBR(string responseType)
+    {
+        GetReservationReportDtoRequest request = new GetReservationReportDtoRequest();
+        request.Arrival = reservationsArrival;
+        request.Departure = reservationsDeparture;
+        request.ResKz = reservationsResKz;
+        request.ResponseType = responseType;
+        request.MandantId = MandantId;
+
+        string endPoint = "https://localhost:5001/api/v1/Report/";
+        string reportEndpoint = "rptreservations";
+        string endPointToSend = endPoint + reportEndpoint;
+        var jsonData = JsonSerializer.Serialize(request);
+        var httpContent = new StringContent(jsonData, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(endPointToSend, httpContent);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseObject = JsonSerializer.Deserialize<ReportResult>(responseContent);
+
+            var reportBytes = Convert.FromBase64String(responseObject.fileContents);
+            var reportFileName = responseObject.fileDownloadName;
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var fileName = $"{reportFileName}_{timestamp}";
+
+            var memoryStream = new MemoryStream(reportBytes);
+            var downloadStream = new MemoryStream();
+            await memoryStream.CopyToAsync(downloadStream);
+            downloadStream.Position = 0;
+
+            // var mimeType = "application/pdf";
+            await _jsRuntime.InvokeVoidAsync("saveAsFile", fileName, downloadStream.ToArray());
+        }
+        else
+        {
+            Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+        }
+    }
+
+    public async Task InvoiceReport(string responseType)
+    {
+        GetInvoiceReportRequest request = new GetInvoiceReportRequest();
+        request.MandantId = MandantId;
+        request.InvoiceIdMandant = invoice_invoiceIdMandant;
+        request.InvoiceId = invoice_invoiceId;
+        request.ResponseType = responseType;
+
+        string reportEndpoint = "rptInvoiceCashier";
+        var jsonData = JsonSerializer.Serialize(request);
+
+        await ProcessReportWriter(responseType, reportEndpoint, jsonData);
+    }
+
+
+    public async Task ReservationReport(string responseType)
+    {
+        GetReservationReportDtoRequest request = new GetReservationReportDtoRequest();
+        request.Arrival = reservationsArrival;
+        request.Departure = reservationsDeparture;
+        request.ResKz = reservationsResKz;
+        request.ResponseType = responseType;
+        request.MandantId = MandantId;
+
+        string reportEndpoint = "rptreservations";
+        var jsonData = JsonSerializer.Serialize(request);
+
+        await ProcessReportWriter(responseType, reportEndpoint, jsonData);
+    }
+
+
+
+
+    public async Task ProcessReportWriter(string responseType, string reportEndpoint, string jsonRequest)
+    {
+        string endPoint = "https://localhost:5001/api/v1/Report/";
+        // string reportEndpoint = "rptreservations";
+        string endPointToSend = endPoint + reportEndpoint;
+        // var jsonData = JsonSerializer.Serialize(request);
+        var httpContent = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
+        var response = await _httpClient.PostAsync(endPointToSend, httpContent);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var responseObject = JsonSerializer.Deserialize<ReportResult>(responseContent);
+
+            var reportBytes = Convert.FromBase64String(responseObject.fileContents);
+            var reportFileName = responseObject.fileDownloadName;
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            string[] reportFileNameParts = reportFileName.Split('.');
+            var fileName = $"{reportFileNameParts[0]}_{timestamp}.{reportFileNameParts[1]}";
+
+            var memoryStream = new MemoryStream(reportBytes);
+            var downloadStream = new MemoryStream();
+            await memoryStream.CopyToAsync(downloadStream);
+            downloadStream.Position = 0;
+
+            // var mimeType = "application/pdf";
+            await _jsRuntime.InvokeVoidAsync("saveAsFile", fileName, downloadStream.ToArray());
+        }
+        else
+        {
+            Console.WriteLine($"Error: {response.StatusCode} - {response.ReasonPhrase}");
+        }
+    }
+
+}

@@ -65,6 +65,7 @@
     public List<PackageExtendDto> packageExtendRestaurantOptionDtos { get; set; } = new List<PackageExtendDto>();
     private bool hotelOptionSwitch { get; set; } = false;
     public List<PackageBookingRhythmEnumDto> PackageRhythmEnumList { get; set; } = new List<PackageBookingRhythmEnumDto>();
+    // public AppointmentDto appointmentDto { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,6 +84,7 @@
             {
                 PackageExtendDto peDto = new();
                 peDto = packageExtendDto.Adapt<PackageExtendDto>();
+                peDto.AppointmentTargetEnum = (int)packageExtendDto.PackageDto.AppointmentTargetEnum;
                 reservationDto.PackageExtendOptionDtos.Add(peDto);
                 packageExtendDto.Amount = 0;
             }
@@ -95,6 +97,7 @@
             {
                 PackageExtendDto peDto = new();
                 peDto = packageExtendDto.Adapt<PackageExtendDto>();
+                peDto.AppointmentTargetEnum = (int)packageExtendDto.PackageDto.AppointmentTargetEnum;
                 reservationDto.PackageExtendOptionDtos.Add(peDto);
                 packageExtendDto.Amount = 0;
             }

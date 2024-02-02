@@ -1,0 +1,296 @@
+﻿@page "/accounts/mandantdetails/{mandantId:int}"
+
+@inject IStringLocalizer<MandantDetails> L
+@inject IMandantsClient MandantsClient
+@inject ICountriesClient CountriesClient
+@inject ILanguagesClient LanguagesClient
+
+@if (_loaded)
+{
+    @*    <MudText Style="min-width:100px;" Typo="Typo.h5">@mandantFullDto.MandantDto.Name</MudText>
+    <MudCheckBox @bind-Checked="@mandantFullDto.MandantDto.GroupHead" Label="@L["IsGroupHead"]" LabelPosition="LabelPosition.Start" Size="Size.Large" Color="Color.Tertiary"></MudCheckBox>
+*@
+    <MudGrid>
+        <MudItem xs="9">
+            <MudPaper Class="pa-4" Elevation="3">
+
+                <MudPaper Class="mud-theme-primary" Height="100px">
+                    <MudStack Row="true" Justify="Justify.SpaceEvenly" AlignItems="AlignItems.Center">
+                        <MudItem>
+                            <MudText Typo="Typo.subtitle1">@L["Mandant"]</MudText>
+                            <MudText Style="min-width:100px;" Typo="Typo.h5">@mandantFullDto.MandantDto.Name</MudText>
+                        </MudItem>
+
+                        <MudItem>
+                            <MudText Typo="Typo.subtitle1">@L["Mandant Kz"]</MudText>
+                            <MudText Style="min-width:100px;" Typo="Typo.h5">@mandantFullDto.MandantDto.Kz</MudText>
+                        </MudItem>
+
+                        <MudItem Class="mt-3">
+                            <MudText Typo="Typo.subtitle1">@L["Is GroupHead"]</MudText>
+                            <MudCheckBox @bind-Checked="@mandantFullDto.MandantDto.GroupHead" ReadOnly="true"></MudCheckBox>
+                        </MudItem>
+                        <MudItem>
+                            <MudText Typo="Typo.subtitle1">@L["Group Member"]</MudText>
+                            <MudText Style="min-width:100px;" Typo="Typo.h5">@mandantFullDto.MandantDto.GroupMember</MudText>
+                        </MudItem>
+                    </MudStack>
+                </MudPaper>
+
+                <MudGrid>
+
+                    @*                    <MudItem xs="6">
+                <MudTextField @bind-Value="mandantFullDto.MandantDto.Name" Disabled="true" Label="Name" Variant="Variant.Outlined"></MudTextField>
+                </MudItem>
+
+                <MudItem xs="3">
+                <MudTextField @bind-Value="mandantFullDto.MandantDto.Kz" Disabled="true" Label="Name" Variant="Variant.Outlined"></MudTextField>
+                </MudItem>
+
+                *@
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Name1" For="()=>updateMandantDetailRequest.Name1" Label="Name1" Variant="Variant.Outlined"></MudTextField>
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Name2" For="()=>updateMandantDetailRequest.Name2" Label="Name2" Variant="Variant.Outlined"></MudTextField>
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Address1" For="()=>updateMandantDetailRequest.Address1" Label="@L["Address1"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Address2" For="()=>updateMandantDetailRequest.Address2" Label="@L["Address2"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="2">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Zip" For="()=>updateMandantDetailRequest.Zip" Label="@L["ZipCode"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="4">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.City" For="()=>updateMandantDetailRequest.City" Label="@L["City"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="3">
+                        <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updateMandantDetailRequest.CountryId)" @bind-Value="@updateMandantDetailRequest.CountryId" Label="@L["Country"]">
+                            @foreach (var item in countriesList)
+                            {
+                                <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="3">
+                        <MudSelect T="int?" Variant="Variant.Outlined" AnchorOrigin="Origin.BottomCenter" For="@(() => updateMandantDetailRequest.LanguageId)" @bind-Value="@updateMandantDetailRequest.LanguageId" Label="@L["Language"]">
+                            <MudSelectItem T="int?" Value="0">@L["Select Language"]</MudSelectItem>
+                            @foreach (var item in languagesList)
+                            {
+                                <MudSelectItem T="int?" Value="@item.Id">@item.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudDivider></MudDivider>
+                    </MudItem>
+
+                    <MudItem xs="4">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Telephone" For="()=>updateMandantDetailRequest.Telephone" Label="@L["Telephone"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="4">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Telefax" For="()=>updateMandantDetailRequest.Telefax" Label="@L["Telefax"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="4">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Mobil" For="()=>updateMandantDetailRequest.Mobil" Label="@L["Mobil"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Email" For="()=>updateMandantDetailRequest.Email" Label="@L["Email"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.EmailInvoice" For="()=>updateMandantDetailRequest.EmailInvoice" Label="@L["EmailInvoice"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.WebSite" For="()=>updateMandantDetailRequest.WebSite" Label="@L["WebSite"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudDivider></MudDivider>
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.BankName" For="()=>updateMandantDetailRequest.BankName" Label="@L["BankName"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="3">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Iban" For="()=>updateMandantDetailRequest.Iban" Label="@L["IBAN"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="3">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Bic" For="()=>updateMandantDetailRequest.Bic" Label="@L["BIC"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="12">
+                        <MudDivider></MudDivider>
+                    </MudItem>
+
+                    <MudItem xs="3">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.TaxId" For="()=>updateMandantDetailRequest.TaxId" Label="@L["TaxId"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="3">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.UStId" For="()=>updateMandantDetailRequest.UStId" Label="@L["UStId"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.Company" For="()=>updateMandantDetailRequest.Company" Label="@L["Company"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudItem xs="6">
+                        <MudTextField @bind-Value="updateMandantDetailRequest.CompanyRegister" For="()=>updateMandantDetailRequest.CompanyRegister" Label="@L["CompanyRegister"]" Variant="Variant.Outlined" />
+                    </MudItem>
+
+                    <MudButton OnClick="SaveMandantDetail" Style="height:100px;" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Save MandantDetail changes"]</MudButton>
+
+                </MudGrid>
+
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="3">
+            <MudPaper Elevation="25" Class="d-flex flex-row pt-6 pb-4" Style="height:100px;">
+                <MudIcon Icon="@Icons.Material.Filled.ViewCarousel" Color="Color.Primary" Class="mx-4"
+                         Style="width:54px; height:54px;"></MudIcon>
+                <div>
+                    <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">@L["Next JournalNumber"]</MudText>
+                    <MudText Typo="Typo.h5">@mandantFullDto.MandantNumbersDto.JournalNumber </MudText>
+                </div>
+            </MudPaper>
+
+            <MudPaper Elevation="25" Class="d-flex flex-row pt-6 pb-4 mt-4" Style="height:100px;">
+                <MudIcon Icon="@Icons.Material.Filled.Receipt" Color="Color.Primary" Class="mx-4"
+                         Style="width:54px; height:54px;"></MudIcon>
+                <div>
+                    <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">@L["Next InvoiceNumber"]</MudText>
+                    <MudText Typo="Typo.h5">@mandantFullDto.MandantNumbersDto.InvoiceNumber </MudText>
+                </div>
+            </MudPaper>
+
+            <MudPaper Elevation="25" Class="d-flex flex-row pt-6 pb-4 mt-4" Style="height:100px;">
+                <MudIcon Icon="@Icons.Material.Filled.GroupAdd" Color="Color.Primary" Class="mx-4"
+                         Style="width:54px; height:54px;"></MudIcon>
+                <div>
+                    <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">@L["Next GroupMasterNumber"]</MudText>
+                    <MudText Typo="Typo.h5">@mandantFullDto.MandantNumbersDto.GroupMasterNumber </MudText>
+                </div>
+            </MudPaper>
+
+            <MudPaper Elevation="25" Class="d-flex flex-row pt-6 pb-4 mt-4" Style="height:100px;">
+                <MudIcon Icon="@Icons.Material.Filled.RemoveRedEye" Color="Color.Primary" Class="mx-4"
+                         Style="width:54px; height:54px;"></MudIcon>
+                <div>
+                    <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">@L["Next PhantomNumber"]</MudText>
+                    <MudText Typo="Typo.h5">@mandantFullDto.MandantNumbersDto.PhantomNumber </MudText>
+                </div>
+            </MudPaper>
+
+            <MudPaper Elevation="25" Class="d-flex flex-row pt-6 pb-4 mt-4" Style="height:100px;">
+                <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Color="Color.Primary" Class="mx-4"
+                         Style="width:54px; height:54px;"></MudIcon>
+                <div>
+                    <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">@L["ForeCastDays"]</MudText>
+                    <MudText Typo="Typo.h5">@mandantFullDto.MandantSettingDto.ForecastDays </MudText>
+                </div>
+            </MudPaper>
+
+            <MudPaper Elevation="25" Class="d-flex flex-row pt-6 pb-4 mt-4" Style="height:100px;">
+                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Primary" Class="mx-4"
+                         Style="width:54px; height:54px;"></MudIcon>
+                <div>
+                    <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">@L["Default ArrivalTime"]</MudText>
+                    <MudText Typo="Typo.h5">@mandantFullDto.MandantSettingDto.DefaultArrivalTime.ToShortTimeString() </MudText>
+                </div>
+            </MudPaper>
+
+            <MudPaper Elevation="25" Class="d-flex flex-row pt-6 pb-4 mt-4" Style="height:100px;">
+                <MudIcon Icon="@Icons.Material.Filled.AccessTime" Color="Color.Primary" Class="mx-4"
+                         Style="width:54px; height:54px;"></MudIcon>
+                <div>
+                    <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">@L["Default DepartureTime"]</MudText>
+                    <MudText Typo="Typo.h5">@mandantFullDto.MandantSettingDto.DefaultDepartureTime.ToShortTimeString() </MudText>
+                </div>
+            </MudPaper>
+
+            <MudPaper Elevation="25" Class="d-flex flex-row pt-6 pb-4 mt-4" Style="height:120px;">
+                <MudIcon Icon="@Icons.Material.Filled.ArrowCircleRight" Color="Color.Primary" Class="mx-4"
+                         Style="width:54px; height:54px;"></MudIcon>
+                <div>
+                    <MudText Typo="Typo.subtitle1" Class="mud-text-secondary mb-n1">@L["Default Transfer GroupMembers"]</MudText>
+                    <MudText Typo="Typo.h5">@mandantFullDto.MandantSettingDto.DefaultTransfer </MudText>
+                </div>
+            </MudPaper>
+
+
+        </MudItem>
+    </MudGrid>
+
+
+}
+
+@code {
+    [Parameter]
+    public int MandantId { get; set; }
+
+    public bool _loaded = false;
+
+    public MandantFullDto mandantFullDto { get; set; }
+    public UpdateMandantDetailRequest updateMandantDetailRequest { get; set; } = new UpdateMandantDetailRequest();
+    public List<CountrySelectDto> countriesList { get; set; } = new();
+    public List<LanguageSelectDto> languagesList { get; set; } = new();
+
+
+
+    protected async override Task OnInitializedAsync()
+    {
+        countriesList = (await CountriesClient.GetCountrySelectAsync()).ToList();
+        languagesList = (await LanguagesClient.GetLanguageSelectAsync()).ToList();
+
+        mandantFullDto = await MandantsClient.GetFullMandantAsync(MandantId);
+        if (mandantFullDto.MandantDetailDto is not null)
+        {
+            updateMandantDetailRequest = mandantFullDto.MandantDetailDto.Adapt<UpdateMandantDetailRequest>();
+        }
+        else
+        {
+            updateMandantDetailRequest = new();
+        }
+
+        //updateMandantDetailRequest = mandantFullDto.MandantDetailDto.Adapt<UpdateMandantDetailRequest>();
+        _loaded = true;
+    }
+
+    private async void SaveMandantDetail()
+    {
+        int result = 0;
+        if (updateMandantDetailRequest.Id == 0)
+        {
+            // als Create speichern
+            updateMandantDetailRequest.MandantId = MandantId;
+            result = await MandantsClient.CreateMandantDetailAsync(updateMandantDetailRequest.Adapt<CreateMandantDetailRequest>());
+            if (result > 0)
+            {
+                updateMandantDetailRequest.Id = result;
+            }
+        }
+        else
+        {
+            // als Update speichern
+            result = await MandantsClient.UpdateMandantDetailAsync(MandantId, updateMandantDetailRequest);
+        }
+    }
+
+}

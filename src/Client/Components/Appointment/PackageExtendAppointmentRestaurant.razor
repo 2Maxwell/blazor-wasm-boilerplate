@@ -1,0 +1,129 @@
+﻿@inject IStringLocalizer<PackageExtendAppointmentRestaurant> L
+
+<h3>PackageExtendAppointmentRestaurant</h3>
+
+    <MudGrid>
+        <MudItem xs="4">
+            <MudDatePicker Label="@L["Begin Date"]" Date="packageExtendDto.AppointmentDto.Start" DateChanged="((e) => OnStartDateChanged(e))" MinDate="reservationDto.Arrival!.Value" MaxDate="Convert.ToDateTime(reservationDto.Departure).AddDays(-1)" DisableToolbar="true" Variant="Variant.Outlined" />
+
+        </MudItem>
+        <MudItem xs="4">
+            <MudTimePicker Label="@L["Begin Time"]" Editable="true" Time="@packageExtendDto.AppointmentDto!.Start.TimeOfDay" TimeChanged="((e) => OnTimeChanged(e, 'a'))" MinuteSelectionStep="15" Variant="Variant.Outlined" />
+
+        </MudItem>
+        <MudItem xs="4">
+            <MudTimePicker Label="@L["End Time"]" Editable="false" ReadOnly="true" Time="@packageExtendDto.AppointmentDto!.End.TimeOfDay" TimeChanged="((e) => OnTimeChanged(e, 'd'))" MinuteSelectionStep="15" Variant="Variant.Outlined" />
+        </MudItem>
+
+        <MudItem xs="12">
+            @if (packageExtendDto.AppointmentDto.DurationUnitEnumId == 10) // 10 = Minutes
+            {
+                <MudSlider TickMarks="true" Step="10" Min="30" Max="240" @bind-Value="packageExtendDto.AppointmentDto.Duration" Color="Color.Warning">Value: @packageExtendDto.AppointmentDto.Duration.ToString()</MudSlider>
+            }
+            @if (packageExtendDto.AppointmentDto.DurationUnitEnumId == 100) // 100 = Hours
+            {
+            <MudSlider T="int?" Min="1" Max="4" Value="packageExtendDto.AppointmentDto.Duration" ValueChanged="((e) => OnDurationChanged(e))" Color="Color.Warning">Value: @packageExtendDto.AppointmentDto.Duration.ToString()</MudSlider>
+            }
+        </MudItem>
+        <MudItem xs="2">
+            <MudNumericField T="int?" HideSpinButtons="true" Value="packageExtendDto.AppointmentDto.Duration" Label="@L["Duration"]" Variant="Variant.Outlined" />
+        </MudItem>
+
+    </MudGrid>
+
+@code {
+    [Parameter]
+    public PackageExtendDto packageExtendDto { get; set; }
+
+    [Parameter]
+    public EventCallback<PackageExtendDto> packageExtendDtoChanged { get; set; }
+
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Set packageExtendDto.AppointmentDto.Start Time to 17:00
+        if (packageExtendDto.AppointmentDto.Start < reservationDto.Arrival)
+        {
+            packageExtendDto.AppointmentDto.Start = Convert.ToDateTime(reservationDto.Arrival).AddHours(17);
+            SetEndTime();
+        }
+
+    }
+
+    private async void OnStartDateChanged(DateTime? date)
+    {
+        if (packageExtendDto.AppointmentDto.Start != date)
+        {
+            packageExtendDto.AppointmentDto.Start = Convert.ToDateTime(date); //.Add((TimeSpan)arrivalTime.Value);
+                                                                              // await reservationDtoChanged.InvokeAsync(reservationDto);
+
+        }
+    }
+
+    private async void OnTimeChanged(TimeSpan? time, char AorD)
+    {
+        if (AorD == 'a')
+        {
+            if (packageExtendDto.AppointmentDto.Start.TimeOfDay != time)
+            {
+                packageExtendDto.AppointmentDto!.Start = Convert.ToDateTime(packageExtendDto.AppointmentDto!.Start.Date + time);
+                SetEndTime();
+                // await reservationDtoChanged.InvokeAsync(reservationDto);
+            }
+        }
+        else
+        {
+            if (packageExtendDto.AppointmentDto.End.TimeOfDay != time)
+            {
+                packageExtendDto.AppointmentDto!.End = Convert.ToDateTime(packageExtendDto.AppointmentDto!.End.Date + time);
+                // await reservationDtoChanged.InvokeAsync(reservationDto);
+            }
+        }
+        StateHasChanged();
+    }
+
+    private async void OnDurationChanged(int? duration)
+    {
+        if (packageExtendDto.AppointmentDto.Duration != duration)
+        {
+            packageExtendDto.AppointmentDto.Duration = duration;
+            SetEndTime();
+            // await reservationDtoChanged.InvokeAsync(reservationDto);
+            StateHasChanged();
+        }
+    }
+
+
+    private void SetEndTime()
+    {
+        // Minute = 10,
+        // Minutes10 = 20,
+        // Minutes15 = 30,
+        // Hours = 100,
+        // Days = 200,
+        // Weeks = 300,
+        // Months = 400,
+        // Years = 500
+
+        // Set packageExtendDto.AppointmentDto.End Time to 17:00
+        packageExtendDto.AppointmentDto.End = Convert.ToDateTime(reservationDto.Arrival).AddHours(17);
+        switch (packageExtendDto.AppointmentDto.DurationUnitEnumId)
+        {
+            case 10:
+                packageExtendDto.AppointmentDto.End = packageExtendDto.AppointmentDto.Start.AddMinutes((int)packageExtendDto.AppointmentDto.Duration!);
+                break;
+            case 20:
+                packageExtendDto.AppointmentDto.End = packageExtendDto.AppointmentDto.Start.AddMinutes((int)packageExtendDto.AppointmentDto.Duration! * 10);
+                break;
+            case 30:
+                packageExtendDto.AppointmentDto.End = packageExtendDto.AppointmentDto.Start.AddMinutes((int)packageExtendDto.AppointmentDto.Duration! * 15);
+                break;
+            case 100:
+                packageExtendDto.AppointmentDto.End = packageExtendDto.AppointmentDto.Start.AddHours((int)packageExtendDto.AppointmentDto.Duration!);
+                break;
+        }
+    }
+
+}

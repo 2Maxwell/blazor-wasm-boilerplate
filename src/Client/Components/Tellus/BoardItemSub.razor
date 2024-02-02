@@ -1,0 +1,109 @@
+﻿@inject IStringLocalizer<BoardItemSub> L
+
+
+@if (_loaded)
+{
+
+
+    <MudPaper MaxHeight="70px" Class="border-2 border-solid mud-border-primary pl-1 pr-1" Outlined="true">
+        @*         <MudGrid>
+
+    <MudItem xs="7">
+    <MudCheckBox @bind-Checked="boardItemSub!.ResultValueBool" Size="Size.Large" Color="Color.Tertiary">
+    <MudTooltip Text="@boardItemSub!.Text" Placement="Placement.Bottom">
+    <MudText Typo="Typo.subtitle1">@boardItemSub.Title</MudText>
+    </MudTooltip>
+
+    </MudCheckBox>
+    </MudItem>
+
+
+    <MudItem xs="5" Class="mt-3">
+
+    @if (boardItemSub!.ResultType == "string")
+    {
+    <MudTextField @bind-Value="boardItemSub.ResultValueString" Label="@L["Result String"]" Margin="Margin.Dense" Variant="Variant.Outlined"></MudTextField>
+    }
+
+    @if (boardItemSub!.ResultType == "int")
+    {
+    <MudNumericField @bind-Value="boardItemSub.ResultValueInt" Label="@L["Result Integer"]" Margin="Margin.Dense" Variant="Variant.Outlined"></MudNumericField>
+    }
+
+    @if (boardItemSub!.ResultType == "decimal")
+    {
+    <MudNumericField @bind-Value="boardItemSub.ResultValueDecimal" Label="@L["Result Decimal"]" Margin="Margin.Dense" Variant="Variant.Outlined"></MudNumericField>
+    }
+
+    </MudItem>
+
+    </MudGrid>
+    *@
+        @* <div class="d-flex align-center justify-space-between"> *@
+            <MudGrid>
+                @if (boardItemSub.ResultType == "bool")
+                {
+                    <MudItem xs="12">
+                      <MudCheckBox @bind-Checked="boardItemSub!.ResultValueBool" Size="Size.Large" Color="Color.Tertiary">
+
+                        <MudTooltip Text="@boardItemSub!.Text" Placement="Placement.Bottom"><MudText Typo="Typo.subtitle1">@boardItemSub.Title</MudText></MudTooltip>
+
+                            </MudCheckBox>
+
+                    </MudItem>
+
+                }
+                else
+                {
+                    <MudItem xs="7">
+                        <MudCheckBox @bind-Checked="boardItemSub!.ResultValueBool" Size="Size.Large" Color="Color.Tertiary">
+                            <MudTooltip Text="@boardItemSub!.Text" Placement="Placement.Bottom">
+                                <MudText Typo="Typo.subtitle1">@boardItemSub.Title</MudText>
+                                </MudTooltip>
+
+                            </MudCheckBox>
+
+                        </MudItem>
+                    <MudItem xs="5">
+
+                        @if (boardItemSub!.ResultType == "string")
+                        {
+                            <MudTextField @bind-Value="boardItemSub.ResultValueString" Label="@L["Result String"]" Margin="Margin.Dense" Variant="Variant.Outlined"></MudTextField>
+                        }
+
+                        @if (boardItemSub!.ResultType == "int")
+                        {
+                            <MudNumericField @bind-Value="boardItemSub.ResultValueInt" Label="@L["Result Integer"]" HideSpinButtons="true" Margin="Margin.Dense" Variant="Variant.Outlined"></MudNumericField>
+                        }
+
+                        @if (boardItemSub!.ResultType == "decimal")
+                        {
+                            <MudNumericField @bind-Value="boardItemSub.ResultValueDecimal" Label="@L["Result Decimal"]" HideSpinButtons="true" Margin="Margin.Dense" Variant="Variant.Outlined"></MudNumericField>
+                        }
+
+                    </MudItem>
+
+                }
+
+            </MudGrid>
+
+
+        @* </div> *@
+
+    </MudPaper>
+
+
+
+}
+
+@code {
+    [Parameter]
+    public BoardItemSubDto? boardItemSub { get; set; }
+
+    private bool _loaded = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _loaded = true;
+    }
+}

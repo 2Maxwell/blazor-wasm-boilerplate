@@ -1,0 +1,85 @@
+﻿
+<MudStack>
+    <MudPaper Class="pa-4">
+        <MudStack Row="true">
+            <MudAvatar Image="@(string.IsNullOrEmpty(packageExtendDto.ImagePath) ? string.Empty : (Config[ConfigNames.ApiBaseUrl] + @packageExtendDto.ImagePath))" Size="Size.Large" Alt="Image of CartItem" />
+            <MudStack Justify="Justify.Center" Spacing="0">
+                <MudText Typo="Typo.body1">@packageExtendDto.PackageDto.Name</MudText>
+                <MudText Typo="Typo.body2">@packageRhythmEnumList.First(x => x.Value == packageExtendDto.PackageDto.PackageBookingRhythmEnumId).Text</MudText>
+            </MudStack>
+        </MudStack>
+    </MudPaper>
+
+    <MudPaper Class="pa-4">
+        <MudStack Spacing="4">
+
+@*             <MudTextField T="string" Label="Card number" Mask="@(new PatternMask("0000 0000 0000 0000"))" />
+ *@
+            <MudStack Row="true">
+                <MudTextField Style="text-align:right;" T="decimal" @bind-Value="packageExtendDto.Amount" For="()=>packageExtendDto.Amount" Margin="Margin.Normal" Label="Amount" Variant="Variant.Outlined" />
+                <MudTextField Style="text-align:right;" T="decimal?" @bind-Value="packageExtendDto.Price" For="()=>packageExtendDto.Price" Margin="Margin.Normal" Label="Price" Variant="Variant.Outlined" />
+            </MudStack>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" DisableElevation="true">OK</MudButton>
+        </MudStack>
+
+@if(packageExtendDto.AppointmentDto is not null)
+{
+    @if (packageExtendDto.AppointmentDto!.AppointmentTargetEnumId == 100) // 100 = Restaurant
+    {
+        // PackageExtendAppointmentRestaurant
+        <FSH.BlazorWebAssembly.Client.Components.Appointment.PackageExtendAppointmentRestaurant packageExtendDto="packageExtendDto" reservationDto="reservationDto" />
+    }
+
+    @if (packageExtendDto.AppointmentDto.AppointmentTargetEnumId == 200) // 200 = Wellness Behandlungen
+    {
+        // PackageExtendAppointmentWellnessBehandlungen
+                <FSH.BlazorWebAssembly.Client.Components.Appointment.PackageExtendAppointmentWellness packageExtendDto="packageExtendDto" reservationDto="reservationDto" />
+    }
+
+    @if (packageExtendDto.AppointmentDto.AppointmentTargetEnumId == 400) // 400 = BikeRental
+    {
+        // PackageExtendAppointmentObjectReservation
+        <FSH.BlazorWebAssembly.Client.Components.Appointment.PackageExtendAppointmentObject packageExtendDto="packageExtendDto" />
+    }
+}
+    </MudPaper>
+
+</MudStack>
+
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public ReservationDto reservationDto { get; set; }
+
+    [Parameter]
+    public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+
+    [Parameter]
+    public PackageExtendDto packageExtendDto { get; set; }
+
+    [Parameter]
+    public List<PackageBookingRhythmEnumDto> packageRhythmEnumList { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        int value = packageRhythmEnumList.First(x => x.Text == "perAppointment").Value;
+        if (packageExtendDto.AppointmentDto is null && packageExtendDto.PackageDto.PackageBookingRhythmEnumId == packageRhythmEnumList.First(x => x.Text == "perAppointment").Value)
+        {
+
+            AppointmentDto app = new AppointmentDto();
+            app.Title = $"HotelRes #{reservationDto.Id} B: {reservationDto.Booker.Name} G: {reservationDto.Guest.Name}";
+            app.AppointmentTargetEnumId = packageExtendDto.AppointmentTargetEnum;
+            app.Duration = packageExtendDto.PackageDto.Duration;
+            app.DurationUnitEnumId = packageExtendDto.PackageDto.DurationUnitEnumId;
+            app.MandantId = packageExtendDto.PackageDto.MandantId;
+            app.Source = "PackageExtend_HotelReservation";
+            app.SourceId = Convert.ToInt32(packageExtendDto.Id);
+            app.Done = false;
+            packageExtendDto.AppointmentDto = app;
+            packageExtendDto.AppointmentTargetEnum = app.AppointmentTargetEnumId;
+        }
+    }
+}

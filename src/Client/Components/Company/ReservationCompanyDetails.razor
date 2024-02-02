@@ -3,24 +3,33 @@
 
 @if (_loaded)
 {
-    <MudCard style="min-height:620px">
-        <MudCardHeader>
+    <MudCard Style="@($"height:{ExpandHeight}px;max-height:{ExpandHeight}px; overflow-y: scroll;")">
+        <MudCardHeader Class="mb-n10">
             <CardHeaderContent>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
-                    <MudText Typo="Typo.subtitle1">
-                        @L["Company details"]
-                    </MudText>
-                </MudButton>
+                <MudStack Row="true">
+
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">
+                        <MudText Typo="Typo.subtitle1">
+                            @L["Company details"] <MudText Typo="Typo.overline"> (@reservationDto.CompanyId)</MudText>
+                        </MudText>
+                    </MudButton>
+                </MudStack>
             </CardHeaderContent>
+            <CardHeaderActions>
+                <MudToggleIconButton Toggled="@ExpandOn" ToggledChanged="ExpandCompanyCard"
+                                     Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" Color="@Color.Primary" Title="Down"
+                                     ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp" ToggledColor="@Color.Primary" ToggledTitle="Up" />
+
+            </CardHeaderActions>
         </MudCardHeader>
         <MudCardContent>
             @if (reservationDto.CompanyId != null)
             {
                 <FSH.BlazorWebAssembly.Client.Components.Company.BookerCompanyShopMandant _mandantId="@reservationDto.MandantId"
-                                                                                  companyId="(int)reservationDto.CompanyId!"
-                                                                                  companyIdChanged="((e) => OnCompanyIdChanged(e))"
-                                                                                  contactId="reservationDto.CompanyContactId != null ? (int)reservationDto.CompanyContactId! : 0"
-                                                                                  contactIdChanged="((e) => OnCompanyContactIdChanged(e))">
+                                                                                          companyId="(int)reservationDto.CompanyId!"
+                                                                                          companyIdChanged="((e) => OnCompanyIdChanged(e))"
+                                                                                          contactId="reservationDto.CompanyContactId != null ? (int)reservationDto.CompanyContactId! : 0"
+                                                                                          contactIdChanged="((e) => OnCompanyContactIdChanged(e))">
                 </FSH.BlazorWebAssembly.Client.Components.Company.BookerCompanyShopMandant>
             }
             else
@@ -29,8 +38,8 @@
 
                 <MudIconButton OnClick="((e) => AddCompany(maxWidth))" Icon="@Icons.Filled.Add" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Success" Title="@L["Add new Company"]" aria-label="Add new Company"></MudIconButton>
 
-@*                <MudIconButton OnClick="((e) => EditCompany(maxWidth))" Icon="@Icons.Filled.Edit" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" Title="@L["Edit Company"]" aria-label="Edit Company"></MudIconButton>
-*@
+                @*                <MudIconButton OnClick="((e) => EditCompany(maxWidth))" Icon="@Icons.Filled.Edit" Variant="Variant.Outlined" Size="Size.Small" Color="Color.Info" Title="@L["Edit Company"]" aria-label="Edit Company"></MudIconButton>
+        *@
             }
         </MudCardContent>
         <MudCardActions>
@@ -47,6 +56,10 @@
     DialogOptions maxWidth = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
 
     public int CompanyContactId { get; set; }
+
+    public bool ExpandOn { get; set; }
+    public int ExpandHeight { get; set; } = 160;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -76,7 +89,7 @@
         _updateCompanyRequest = new();
         var parameters = new DialogParameters
             {
-                ["_mandantId"] =  reservationDto.MandantId,
+                ["_mandantId"] = reservationDto.MandantId,
                 ["_isCreate"] = true,
                 ["updateCompanyRequest"] = _updateCompanyRequest,
             };
@@ -99,5 +112,17 @@
         }
     }
 
+    private void ExpandCompanyCard()
+    {
+        ExpandOn = !ExpandOn;
+        if (ExpandOn)
+        {
+            ExpandHeight = 820;
+        }
+        else
+        {
+            ExpandHeight = 160;
+        }
+    }
 
 }

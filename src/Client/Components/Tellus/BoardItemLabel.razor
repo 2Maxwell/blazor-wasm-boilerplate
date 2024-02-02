@@ -1,0 +1,9 @@
+﻿@{string text = showText ? boardItemLabel.Text : "";}
+<MudChip Style="@($"background:{boardItemLabel!.Color}; MinWidth:50px;")" Text="@text" Value="@boardItemLabel!.Id" Size="Size.Medium"></MudChip>
+
+@code {
+    [Parameter]
+    public BoardItemLabelDto? boardItemLabel { get; set; }
+    [Parameter]
+    public bool showText { get; set;}
+}

@@ -5,8 +5,8 @@
 
 @if (_loaded)
 {
-    <MudCard style="min-height:620px">
-        <MudCardHeader>
+    <MudCard style="min-height:500px">
+        <MudCardHeader Class="mb-n10">
             <CardHeaderContent>
                 <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">@L["Stay details"]</MudButton>
             </CardHeaderContent>
@@ -16,20 +16,27 @@
                 @{
                     bool arrivalReadOnly = reservationDto.ResKz == "C" ? true : false;
                 }
+                <MudItem xs="1" Class="mt-4">
+                    <MudAvatar Color="Color.Primary">@GetWeekday(Convert.ToDateTime(reservationDto.Arrival))</MudAvatar>
+                </MudItem>
 
                 <MudItem xs="6">
-                    <MudDatePicker Label="Arrival" Editable="true" Date="@reservationDto.Arrival!.Value" DateChanged="((e) => OnArrivalDateChanged(e))" ReadOnly="arrivalReadOnly" MaxDate="@reservationDto.Departure" Variant="Variant.Outlined" Placeholder="Arrival Date" />
+                    <MudDatePicker Label="Arrival" Editable="true" Date="@reservationDto.Arrival!.Value" DateChanged="((e) => OnArrivalDateChanged(e))" ReadOnly="arrivalReadOnly" MinDate="@mandantDto.HotelDate" Variant="Variant.Outlined" Placeholder="Arrival Date" />
                 </MudItem>
-                <MudItem xs="4">
+                <MudItem xs="3">
                     <MudTimePicker Label="Arrivaltime" Editable="true" Time="@reservationDto.Arrival!.Value.TimeOfDay" TimeChanged="((e) => OnTimeChanged(e, 'a'))" ReadOnly="arrivalReadOnly" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="2">
-                    <MudNumericField T="int" HideSpinButtons="true" Value="@getNights(Convert.ToDateTime(@reservationDto.Arrival), Convert.ToDateTime(@reservationDto.Departure))" Label="@L["Nights"]" Variant="Variant.Outlined" />
+                    <MudNumericField T="int" HideSpinButtons="true" ReadOnly="true" Value="@getNights(Convert.ToDateTime(@reservationDto.Arrival), Convert.ToDateTime(@reservationDto.Departure))" Label="@L["Nights"]" Variant="Variant.Outlined" />
                 </MudItem>
-                <MudItem xs="7">
+                    <MudItem xs="1" Class="mt-4">
+                        <MudAvatar Color="Color.Primary">@GetWeekday(Convert.ToDateTime(reservationDto.Departure))</MudAvatar>
+                    </MudItem>
+
+                <MudItem xs="6">
                     <MudDatePicker Label="Departure" Editable="true" Date="@reservationDto.Departure!.Value" DateChanged="((e) => OnDepartureDateChanged(e))" MinDate="@reservationDto.Arrival" Variant="Variant.Outlined" Placeholder="Departure Date" />
                 </MudItem>
-                <MudItem xs="5">
+                <MudItem xs="3">
                     <MudTimePicker Label="Departuretime" Editable="true" Time="@reservationDto.Departure!.Value.TimeOfDay" TimeChanged="((e) => OnTimeChanged(e, 'd'))" Variant="Variant.Outlined" />
                 </MudItem>
                 <MudItem xs="3">
@@ -72,13 +79,9 @@
 
                 </MudItem>
             </MudGrid>
-
-
         </MudCardContent>
-        <MudCardActions>
-            <MudButton Variant="Variant.Text" Color="Color.Primary">Read More</MudButton>
-        </MudCardActions>
-    </MudCard>
+
+</MudCard>
 }
 
 @code {
@@ -89,6 +92,8 @@
     public ReservationDto reservationDto { get; set; }
     [Parameter]
     public EventCallback<ReservationDto> reservationDtoChanged { get; set; }
+    [Parameter]
+    public MandantDto mandantDto { get; set; }
 
     public TimeSpan? arrivalTime { get; set; }
     public TimeSpan? departureTime { get; set; }
@@ -97,6 +102,7 @@
     public int childsShow { get; set; } = 0;
     public bool openChildDialog { get; set; } = false;
     public MandantSettingDto mandantSettingDto { get; set; }
+    ReservationHelper reservationHelper = new ReservationHelper();
 
 
     protected override async Task OnInitializedAsync()
@@ -125,6 +131,36 @@
         pax = JsonSerializer.Deserialize<Pax>(reservationDto.PaxString);
 
         _loaded = true;
+    }
+
+    private string GetWeekday(DateTime date)
+    {
+        string result = "";
+        switch (date.DayOfWeek)
+        {
+            case DayOfWeek.Monday:
+                result = "Mo";
+                break;
+            case DayOfWeek.Tuesday:
+                result = "Di";
+                break;
+            case DayOfWeek.Wednesday:
+                result = "Mi";
+                break;
+            case DayOfWeek.Thursday:
+                result = "Do";
+                break;
+            case DayOfWeek.Friday:
+                result = "Fr";
+                break;
+            case DayOfWeek.Saturday:
+                result = "Sa";
+                break;
+            case DayOfWeek.Sunday:
+                result = "So";
+                break;
+        }
+        return result;
     }
 
     private async void OnArrivalDateChanged(DateTime? date)
@@ -233,7 +269,12 @@
                 };
             var dialog = DialogService.ShowModal<RoomOccupancyDialog>(parameters);
             var result = await dialog.Result;
-            //if (!result.Cancelled) startShopMandantCatRatePrice();
+            if (!result.Cancelled)
+            {
+                List<Pax> paxesResult = (List<Pax>)result.Data;
+                reservationDto.PaxString = JsonSerializer.Serialize<Pax>(paxesResult[0]);
+                reservationHelper.InitOrSetPersonShopItems(reservationDto, paxesResult[0]);
+            }
             StateHasChanged();
         }
     }

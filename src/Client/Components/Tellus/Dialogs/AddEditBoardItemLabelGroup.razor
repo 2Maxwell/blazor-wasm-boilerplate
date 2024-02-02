@@ -1,0 +1,78 @@
+﻿@inject IStringLocalizer<AddEditBoardItemLabelGroup> L
+@inject IBoardItemLabelGroupsClient BoardItemLabelGroupsClient
+
+@if (_loaded)
+{
+    <MudDialog Title="@L[HeaderText!]" MaxWidth="MaxWidth.Small">
+
+        <DialogContent>
+            <MudGrid>
+
+                <MudItem xs="12" md="12">
+                    <MudTextField @bind-Value="request!.Title" Tag="@L["Title"]" Variant="Variant.Outlined" />
+                </MudItem>
+
+            </MudGrid>
+        </DialogContent>
+
+        <DialogActions>
+            <MudButton OnClick="SaveBoardItemLabelGroup" Variant="Variant.Filled" Color="Color.Primary">@L["Save"]</MudButton>
+            <MudButton OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">@L["Cancel"]</MudButton>
+        </DialogActions>
+
+    </MudDialog>
+
+}
+
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance? MudDialog { get; set; }
+    [Parameter]
+    public int MandantId { get; set; }
+    [Parameter]
+    public BoardItemLabelGroupDto? BoardItemLabelGroup { get; set; }
+
+    public UpdateBoardItemLabelGroupRequest? request { get; set; }
+
+    public bool _loaded { get; set; } = false;
+    public string? HeaderText { get; set; }
+
+    protected async override Task OnInitializedAsync()
+    {
+        if (BoardItemLabelGroup is not null)
+        {
+            request = BoardItemLabelGroup.Adapt<UpdateBoardItemLabelGroupRequest>();
+            HeaderText = $"Edit BoardItemLabelGroup {request.Id}";
+        }
+        else
+        {
+            request = new UpdateBoardItemLabelGroupRequest();
+            HeaderText = "Add BoardItemLabelGroup";
+        };
+
+        _loaded = true;
+    }
+
+    private async void SaveBoardItemLabelGroup()
+    {
+        request!.MandantId = MandantId;
+
+        if (request.Id > 0)
+        {
+            await BoardItemLabelGroupsClient.UpdateAsync(request.Id, request);
+        }
+        else
+        {
+            await BoardItemLabelGroupsClient.CreateAsync(request.Adapt<CreateBoardItemLabelGroupRequest>());
+        }
+
+        MudDialog!.Close(DialogResult.Ok(true));
+    }
+
+    private void Cancel()
+    {
+        MudDialog!.Cancel();
+    }
+
+}
